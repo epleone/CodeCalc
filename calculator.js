@@ -1,7 +1,7 @@
 function calculate(expression) {
     // 定义数学常量
     const constants = {
-        'pi': Math.PI,
+        'PI': Math.PI,
         'e': Math.E
     };
 
@@ -119,14 +119,29 @@ function calculate(expression) {
     expression = expression.replace(/\blog\((.*?)\)/g, 'Math.log10($1)');
     expression = expression.replace(/\bln\((.*?)\)/g, 'Math.log($1)');
 
-    // 将表达式中的常��替换为其数值
+    // 将表达式中的常量替换为其数值
     for (const [constant, value] of Object.entries(constants)) {
-        const regex = new RegExp(`\\b${constant}\\b`, 'gi');
+        const regex = new RegExp(`\\b${constant}\\b`, 'g');  // 移除 i 标志，使大小写敏感
         expression = expression.replace(regex, value);
     }
 
     // 处理角度值（例如：90d -> pi/2）
-    expression = expression.replace(/(\d+(?:\.\d+)?)d\b/g, (match, num) => {
+    if (/^\s*-?\d+(\.\d+)?d\s*$/.test(expression)) {  // 检查是否只有一个角度值
+        const match = expression.match(/(-?\d+(?:\.\d+)?)d/);
+        const degrees = parseFloat(match[1]);
+        const radians = degrees * Math.PI / 180;  // 实际的弧度值
+        const piRatio = degrees / 180;  // 转换为 PI 的倍数
+        
+        if (piRatio === 0) return '0';
+        const piFormat = simplifyPiFraction(piRatio);
+        return {
+            value: piFormat,
+            success: `${radians.toFixed(6)} 弧度`  // 添加实际的弧度值
+        };
+    }
+
+    // 其他情况下的角度转换
+    expression = expression.replace(/(-?\d+(?:\.\d+)?)d\b/g, (match, num) => {
         return `(${num} * Math.PI / 180)`;
     });
 
@@ -169,3 +184,29 @@ function calculate(expression) {
 console.log(calculate('2 + 3 * 4')); // 输出: 14
 console.log(calculate('10 - 2 * 3')); // 输出: 4
 console.log(calculate('20 / 5 + 3')); // 输出: 7 
+
+// 辅助函数：尝试将数字转换为 PI 的倍数或分数形式
+function simplifyPiFraction(ratio) {
+    // 检查是否为整数倍
+    if (Number.isInteger(ratio)) {
+        if (ratio === 1) return 'PI';
+        if (ratio === -1) return '-PI';
+        return `${ratio}*PI`;
+    }
+
+    // 检查常见的分数
+    const denominators = [2, 3, 4, 6, 8, 12];
+    for (const den of denominators) {
+        const num = ratio * den;
+        if (Math.abs(Math.round(num) - num) < 1e-10) {
+            const roundedNum = Math.round(num);
+            if (Math.abs(roundedNum) === 1) {
+                return roundedNum > 0 ? `PI/${den}` : `-PI/${den}`;
+            }
+            return `${roundedNum}*PI/${den}`;
+        }
+    }
+
+    // 如果无法简化，返回小数形式
+    return `${ratio.toFixed(6)}*PI`;
+}

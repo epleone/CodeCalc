@@ -276,6 +276,9 @@
             text-align: center;
             line-height: 1.5rem;
             background: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .expression-line:nth-child(even) .message-icon {
@@ -343,6 +346,48 @@
             display: flex;
             align-items: center;
         }
+
+        /* 消息图标的基本内容 */
+        .message-icon::before {
+            content: "⚠";  /* 默认是警告图标 */
+        }
+
+        /* 错误图标样式 */
+        .message-icon.error::before {
+            content: "❌";  /* 使用乘号作为错误图标 */
+            font-size: 1rem;  /* 调整大小 */
+        }
+
+        /* 警告图标保持原样 */
+        .message-icon.warning::before {
+            content: "⚠";
+        }
+
+        /* 成功图标样式 */
+        .message-icon.success {
+            color: #28a745;  /* 使用绿色 */
+        }
+
+        .message-icon.success::before {
+            content: "ⓘ";
+            font-family: Arial, sans-serif;
+            font-size: 1.2rem;
+        }
+
+        /* 成功提示文本背景 */
+        .message-icon.success .message-text {
+            background-color: rgba(40, 167, 69, 0.9);  /* 半透明绿色 */
+        }
+
+        /* 修改错误样式，使其更具体 */
+        .result.error .result-value {
+            color: #dc3545;  /* 红色 */
+        }
+
+        /* 移除原来的通用错误样式 */
+        .error {
+            /* 删除这个样式 */
+        }
     </style>
 </head>
 <body>
@@ -356,7 +401,7 @@
                     <div class="result">
                         <span class="result-value"></span>
                     </div>
-                    <div class="message-icon">⚠
+                    <div class="message-icon">
                         <div class="message-text"></div>
                     </div>
                 </div>
@@ -369,7 +414,7 @@
             <div class="tooltip-icon">?</div>
             <div class="tooltip-text">
                 默认常数：<br>
-                • pi=3.14159, e=2.71828<br>
+                • PI=3.14159, e=2.71828<br>
                 <br>
                 基础运算：<br>
                 • +, -, *xX, /, //(整除), %(余数), **(幂)<br>
@@ -379,7 +424,7 @@
                 • 30d=30*pi/180<br>
                 <br>
                 数学函数：<br>
-                • 弧度：sin(pi/6), cos(pi/2), tan(pi/4)<br>
+                • 弧度：sin(PI/6), cos(PI/2), tan(PI/4)<br>
                 • 对应角度：sin(30d), cos(90d), tan(45d)<br>
                 • log(100), ln(e), exp(2)=e²<br>
                 • sqrt(2), root(8,3)=2<br>
@@ -400,7 +445,7 @@
             'log(', 'ln(', 'exp(',
             'sqrt(', 'root(',
             'bin(', 'oct(', 'hex(',
-            'pi', 'e',
+            'PI',
             '0b', '0o', '0x'
         ];
 
@@ -411,41 +456,51 @@
             const messageText = messageIcon.querySelector('.message-text');
             const expression = input.value.trim();
             
-            // 处理输入状态
-            if (expression === '') {
-                result.textContent = '';
-                result.classList.remove('has-input', 'has-value', 'warning', 'error');
+            // 清除所有状态
+            function clearState() {
+                result.innerHTML = '<span class="result-value"></span>';
+                result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
                 messageIcon.style.display = 'none';
-                return;
-            } else {
-                result.classList.add('has-input');
             }
+
+            // 设置状态
+            function setState(value, type, message) {
+                result.innerHTML = `<span class="result-value">${value}</span>`;
+                result.classList.remove('warning', 'error', 'success');  // 先移除所有状态
+                result.classList.add('has-value', type);  // 再添加新状态
+                messageIcon.className = `message-icon ${type}`;
+                messageIcon.style.display = 'inline';
+                messageText.textContent = message;
+            }
+
+            // 设置正常结果
+            function setNormalState(value) {
+                result.innerHTML = `<span class="result-value">${value}</span>`;
+                result.classList.remove('warning', 'error', 'success');  // 确保移除所有特殊状态
+                result.classList.add('has-value');
+                messageIcon.style.display = 'none';
+            }
+
+            // 空输入处理
+            if (expression === '') {
+                clearState();
+                return;
+            }
+            result.classList.add('has-input');
 
             try {
                 const value = calculate(expression);
-                if (typeof value === 'object' && value.warning) {
-                    // 显示警告
-                    result.innerHTML = `<span class="result-value">${value.value}</span>`;
-                    result.classList.add('has-value', 'warning');
-                    result.classList.remove('error');
-                    messageIcon.className = 'message-icon warning';
-                    messageIcon.style.display = 'inline';
-                    messageText.textContent = value.warning;
+                if (typeof value === 'object') {
+                    if (value.warning) {
+                        setState(value.value, 'warning', value.warning);
+                    } else if (value.success) {
+                        setState(value.value, 'success', value.success);
+                    }
                 } else {
-                    // 正常结果
-                    result.innerHTML = `<span class="result-value">${value}</span>`;
-                    result.classList.add('has-value');
-                    result.classList.remove('warning', 'error');
-                    messageIcon.style.display = 'none';
+                    setNormalState(value);
                 }
             } catch (error) {
-                // 显示错误
-                result.innerHTML = `<span class="result-value"></span>`;  // 保持 span 元素但清空内容
-                result.classList.remove('has-value', 'warning');
-                result.classList.add('error');
-                messageIcon.className = 'message-icon error';
-                messageIcon.style.display = 'inline';
-                messageText.textContent = error.message;
+                setState('', 'error', error.message);
             }
         }
 
@@ -461,7 +516,7 @@
                     <div class="result">
                         <span class="result-value"></span>
                     </div>
-                    <div class="message-icon">⚠
+                    <div class="message-icon" style="display: none;">
                         <div class="message-text"></div>
                     </div>
                 </div>
@@ -496,20 +551,20 @@
                     }
                 }
             } else if (event.key === 'Backspace' && input.value === '') {
-                // 当Backspace键且当前输入框为空时
+                // 当Backspace键且当前输入框空时
                 event.preventDefault();
                 const previousLine = currentLine.previousElementSibling;
                 
-                // 如果存在上一行且当前不是第一行
+                // 如果存在上一行且前不是第一行
                 if (previousLine && document.querySelectorAll('.expression-line').length > 1) {
-                    // 移动焦点到上一行的输入框
+                    // 移焦点到上一行的输入框
                     const previousInput = previousLine.querySelector('.input');
                     previousInput.focus();
                     // 将光标移到文本末尾
                     previousInput.selectionStart = previousInput.value.length;
                     previousInput.selectionEnd = previousInput.value.length;
                     
-                    // 如果当前行是空的，则删除当前行
+                    // 如果当前行是空，则删除当前行
                     if (!input.value && !currentLine.querySelector('.result').textContent) {
                         currentLine.remove();
                     }
@@ -560,11 +615,17 @@
                         const afterCursor = input.value.substring(cursorPos);
                         
                         // 更新输入值
-                        input.value = beforeWord + completion + afterCursor;
-                        
-                        // 移动光标到补全内容后面
-                        const newCursorPos = beforeWord.length + completion.length;
-                        input.setSelectionRange(newCursorPos, newCursorPos);
+                        if (completion.endsWith('(')) {
+                            // 如果是函数，添加右括号并将光标移动到括号内
+                            input.value = beforeWord + completion + ')' + afterCursor;
+                            const newCursorPos = beforeWord.length + completion.length;
+                            input.setSelectionRange(newCursorPos, newCursorPos);
+                        } else {
+                            // 对于非函数的补全，正常处理
+                            input.value = beforeWord + completion + afterCursor;
+                            const newCursorPos = beforeWord.length + completion.length;
+                            input.setSelectionRange(newCursorPos, newCursorPos);
+                        }
                         
                         // 触发计算
                         calculateLine(input);
@@ -634,9 +695,13 @@
             
             const input = firstLine.querySelector('.input');
             const result = firstLine.querySelector('.result');
-            input.value = '';
-            result.textContent = '';
-            result.classList.remove('has-input', 'has-value', 'warning', 'error');
+            const messageIcon = firstLine.querySelector('.message-icon');  // 获取图标元素
+            
+            // 清空所有状态
+            input.value = '';  // 清空输入框的值
+            result.innerHTML = '';  // 使用 innerHTML 清空结果，确保子元素也被清除
+            result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
+            messageIcon.style.display = 'none';  // 隐藏图标
             
             input.focus();
         }
