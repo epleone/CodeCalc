@@ -37,7 +37,7 @@
             gap: 0.625rem;
             min-height: 3.5rem;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .expression-line:nth-child(even) {
@@ -63,11 +63,12 @@
             font-family: monospace;
             padding-left: 0.625rem;
             border-left: 0.0625rem solid #dee2e6;
-            width: 10rem;
+            min-width: 18rem;
+            width: auto;
             text-align: right;
             flex-shrink: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            overflow: visible;
+            text-overflow: clip;
             white-space: nowrap;
             padding-right: 0.5rem;
             position: relative;
@@ -84,26 +85,22 @@
             transition: opacity 0.2s, color 0.2s, font-weight 0.2s;
         }
 
-        /* 有输入时显示等号 */
         .result.has-input::before {
             opacity: 1;
-            color: #6c757d;  /* 默认使用灰色 */
+            color: #6c757d;
         }
 
-        /* 有结果时等号使用正常颜色 */
         .result.has-value::before {
             color: inherit;
         }
 
-        /* 警告时等号使用警告颜色 */
         .result.warning::before {
-            color: #f0ad4e;  /* 使用原始黄色 */
+            color: #f0ad4e;
             font-weight: bold;
         }
 
-        /* 错误时等号使用错误颜色 */
         .result.error::before {
-            color: #dc3545;  /* 使用原始红色 */
+            color: #dc3545;
             font-weight: bold;
         }
 
@@ -111,16 +108,13 @@
             margin-left: 1.5rem;
             display: inline-block;
         }
-        
-        .error {
-            color: #dc3545;
-        }
 
         #expression-container {
             display: flex;
             flex-direction: column;
             flex: 1;
             overflow-y: auto;
+            overflow-x: auto;
         }
 
         .footer {
@@ -207,60 +201,14 @@
             background-color: #c82333;
         }
 
-        /* 响应式设计 */
-        @media screen and (max-width: 768px) {
-            body {
-                font-size: 14px;
-            }
-            
-            .container {
-                width: calc(100% - 2rem);
-                padding: 0.75rem;
-            }
-            
-            .input, .result {
-                font-size: 1.2rem;
-            }
-        }
-
-        @media screen and (max-width: 480px) {
-            body {
-                font-size: 12px;
-                padding: 1vh;
-            }
-            
-            .container {
-                width: calc(100% - 1.5rem);
-                padding: 0.5rem;
-            }
-            
-            .input, .result {
-                font-size: 1rem;
-            }
-        }
-
         .result-container {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            width: 12rem;
+            min-width: 20rem;
             flex-shrink: 0;
             position: relative;
             padding-right: 1.5rem;
-        }
-
-        .result {
-            font-size: 1.5rem;
-            font-family: monospace;
-            padding-left: 0.625rem;
-            border-left: 0.0625rem solid #dee2e6;
-            width: 10rem;
-            text-align: right;
-            flex-shrink: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            padding-right: 0.5rem;
         }
 
         .message-icon {
@@ -270,7 +218,6 @@
             transform: translateY(-50%);
             cursor: pointer;
             font-weight: bold;
-            display: none;
             width: 1.5rem;
             height: 1.5rem;
             text-align: center;
@@ -322,12 +269,6 @@
             background-color: rgba(240, 173, 78, 0.9);
         }
 
-        .message-icon:hover .message-text {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        /* 补全提示的样式 */
         .completion-hint {
             position: absolute;
             color: #adb5bd;
@@ -342,30 +283,26 @@
             left: 0;
             right: 0;
             bottom: 0;
-            padding: 0.75rem 1rem;  /* 与 expression-line 的 padding 一致 */
+            padding: 0.75rem 1rem;
             display: flex;
             align-items: center;
         }
 
-        /* 消息图标的基本内容 */
         .message-icon::before {
-            content: "⚠";  /* 默认是警告图标 */
+            content: "⚠";
         }
 
-        /* 错误图标样式 */
         .message-icon.error::before {
-            content: "❌";  /* 使用乘号作为错误图标 */
-            font-size: 1rem;  /* 调整大小 */
+            content: "❌";
+            font-size: 1rem;
         }
 
-        /* 警告图标保持原样 */
         .message-icon.warning::before {
             content: "⚠";
         }
 
-        /* 成功图标样式 */
         .message-icon.success {
-            color: #28a745;  /* 使用绿色 */
+            color: #28a745;
         }
 
         .message-icon.success::before {
@@ -374,24 +311,69 @@
             font-size: 1.2rem;
         }
 
-        /* 成功提示文本背景 */
         .message-icon.success .message-text {
-            background-color: rgba(40, 167, 69, 0.9);  /* 半透明绿色 */
+            background-color: rgba(40, 167, 69, 0.9);
         }
 
-        /* 修改错误样式，使其更具体 */
         .result.error .result-value {
-            color: #dc3545;  /* 红色 */
+            color: #dc3545;
         }
 
-        /* 移除原来的通用错误样式 */
-        .error {
-            /* 删除这个样式 */
+        .expression-line:not(:focus-within) .message-icon.error .message-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .message-icon.warning:hover .message-text,
+        .message-icon.success:hover .message-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .expression-line:focus-within .message-icon.error .message-text {
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        .expression-line:focus-within .message-icon.error:hover .message-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media screen and (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+            
+            .container {
+                width: calc(100% - 2rem);
+                padding: 0.75rem;
+            }
+            
+            .input, .result {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            body {
+                font-size: 12px;
+                padding: 1vh;
+            }
+            
+            .container {
+                width: calc(100% - 1.5rem);
+                padding: 0.5rem;
+            }
+            
+            .input, .result {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" onclick="handleContainerClick(event)">
         <div id="expression-container">
             <div class="expression-line">
                 <input type="text" class="input" placeholder="输入表达式，例如: 2 + 3 * 4" 
@@ -413,21 +395,27 @@
         <div class="tooltip">
             <div class="tooltip-icon">?</div>
             <div class="tooltip-text">
+                变量：<br>
+                • a = 2x3<br>
+                • b = a + 1<br>
+                <br>
                 默认常数：<br>
                 • PI=3.14159, e=2.71828<br>
                 <br>
                 基础运算：<br>
                 • +, -, *xX, /, //(整除), %(余数), **(幂)<br>
+                • +=、-=、*=、/=<br>
                 <br>
-                弧度角度转换：<br>
-                • 默认使用弧度，后缀+d表示角度<br>
-                • 30d=30*pi/180<br>
+                角度转换弧度：角度值 + d 转为弧度<br>
+                • 30d = 30 * PI / 180<br>
+                • sin(45d) = sin(45 * PI / 180)<br>
                 <br>
                 数学函数：<br>
-                • 弧度：sin(PI/6), cos(PI/2), tan(PI/4)<br>
-                • 对应角度：sin(30d), cos(90d), tan(45d)<br>
+                • 三角函数：sin(45d), cos(PI/2), tan(PI/4)<br>
+                • 反三角函数：asin(0.5), acos(0), atan(1)<br>
                 • log(100), ln(e), exp(2)=e²<br>
-                • sqrt(2), root(8,3)=2<br>
+                • sqrt(2), root(8,3)=2, pow(2,3)=8<br>
+                • max(1,2,3)=3, min(1,2,3)=1<br>
                 <br>
                 进制：<br>
                 • 其它进制转十进制：0b111, 0o111, 0x111<br>
@@ -438,273 +426,6 @@
     </div>
 
     <script src="calculator.js"></script>
-    <script>
-        // 添加可补全的函数和操作列表
-        const completions = [
-            'sin(', 'cos(', 'tan(',
-            'log(', 'ln(', 'exp(',
-            'sqrt(', 'root(',
-            'bin(', 'oct(', 'hex(',
-            'PI',
-            '0b', '0o', '0x'
-        ];
-
-        function calculateLine(input) {
-            const resultContainer = input.parentElement.querySelector('.result-container');
-            const result = resultContainer.querySelector('.result');
-            const messageIcon = resultContainer.querySelector('.message-icon');
-            const messageText = messageIcon.querySelector('.message-text');
-            const expression = input.value.trim();
-            
-            // 清除所有状态
-            function clearState() {
-                result.innerHTML = '<span class="result-value"></span>';
-                result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
-                messageIcon.style.display = 'none';
-            }
-
-            // 设置状态
-            function setState(value, type, message) {
-                result.innerHTML = `<span class="result-value">${value}</span>`;
-                result.classList.remove('warning', 'error', 'success');  // 先移除所有状态
-                result.classList.add('has-value', type);  // 再添加新状态
-                messageIcon.className = `message-icon ${type}`;
-                messageIcon.style.display = 'inline';
-                messageText.textContent = message;
-            }
-
-            // 设置正常结果
-            function setNormalState(value) {
-                result.innerHTML = `<span class="result-value">${value}</span>`;
-                result.classList.remove('warning', 'error', 'success');  // 确保移除所有特殊状态
-                result.classList.add('has-value');
-                messageIcon.style.display = 'none';
-            }
-
-            // 空输入处理
-            if (expression === '') {
-                clearState();
-                return;
-            }
-            result.classList.add('has-input');
-
-            try {
-                const value = calculate(expression);
-                if (typeof value === 'object') {
-                    if (value.warning) {
-                        setState(value.value, 'warning', value.warning);
-                    } else if (value.success) {
-                        setState(value.value, 'success', value.success);
-                    }
-                } else {
-                    setNormalState(value);
-                }
-            } catch (error) {
-                setState('', 'error', error.message);
-            }
-        }
-
-        function addNewLine() {
-            const container = document.getElementById('expression-container');
-            const newLine = document.createElement('div');
-            newLine.className = 'expression-line';
-            newLine.innerHTML = `
-                <input type="text" class="input" placeholder="输入表达式" 
-                       oninput="handleInput(event)"
-                       onkeydown="handleKeyDown(event, this)">
-                <div class="result-container">
-                    <div class="result">
-                        <span class="result-value"></span>
-                    </div>
-                    <div class="message-icon" style="display: none;">
-                        <div class="message-text"></div>
-                    </div>
-                </div>
-            `;
-            container.appendChild(newLine);
-            newLine.querySelector('.input').focus();
-        }
-
-        function handleKeyDown(event, input) {
-            const currentLine = input.parentElement;
-            
-            if (event.key === 'Enter') {
-                event.preventDefault(); // 阻止默认的回车行为
-                
-                const expression = input.value.trim();
-                const result = currentLine.querySelector('.result');
-                const hasExpression = expression !== '';
-                
-                // 修改判断逻辑：只要有输入内容就以添加新行
-                if (hasExpression) {
-                    const lines = document.querySelectorAll('.expression-line');
-                    const isLastLine = input === lines[lines.length - 1].querySelector('.input');
-                    
-                    if (isLastLine) {
-                        addNewLine();
-                    } else {
-                        // 如果不是最后一行，移动焦点到下一行
-                        const nextLine = currentLine.nextElementSibling;
-                        if (nextLine) {
-                            nextLine.querySelector('.input').focus();
-                        }
-                    }
-                }
-            } else if (event.key === 'Backspace' && input.value === '') {
-                // 当Backspace键且当前输入框空时
-                event.preventDefault();
-                const previousLine = currentLine.previousElementSibling;
-                
-                // 如果存在上一行且前不是第一行
-                if (previousLine && document.querySelectorAll('.expression-line').length > 1) {
-                    // 移焦点到上一行的输入框
-                    const previousInput = previousLine.querySelector('.input');
-                    previousInput.focus();
-                    // 将光标移到文本末尾
-                    previousInput.selectionStart = previousInput.value.length;
-                    previousInput.selectionEnd = previousInput.value.length;
-                    
-                    // 如果当前行是空，则删除当前行
-                    if (!input.value && !currentLine.querySelector('.result').textContent) {
-                        currentLine.remove();
-                    }
-                }
-            } else if (event.key === 'ArrowUp') {
-                // 向上键
-                event.preventDefault();
-                const previousLine = currentLine.previousElementSibling;
-                if (previousLine) {
-                    const previousInput = previousLine.querySelector('.input');
-                    previousInput.focus();
-                    // 保持光标位置
-                    const cursorPos = input.selectionStart;
-                    previousInput.selectionStart = Math.min(cursorPos, previousInput.value.length);
-                    previousInput.selectionEnd = Math.min(cursorPos, previousInput.value.length);
-                }
-            } else if (event.key === 'ArrowDown') {
-                // 向下键
-                event.preventDefault();
-                const nextLine = currentLine.nextElementSibling;
-                if (nextLine) {
-                    const nextInput = nextLine.querySelector('.input');
-                    nextInput.focus();
-                    // 保持光标位置
-                    const cursorPos = input.selectionStart;
-                    nextInput.selectionStart = Math.min(cursorPos, nextInput.value.length);
-                    nextInput.selectionEnd = Math.min(cursorPos, nextInput.value.length);
-                }
-            } else if (event.key === 'Tab') {
-                event.preventDefault();
-                
-                const cursorPos = input.selectionStart;
-                const textBeforeCursor = input.value.substring(0, cursorPos);
-                
-                // 找到最后一个单词
-                const lastWord = textBeforeCursor.match(/[a-zA-Z0-9]*$/)[0].toLowerCase();
-                
-                if (lastWord) {
-                    // 找到所有匹配的补全选项
-                    const matches = completions.filter(c => 
-                        c.toLowerCase().startsWith(lastWord)
-                    );
-                    
-                    if (matches.length > 0) {
-                        // 使用第一个匹配项进行补全
-                        const completion = matches[0];
-                        const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
-                        const afterCursor = input.value.substring(cursorPos);
-                        
-                        // 更新输入值
-                        if (completion.endsWith('(')) {
-                            // 如果是函数，添加右括号并将光标移动到括号内
-                            input.value = beforeWord + completion + ')' + afterCursor;
-                            const newCursorPos = beforeWord.length + completion.length;
-                            input.setSelectionRange(newCursorPos, newCursorPos);
-                        } else {
-                            // 对于非函数的补全，正常处理
-                            input.value = beforeWord + completion + afterCursor;
-                            const newCursorPos = beforeWord.length + completion.length;
-                            input.setSelectionRange(newCursorPos, newCursorPos);
-                        }
-                        
-                        // 触发计算
-                        calculateLine(input);
-                    }
-                }
-                return;
-            }
-
-            // 处理其他按键时清除提示
-            removeCompletionHint(input);
-        }
-
-        // 添加输入事件处理
-        function handleInput(event) {
-            const input = event.target;
-            const cursorPos = input.selectionStart;
-            const textBeforeCursor = input.value.substring(0, cursorPos);
-            
-            // 找到最后一个单词
-            const lastWord = textBeforeCursor.match(/[a-zA-Z0-9]*$/)[0].toLowerCase();
-            
-            // 移除旧的提示
-            removeCompletionHint(input);
-            
-            if (lastWord) {
-                // 找到所有匹配的补全选项
-                const matches = completions.filter(c => 
-                    c.toLowerCase().startsWith(lastWord)
-                );
-                
-                if (matches.length > 0) {
-                    // 显示第一个匹配项作为提示
-                    const completion = matches[0];
-                    const hint = completion.slice(lastWord.length);
-                    if (hint) {
-                        showCompletionHint(input, textBeforeCursor + hint);
-                    }
-                }
-            }
-            
-            // 触发计算
-            calculateLine(input);
-        }
-
-        function showCompletionHint(input, fullText) {
-            const hint = document.createElement('div');
-            hint.className = 'completion-hint';
-            hint.textContent = fullText;
-            input.parentElement.appendChild(hint);
-        }
-
-        function removeCompletionHint(input) {
-            const hint = input.parentElement.querySelector('.completion-hint');
-            if (hint) {
-                hint.remove();
-            }
-        }
-
-        // 初始聚焦到输入框
-        document.querySelector('.input').focus();
-
-        function clearAll() {
-            const container = document.getElementById('expression-container');
-            const firstLine = container.querySelector('.expression-line');
-            container.innerHTML = '';
-            container.appendChild(firstLine);
-            
-            const input = firstLine.querySelector('.input');
-            const result = firstLine.querySelector('.result');
-            const messageIcon = firstLine.querySelector('.message-icon');  // 获取图标元素
-            
-            // 清空所有状态
-            input.value = '';  // 清空输入框的值
-            result.innerHTML = '';  // 使用 innerHTML 清空结果，确保子元素也被清除
-            result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
-            messageIcon.style.display = 'none';  // 隐藏图标
-            
-            input.focus();
-        }
-    </script>
+    <script src="ui.js"></script>
 </body>
 </html> 
