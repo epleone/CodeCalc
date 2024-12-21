@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>计算器功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-case {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .test-input {
+            margin-bottom: 10px;
+        }
+
+        .test-result {
+            color: #666;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 30px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+        }
+
+        #results {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .test-stats {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .test-stats span {
+            font-weight: bold;
+        }
+
+        .test-stats .total {
+            color: #17a2b8;
+        }
+
+        .test-stats .passed {
+            color: #28a745;
+        }
+
+        .test-stats .failed {
+            color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>计算器功能测试</h1>
+
+    <div id="test-stats" class="test-stats">
+        <span class="total">总测试数: 0</span>
+        <span class="passed">通过: 0</span>
+        <span class="failed">失败: 0</span>
+    </div>
+
+    <div id="test-controls">
+        <button onclick="runAllTests()">运行所有测试</button>
+        <button onclick="clearResults()">清除结果</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script src="calculator.js"></script>
+    <script>
+        // 修改测试用例定义，将变量测试分成多组
+        const tests = [
+            // 基本运算测试
+            { group: '基本运算', name: "基本加法", input: "1 + 2", expected: "3" },
+            { group: '基本运算', name: "基本减法", input: "5 - 3", expected: "2" },
+            { group: '基本运算', name: "基本乘法", input: "4 * 3", expected: "12" },
+            { group: '基本运算', name: "基本除法", input: "10 / 2", expected: "5" },
+            { group: '基本运算', name: "乘方运算", input: "2 ** 3", expected: "8" },
+            { group: '基本运算', name: "整除运算", input: "7 // 2", expected: "3" },
+            { group: '基本运算', name: "取余运算", input: "7 % 3", expected: "1" },
+
+            // 变量测试组1：基本赋值和使用
+            {
+                group: '变量测试1', init: "a = 5", tests: [
+                    { name: "变量赋值", input: "a = 5", expected: { value: "5", success: "变量 a：5" } },
+                    { name: "变量使用", input: "a + 3", expected: "8" }
+                ]
+            },
+
+            // 变量测试组2：复合赋值 +=
+            {
+                group: '变量测试2', init: "a = 5", tests: [
+                    { name: "复合赋值 +=", input: "a += 2", expected: { value: "7", success: "变量 a：7" } },
+                    { name: "变量使用", input: "a + 1", expected: "8" }
+                ]
+            },
+
+            // 变量测试组3：复合赋值 *=
+            {
+                group: '变量测试3', init: "a = 5", tests: [
+                    { name: "复合赋值 *=", input: "a *= 2", expected: { value: "10", success: "变量 a：10" } },
+                    { name: "变量使用", input: "a + 1", expected: "11" }
+                ]
+            },
+
+            // 变量测试组4：多变量操作
+            {
+                group: '变量测试4', init: ["a = 5", "b = 3"], tests: [
+                    { name: "多变量运算", input: "a + b", expected: "8" },
+                    { name: "新变量赋值", input: "c = a * b", expected: { value: "15", success: "变量 c：15" } },
+                    { name: "三变量运算", input: "a + b + c", expected: "23" }
+                ]
+            },
+
+            // 常量测试
+            { group: '常量测试', name: "PI常量", input: "PI", expected: "3.141592653589793" },
+            { group: '常量测试', name: "e常量", input: "e", expected: "2.718281828459045" },
+
+            // 三角函数测试
+            { group: '三角函数', name: "正弦函数", input: "sin(PI/2)", expected: "1" },
+            { group: '三角函数', name: "余弦函数", input: "cos(PI)", expected: "-1" },
+            { group: '三角函数', name: "正切函数", input: "tan(PI/4)", expected: "1" },
+
+            // 角度转换测试
+            { group: '角度转换', name: "角度转弧度", input: "45d", expected: { value: "PI/4", success: "0.785398 弧度" } },
+
+            // 数学函数测试
+            { group: '数学函数', name: "对数函数", input: "log(100)", expected: "2" },
+            { group: '数学函数', name: "自然对数", input: "ln(e)", expected: "1" },
+            { group: '数学函数', name: "平方根", input: "sqrt(16)", expected: "4" },
+            { group: '数学函数', name: "n次方根", input: "root(8,3)", expected: "2" },
+            { group: '数学函数', name: "幂函数", input: "pow(2,3)", expected: "8" },
+
+            // 进制转换测试
+            { group: '进制转换', name: "二进制转十进制", input: "0b1010", expected: "10" },
+            { group: '进制转换', name: "八进制转十进制", input: "0o10", expected: "8" },
+            { group: '进制转换', name: "十六进制转十进制", input: "0xFF", expected: "255" },
+            { group: '进制转换', name: "十进制转二进制", input: "bin(10)", expected: "0b1010" },
+            { group: '进制转换', name: "十进制转八进制", input: "oct(8)", expected: "0o10" },
+            { group: '进制转换', name: "十进制转十六进制", input: "hex(255)", expected: "0xFF" },
+            { group: '进制转换', name: "正数整除", input: "7 // 2", expected: "3" },
+            { group: '进制转换', name: "负数整除", input: "-7 // 2", expected: "-3" },
+            { group: '进制转换', name: "零整除", input: "0 // 5", expected: "0" },
+            { group: '进制转换', name: "小数整除", input: "7.5 // 2", expected: "3" },
+            { group: '进制转换', name: "立方根", input: "root(8,3)", expected: "2" },
+            { group: '进制转换', name: "负数立方根", input: "root(-8,3)", expected: "-2" },
+            { group: '进制转换', name: "小数结果", input: "root(2,2)", expected: "1.414214" },
+            { group: '进制转换', name: "零的根", input: "root(0,2)", expected: "0" },
+            { group: '进制转换', name: "大数的根", input: "root(1000,3)", expected: "10" },
+
+            // max 和 min 函数测试
+            { group: '最值函数', name: "最大值-整数", input: "max(1,2,3,4,5)", expected: "5" },
+            { group: '最值函数', name: "最大值-负数", input: "max(-5,-2,-1,-10)", expected: "-1" },
+            { group: '最值函数', name: "最大值-小数", input: "max(1.5,2.3,2.1)", expected: "2.300000" },
+            { group: '最值函数', name: "最小值-整数", input: "min(1,2,3,4,5)", expected: "1" },
+            { group: '最值函数', name: "最小值-负数", input: "min(-5,-2,-1,-10)", expected: "-10" },
+            { group: '最值函数', name: "最小值-小数", input: "min(1.5,2.3,2.1)", expected: "1.500000" },
+            { group: '最值函数', name: "最值-混合类型", input: "max(-1,0,3.14,2)", expected: "3.140000" },
+
+            // 复合函数测试
+            { group: '复合函数', name: "三角复合", input: "sin(cos(PI/2))", expected: "0" },
+            { group: '复合函数', name: "对数复合", input: "log(exp(2))", expected: "0.868589" },
+            { group: '复合函数', name: "根式复合", input: "sqrt(pow(2,4))", expected: "4" },
+            { group: '复合函数', name: "三角对数", input: "log(sin(PI/2))", expected: "0" },
+            { group: '复合函数', name: "多重复合", input: "sqrt(pow(sin(PI/2),2))", expected: "1" },
+            { group: '复合函数', name: "根式幂", input: "pow(sqrt(16),2)", expected: "16" },
+            { group: '复合函数', name: "最值复合", input: "max(sin(PI/2),cos(0),tan(PI/4))", expected: "1" },
+            {
+                group: '复合函数', name: "变量复合", init: "a = 2", tests: [
+                    { name: "变量幂函数", input: "pow(a,3)", expected: "8" },
+                    { name: "变量根式", input: "sqrt(pow(a,4))", expected: "4" }
+                ]
+            },
+
+            // 复杂表达式测试
+            { group: '复杂表达式', name: "混合运算1", input: "sin(PI/4) * sqrt(2)", expected: "1" },
+            { group: '复杂表达式', name: "混合运算2", input: "log(e**2) * pow(2,3)", expected: "6.948712" },
+            { group: '复杂表达式', name: "混合运算3", input: "max(sin(PI/2), sqrt(3)/2, cos(PI/3))", expected: "1" },
+
+            // 添加大数测试组
+            {
+                group: '大数运算', name: "大整数加法", input: "123456789123456789 + 987654321987654321",
+                expected: { value: "1111111111111111110", warning: "大数运算未必正确" }
+            },
+            {
+                group: '大数运算', name: "大整数乘法", input: "123456789 * 987654321",
+                expected: { value: "121932631112635269", warning: "大数运算未必正确" }
+            },
+            {
+                group: '大数运算', name: "大数幂运算", input: "2**50",
+                expected: { value: "1125899906842624", warning: "大数运算未必正确" }
+            },
+            {
+                group: '大数运算', name: "大数进制转换", input: "hex(123456789123456789)",
+                expected: { value: "0x1B69B4BACD05F15", warning: "大数运算未必正确" }
+            },
+            { group: '大数运算', name: "大数二进制", input: "0b1111111111111111111111111111111111111111111111111111", expected: "4503599627370495" },
+            { group: '大数运算', name: "大数八进制", input: "0o7777777777777777", expected: "2251799813685247" },
+            { group: '大数运算', name: "大数十六进制", input: "0xFFFFFFFFFFFF", expected: "281474976710655" },
+            { group: '大数运算', name: "大数除法", input: "9999999999999999 / 3", expected: "3333333333333333" },
+            { group: '大数运算', name: "大数整除", input: "9999999999999999 // 3", expected: "3333333333333333" },
+            { group: '大数运算', name: "大数取余", input: "12345678912345678 % 123456789", expected: "99999999" },
+
+            // 大数错误处理测试
+            { group: '大数错误', name: "超大乘法溢出", input: "999999999999999999999 * 999999999999999999999", expected: "计算结果超出范围" },
+            { group: '大数错误', name: "超大幂运算溢出", input: "2**1000", expected: "计算结果超出范围" },
+
+            // 大数与变量混合测试
+            {
+                group: '大数变量', init: "a = 123456789123456789", tests: [
+                    {
+                        name: "大数变量赋值", input: "a",
+                        expected: { value: "123456789123456789", warning: "大数运算未必正确" }
+                    },
+                    {
+                        name: "大数变量运算", input: "a + 1",
+                        expected: { value: "123456789123456790", warning: "大数运算未必正确" }
+                    },
+                    {
+                        name: "大数变量乘法", input: "a * 2",
+                        expected: { value: "246913578246913578", warning: "大数运算未必正确" }
+                    }
+                ]
+            },
+
+            // 大数与函数混合测试
+            {
+                group: '大数函数', name: "大数开方", input: "sqrt(123456789123456789)",
+                expected: { value: "11111111.111111", warning: "大数运算未必正确" }
+            },
+            {
+                group: '大数函数', name: "大数对数", input: "log(123456789123456789)",
+                expected: { value: "17.091512", warning: "大数运算未必正确" }
+            },
+            {
+                group: '大数函数', name: "大数最大值", input: "max(123456789123456789, 987654321987654321)",
+                expected: { value: "987654321987654321", warning: "大数运算未必正确" }
+            },
+
+            // 添加新的十六进制转换测试
+            {
+                group: '大数进制', name: "十六进制转十进制1", input: "0x13e48326954132e2",
+                expected: { value: "1433414783146734306", warning: "大数运算未必正确" }
+            },
+            {
+                group: '大数进制', name: "十进制转十六进制1", input: "hex(1433414783146734306)",
+                expected: { value: "0x13E48326954132E2", warning: "大数运算未必正确" }
+            },
+            {
+                group: '大数进制', name: "十六进制大数运算", input: "0x13e48326954132e2 + 1",
+                expected: { value: "1433414783146734307", warning: "大数运算未必正确" }
+            },
+            { group: '大数进制', name: "十六进制混合运算", input: "0x13e48326954132e2 * 2", expected: "2866829566293468612" },
+            { group: '大数进制', name: "大数进制转换验证", input: "hex(0x13e48326954132e2)", expected: "0x13E48326954132E2" },
+
+            // 添加一些边界测试
+            { group: '大数进制', name: "大数十六进制边界", input: "0xFFFFFFFFFFFFFFFF", expected: "18446744073709551615" },
+            { group: '大数进制', name: "大数十进制边界", input: "hex(18446744073709551615)", expected: "0xFFFFFFFFFFFFFFFF" },
+
+            // 添加大数警告测试
+            {
+                group: '大数警告', name: "大数加法警告", input: "123456789123456789 + 1",
+                expected: { value: "123456789123456790", warning: "大数运算未必正确" }
+            },
+            {
+                group: '大数警告', name: "大数乘法警告", input: "123456789123456789 * 2",
+                expected: { value: "246913578246913578", warning: "大数运算未必正确" }
+            }
+        ];
+
+        function runTest(test, preserveState = false) {
+            try {
+                const result = calculate(test.input);
+                const resultStr = typeof result === 'object' ?
+                    JSON.stringify(result) : result.toString();
+                const expectedStr = typeof test.expected === 'object' ?
+                    JSON.stringify(test.expected) : test.expected;
+
+                const success = resultStr === expectedStr;
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: expectedStr,
+                    actual: resultStr,
+                    success: success
+                };
+            } catch (error) {
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: test.expected,
+                    actual: error.message,
+                    success: false
+                };
+            }
+        }
+
+        function runAllTests() {
+            const results = document.getElementById('results');
+            const statsDiv = document.getElementById('test-stats');
+            results.innerHTML = '';
+            let successCount = 0;
+            let totalTests = 0;
+
+            // 按组运行测试
+            let currentGroup = '';
+            let groupDiv = null;
+
+            tests.forEach(test => {
+                // 如果是变量测试组
+                if (test.tests) {
+                    if (currentGroup !== test.group) {
+                        currentGroup = test.group;
+                        groupDiv = document.createElement('div');
+                        groupDiv.innerHTML = `<h3>${test.group}</h3>`;
+                        results.appendChild(groupDiv);
+                    }
+
+                    // 初始化变量
+                    clearTempConstants();
+                    if (Array.isArray(test.init)) {
+                        test.init.forEach(init => calculate(init));
+                    } else {
+                        calculate(test.init);
+                    }
+
+                    // 运行组内测试
+                    test.tests.forEach(subTest => {
+                        totalTests++;
+                        const result = runTest(subTest);
+                        appendTestResult(groupDiv, result);
+                        if (result.success) successCount++;
+                    });
+                } else {
+                    // 普通测试
+                    if (currentGroup !== test.group) {
+                        currentGroup = test.group;
+                        groupDiv = document.createElement('div');
+                        groupDiv.innerHTML = `<h3>${test.group}</h3>`;
+                        results.appendChild(groupDiv);
+                    }
+
+                    totalTests++;
+                    const result = runTest(test);
+                    appendTestResult(groupDiv, result);
+                    if (result.success) successCount++;
+                }
+            });
+
+            // 更新统计信息
+            statsDiv.innerHTML = `
+                <span class="total">总测试数: ${totalTests}</span>
+                <span class="passed">通过: ${successCount}</span>
+                <span class="failed">失败: ${totalTests - successCount}</span>
+            `;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('test-stats').innerHTML = `
+                <span class="total">总测试数: 0</span>
+                <span class="passed">通过: 0</span>
+                <span class="failed">失败: 0</span>
+            `;
+            clearTempConstants();
+        }
+
+        // 添加辅助函数来显示测试结果
+        function appendTestResult(container, result) {
+            const div = document.createElement('div');
+            div.className = 'test-case';
+            div.innerHTML = `
+                <div class="test-input">
+                    <strong>${result.name}</strong> (${result.input})
+                </div>
+                <div class="test-result ${result.success ? 'success' : 'error'}">
+                    ${result.success ? '✓ 通过' : '✗ 失败'}<br>
+                    期望值: ${result.expected}<br>
+                    实际值: ${result.actual}
+                </div>
+            `;
+            container.appendChild(div);
+        }
+    </script>
+</body>
+
+</html>
