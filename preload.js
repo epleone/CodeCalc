@@ -1,5 +1,5 @@
 window.exports = {
-    "realtime-calculator": {
+    "codecalc": {
         mode: "none",
         args: {
             enter: (action) => {

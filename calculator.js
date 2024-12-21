@@ -13,30 +13,24 @@ const reservedFunctions = [
 
 // 添加一个辅助函数来检查大数运算是否会溢出
 function checkBigIntOperation(expression) {
-    // 检查是否包含乘法、幂运算等可能导致溢出的操作
-    const hasMultiplication = /\*(?!\*)/.test(expression);  // 匹配乘法，但不匹配 **
-    const hasPower = /\*\*/.test(expression);
-    const hasSquare = /\b\d{15,}(\s*[\*]{1,2}|\s*\^)\s*\d+/.test(expression);  // 检查大数的乘方运算
+    // 检查大整数
+    const bigIntPattern = /\b\d{15,}\b|\b\d{15,}(?=\.)/;
+    if (!bigIntPattern.test(expression)) return false;
 
-    if ((hasMultiplication || hasPower || hasSquare) && /\d{15,}/.test(expression)) {
-        try {
-            // 尝试计算
-            const result = Function('"use strict";return BigInt(' + 
-                expression.replace(/\*\*/g, '^')
-                         .replace(/\^/g, '**') + 
-                ')')();
-            
-            // 检查结果是否超过合理范围（比如 2^53）
-            if (result > BigInt(Number.MAX_SAFE_INTEGER) || 
-                result < BigInt(Number.MIN_SAFE_INTEGER)) {
-                throw new Error('计算结果超出范围');
-            }
-            return true;
-        } catch {
-            throw new Error('计算结果超出范围');
-        }
+    // 检查是否包含可能导致溢出的运算
+    if (!/\*|\*\*|\^/.test(expression)) return false;
+
+    try {
+        const result = Function('"use strict";return BigInt(' + 
+            expression.replace(/\*\*/g, '^')
+                     .replace(/\^/g, '**') + 
+            ')')();
+        
+        return !(result > BigInt(Number.MAX_SAFE_INTEGER) || 
+                result < BigInt(Number.MIN_SAFE_INTEGER));
+    } catch {
+        return false;
     }
-    return false;
 }
 
 function calculate(expression) {
@@ -45,6 +39,17 @@ function calculate(expression) {
         'PI': Math.PI,
         'e': Math.E
     };
+
+    // 将表达式中的常量替换为其数值
+    // 先检查临时常量，再检查内置常量
+    for (const [name, value] of tempConstants) {
+        const regex = new RegExp(`\\b${name}\\b`, 'g');
+        expression = expression.replace(regex, `(${value})`);
+    }
+    for (const [constant, value] of Object.entries(constants)) {
+        const regex = new RegExp(`\\b${constant}\\b`, 'g');
+        expression = expression.replace(regex, `(${value})`);
+    }
 
     // 检查是否是赋值表达式（包括复合赋值）
     const assignmentMatch = expression.match(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([+\-*/])?=\s*(.+)\s*$/);
@@ -350,17 +355,6 @@ function calculate(expression) {
     expression = expression.replace(/\b(?:sqrt|SQRT|Sqrt)\((.*?)\)/g, 'Math.sqrt($1)');
     expression = expression.replace(/\b(?:pow|POW|Pow)\((.*?),(.*?)\)/g, 'Math.pow($1,$2)');
 
-    // 将表达式中的常量替换为其数值
-    // 先检查临时常量，再检查内置常量
-    for (const [name, value] of tempConstants) {
-        const regex = new RegExp(`\\b${name}\\b`, 'g');
-        expression = expression.replace(regex, value);
-    }
-    for (const [constant, value] of Object.entries(constants)) {
-        const regex = new RegExp(`\\b${constant}\\b`, 'g');
-        expression = expression.replace(regex, value);
-    }
-
     // 处理角度值（例如：90d -> pi/2）
     if (/^\s*-?\d+(\.\d+)?d\s*$/.test(expression)) {  // 检查是否只有个角度值
         const match = expression.match(/(-?\d+(?:\.\d+)?)d/);
@@ -388,61 +382,48 @@ function calculate(expression) {
     expression = expression.replace(/\/\//g, '|');
     
     try {
-        // 执行计算
         let result;
-        // 检查是否是纯数字（包括负数）
         if (/^-?\d+$/.test(expression)) {
-            // 如果是纯整数，直接返回字符串形式
             result = expression;
         } else {
-            // 检查表达式是否包含大整数
-            const bigIntPattern = /\d{15,}/g;  // 修改为15位以上的数字
-            const hasBigInt = bigIntPattern.test(expression);
-            
-            if (hasBigInt) {
-                // 检查是否会溢出
-                checkBigIntOperation(expression);
-
-                try {
-                    // 如果包含大整数，将所有整数转换为 BigInt
+            try {
+                result = Function('"use strict";return (' + expression + ')')();
+            } catch (error) {
+                if (/\b\d{15,}\b|\b\d{15,}(?=\.)/.test(expression) && 
+                    checkBigIntOperation(expression)) {
+                    // 尝试大整数计算
                     const modifiedExpression = expression
                         .replace(/\b\d+\b/g, match => `BigInt("${match}")`)
-                        .replace(/\*\*/g, '^');  // BigInt 不支持 **，需要特殊处理幂运算
-                    
-                    // 执行计算
-                    result = Function('"use strict";return (' + modifiedExpression + ')')();
-                    // 将 BigInt 结果转换回字符串
-                    result = result.toString().replace('n', '');
-                } catch (error) {
-                    throw new Error('计算结果超出范围');
-                }
-            } else {
-                // 其他表达式进行普通计算
-                result = Function('"use strict";return (' + expression + ')')();
-            }
-            
-            // 处理整除的结果
-            if (expression.includes('|')) {
-                result = Math.floor(result);
-            }
-            
-            // 格式化结果，处理精度问题
-            if (Number.isFinite(result)) {
-                if (Number.isInteger(result)) {
-                    // 对于整数，直接转为字符串，避免科学计数法
-                    result = result.toString();
+                        .replace(/\*\*/g, '^');
+                    result = Function('"use strict";return (' + modifiedExpression + ')')()
+                        .toString().replace('n', '');
                 } else {
-                    // 对于小数，保留6位小数
-                    result = parseFloat(result.toFixed(6));
+                    throw error;
                 }
-            } else if (typeof result === 'string') {
-                // 已经是字符串形式的大整数
-                result = result;
-            } else {
-                throw new Error('计算结果无效');
             }
         }
-        
+
+        // 处理整除
+        if (expression.includes('|')) {
+            result = Math.floor(result);
+        }
+
+        // 格式化结果，处理精度问题
+        if (Number.isFinite(result)) {
+            if (Number.isInteger(result)) {
+                // 对于整数，直接转为字符串，避免科学计数法
+                result = result.toString();
+            } else {
+                // 对于小数，保留6位小数
+                result = parseFloat(result.toFixed(6));
+            }
+        } else if (typeof result === 'string') {
+            // 已经是字符串形式的大整数
+            result = result;
+        } else {
+            throw new Error('计算结果无效');
+        }
+
         // 如果有警告，将警告添加到结果中
         if (warnings.length > 0) {
             return { value: result, warning: warnings[0] };
@@ -458,7 +439,7 @@ function calculate(expression) {
     }
 }
 
-// 辅助函数：尝试将数字转换为 PI 的倍数或分数形式
+// 辅助函数：尝试数字转换为 PI 的倍数或分数形式
 function simplifyPiFraction(ratio) {
     // 检查是否为整数倍
     if (Number.isInteger(ratio)) {
