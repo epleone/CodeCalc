@@ -40,22 +40,11 @@ function calculate(expression) {
         'e': Math.E
     };
 
-    // 将表达式中的常量替换为其数值
-    // 先检查临时常量，再检查内置常量
-    for (const [name, value] of tempConstants) {
-        const regex = new RegExp(`\\b${name}\\b`, 'g');
-        expression = expression.replace(regex, `(${value})`);
-    }
-    for (const [constant, value] of Object.entries(constants)) {
-        const regex = new RegExp(`\\b${constant}\\b`, 'g');
-        expression = expression.replace(regex, `(${value})`);
-    }
-
     // 检查是否是赋值表达式（包括复合赋值）
     const assignmentMatch = expression.match(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([+\-*/])?=\s*(.+)\s*$/);
     if (assignmentMatch) {
         const variableName = assignmentMatch[1];
-        const operator = assignmentMatch[2] || '';  // 获取运算符，如果没有则为空字符串
+        const operator = assignmentMatch[2] || '';
         const valueExpression = assignmentMatch[3];
 
         // 检查变量名是否是保留的常量名、函数名或乘法符号
@@ -71,8 +60,21 @@ function calculate(expression) {
 
         // 计算右边的表达式
         try {
-            let value = calculate(valueExpression);
-            // 如果计算结果是对象（带警告或成功信息），取其值
+            let value;
+            // 对右边的表达式进行常量替换和计算
+            let processedExpression = valueExpression;
+            
+            // 替换常量
+            for (const [name, val] of tempConstants) {
+                const regex = new RegExp(`\\b${name}\\b`, 'g');
+                processedExpression = processedExpression.replace(regex, `(${val})`);
+            }
+            for (const [constant, val] of Object.entries(constants)) {
+                const regex = new RegExp(`\\b${constant}\\b`, 'g');
+                processedExpression = processedExpression.replace(regex, `(${val})`);
+            }
+
+            value = calculate(processedExpression);
             const newValue = typeof value === 'object' ? value.value : value;
 
             // 处理复合赋值运算
@@ -82,19 +84,11 @@ function calculate(expression) {
                 }
                 const oldValue = tempConstants.get(variableName);
                 switch (operator) {
-                    case '+':
-                        value = oldValue + newValue;
-                        break;
-                    case '-':
-                        value = oldValue - newValue;
-                        break;
-                    case '*':
-                        value = oldValue * newValue;
-                        break;
+                    case '+': value = oldValue + newValue; break;
+                    case '-': value = oldValue - newValue; break;
+                    case '*': value = oldValue * newValue; break;
                     case '/':
-                        if (newValue === 0) {
-                            throw new Error('除数不能为零');
-                        }
+                        if (newValue === 0) throw new Error('除数不能为零');
                         value = oldValue / newValue;
                         break;
                 }
@@ -105,7 +99,6 @@ function calculate(expression) {
             // 存储到临时常量字典中
             tempConstants.set(variableName, value);
 
-            // 返回赋值结果，包含变量名和值
             return {
                 value: value,
                 success: `变量 ${variableName}：${value}`
@@ -113,6 +106,17 @@ function calculate(expression) {
         } catch (error) {
             throw new Error(`赋值表达式计算错误: ${error.message}`);
         }
+    }
+
+    // 非赋值表达式的处理
+    // 替换常量
+    for (const [name, value] of tempConstants) {
+        const regex = new RegExp(`\\b${name}\\b`, 'g');
+        expression = expression.replace(regex, `(${value})`);
+    }
+    for (const [constant, value] of Object.entries(constants)) {
+        const regex = new RegExp(`\\b${constant}\\b`, 'g');
+        expression = expression.replace(regex, `(${value})`);
     }
 
     // 存储警告信息
