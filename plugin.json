@@ -1,0 +1,15 @@
+{
+  "main": "index.html",
+  "logo": "logo.png",
+  "platform": ["win32", "darwin", "linux"],
+  "features": [
+    {
+      "code": "codecalc",
+      "explain": "代码计算器",
+      "cmds": ["calc", "codecc", "code计算器"]
+    }
+  ],
+  "name": "Code Calculator",
+  "version": "1.0.0",
+  "description": "一个可以运行代码的计算器"
+} 

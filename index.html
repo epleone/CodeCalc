@@ -370,6 +370,106 @@
                 font-size: 1rem;
             }
         }
+
+        .copy-notification {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(40, 167, 69, 0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .copy-notification.show {
+            opacity: 1;
+        }
+
+        .result {
+            cursor: pointer;
+        }
+
+        .result:hover {
+            background-color: transparent;
+        }
+
+        .result.has-value:hover {
+            background-color: rgba(40, 167, 69, 0.15);
+        }
+
+        .left-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .completion-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        /* 开关按钮样式 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 2.5rem;
+            height: 1.25rem;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 0.875rem;
+            width: 0.875rem;
+            left: 0.188rem;
+            bottom: 0.188rem;
+            background-color: white;
+            transition: .4s;
+        }
+
+        .slider.round {
+            border-radius: 1.25rem;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #28a745;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(1.25rem);
+        }
     </style>
 </head>
 <body>
@@ -383,7 +483,7 @@
                     <div class="result">
                         <span class="result-value"></span>
                     </div>
-                    <div class="message-icon">
+                    <div class="message-icon" style="display: none;">
                         <div class="message-text"></div>
                     </div>
                 </div>
@@ -391,35 +491,46 @@
         </div>
     </div>
 
+    <div class="copy-notification">已复制到剪贴板</div>
+
     <div class="footer">
-        <div class="tooltip">
-            <div class="tooltip-icon">?</div>
-            <div class="tooltip-text">
-                变量：<br>
-                • a = 2x3<br>
-                • b = a + 1<br>
-                <br>
-                默认常数：<br>
-                • PI=3.14159, e=2.71828<br>
-                <br>
-                基础运算：<br>
-                • +, -, *xX, /, //(整除), %(余数), **(幂)<br>
-                • +=、-=、*=、/=<br>
-                <br>
-                角度转换弧度：角度值 + d 转为弧度<br>
-                • 30d = 30 * PI / 180<br>
-                • sin(45d) = sin(45 * PI / 180)<br>
-                <br>
-                数学函数：<br>
-                • 三角函数：sin(45d), cos(PI/2), tan(PI/4)<br>
-                • 反三角函数：asin(0.5), acos(0), atan(1)<br>
-                • log(100), ln(e), exp(2)=e²<br>
-                • sqrt(2), root(8,3)=2, pow(2,3)=8<br>
-                • max(1,2,3)=3, min(1,2,3)=1<br>
-                <br>
-                进制：<br>
-                • 其它进制转十进制：0b111, 0o111, 0x111<br>
-                • 十进制转其它进制：bin(111), oct(111), hex(111)<br>
+        <div class="left-section">
+            <div class="tooltip">
+                <div class="tooltip-icon">?</div>
+                <div class="tooltip-text">
+                    变量：<br>
+                    • a = 2x3<br>
+                    • b = a + 1<br>
+                    <br>
+                    默认常数：<br>
+                    • PI=3.14159, e=2.71828<br>
+                    <br>
+                    基本运算：<br>
+                    • +, -, *xX, /, //(整除), %(余数), **(幂)<br>
+                    • +=、-=、*=、/=<br>
+                    <br>
+                    角度转换弧度：角度值 + d 转为弧度<br>
+                    • 30d = 30 * PI / 180<br>
+                    • sin(45d) = sin(45 * PI / 180)<br>
+                    <br>
+                    数学函数：<br>
+                    • 三角函数：sin(45d), cos(PI/2), tan(PI/4)<br>
+                    • 反三角函数：asin(0.5), acos(0), atan(1)<br>
+                    • log(100), ln(e), exp(2)=e²<br>
+                    • sqrt(2), root(8,3)=2, pow(2,3)=8<br>
+                    • max(1,2,3)=3, min(1,2,3)=1<br>
+                    <br>
+                    进制：<br>
+                    • 其它进制转十进制：0b111, 0o111, 0x111<br>
+                    • 十进制转其它进制：bin(111), oct(111), hex(111)<br>
+                </div>
+            </div>
+            <div class="completion-toggle">
+                <label class="switch">
+                    <input type="checkbox" id="completionToggle" checked>
+                    <span class="slider round"></span>
+                </label>
+                <span class="toggle-label">函数补全</span>
             </div>
         </div>
         <button class="clear-button" onclick="clearAll()">清空</button>

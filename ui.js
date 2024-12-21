@@ -11,6 +11,9 @@ const completions = [
     '**('
 ];
 
+// 添加全局变量
+let isCompletionEnabled = true;
+
 function calculateLine(input) {
     const resultContainer = input.parentElement.querySelector('.result-container');
     const result = resultContainer.querySelector('.result');
@@ -22,7 +25,8 @@ function calculateLine(input) {
     function clearState() {
         result.innerHTML = '<span class="result-value"></span>';
         result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
-        messageIcon.style.display = 'none';
+        messageIcon.style.display = 'none';  // 确保隐藏消息图标
+        messageIcon.className = 'message-icon';  // 重置消息图标的类
     }
 
     // 设置状态
@@ -40,7 +44,8 @@ function calculateLine(input) {
         result.innerHTML = `<span class="result-value">${value}</span>`;
         result.classList.remove('warning', 'error', 'success');  // 确保移除所有特殊状态
         result.classList.add('has-value');
-        messageIcon.style.display = 'none';
+        messageIcon.style.display = 'none';  // 确保隐藏消息图标
+        messageIcon.className = 'message-icon';  // 重置消息图标的类
     }
 
     // 空输入处理
@@ -84,6 +89,11 @@ function addNewLine() {
         </div>
     `;
     container.appendChild(newLine);
+    
+    // 为新行的结果添加点击处理
+    const result = newLine.querySelector('.result');
+    addResultClickHandler(result);
+    
     newLine.querySelector('.input').focus();
 }
 
@@ -154,6 +164,8 @@ function handleKeyDown(event, input) {
 }
 
 function handleTabCompletion(input) {
+    if (!isCompletionEnabled) return;
+    
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
     const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0].toLowerCase();
@@ -201,20 +213,23 @@ function handleInput(event) {
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
     
-    const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*{2})*$/)[0].toLowerCase();
-    
     removeCompletionHint(input);
     
-    if (lastWord) {
-        const matches = completions.filter(c => 
-            c.toLowerCase().startsWith(lastWord)
-        );
+    // 只在启用补全时显示提示
+    if (isCompletionEnabled) {
+        const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*{2})*$/)[0].toLowerCase();
         
-        if (matches.length > 0) {
-            const completion = matches[0];
-            const hint = completion.slice(lastWord.length);
-            if (hint) {
-                showCompletionHint(input, textBeforeCursor + hint);
+        if (lastWord) {
+            const matches = completions.filter(c => 
+                c.toLowerCase().startsWith(lastWord)
+            );
+            
+            if (matches.length > 0) {
+                const completion = matches[0];
+                const hint = completion.slice(lastWord.length);
+                if (hint) {
+                    showCompletionHint(input, textBeforeCursor + hint);
+                }
             }
         }
     }
@@ -267,3 +282,65 @@ function handleContainerClick(event) {
 
 // 初始聚焦到输入框
 document.querySelector('.input').focus(); 
+
+// 添加以下函数
+function copyToClipboard(text) {
+    // 创建临时文本区域
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+        document.execCommand('copy');
+        showCopyNotification();
+    } catch (err) {
+        console.error('复制失败:', err);
+    }
+    
+    document.body.removeChild(textarea);
+}
+
+function showCopyNotification() {
+    const notification = document.querySelector('.copy-notification');
+    notification.classList.add('show');
+    
+    // 1秒后隐藏提示
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 1000);
+}
+
+// 为结果添加点击事件处理
+function addResultClickHandler(resultElement) {
+    resultElement.addEventListener('click', function() {
+        const resultValue = this.querySelector('.result-value').textContent;
+        if (resultValue.trim()) {
+            copyToClipboard(resultValue);
+        }
+    });
+}
+
+// 为现有的结果元素添加点击处理
+document.addEventListener('DOMContentLoaded', function() {
+    const results = document.querySelectorAll('.result');
+    results.forEach(addResultClickHandler);
+}); 
+
+// 添加开关事件监听
+document.addEventListener('DOMContentLoaded', function() {
+    const completionToggle = document.getElementById('completionToggle');
+    
+    // 从本地存储加载设置
+    const savedState = localStorage.getItem('completionEnabled');
+    if (savedState !== null) {
+        isCompletionEnabled = savedState === 'true';
+        completionToggle.checked = isCompletionEnabled;
+    }
+    
+    completionToggle.addEventListener('change', function() {
+        isCompletionEnabled = this.checked;
+        // 保存设置到本地存储
+        localStorage.setItem('completionEnabled', isCompletionEnabled);
+    });
+}); 
