@@ -1,172 +1,168 @@
 function calculate(expression) {
-    // 移除所有空格
-    expression = expression.replace(/\s+/g, '');
-    
-    // 替换 x 和 X 为 *
-    expression = expression.replace(/[xX]/g, '*');
-    
-    // 替换常数
-    expression = expression.replace(/pi|π/gi, Math.PI.toString());
-    expression = expression.replace(/e/gi, Math.E.toString());
-    
-    // 预处理阶乘
-    expression = handleFactorial(expression);
-    
-    // 修改正则表达式以支持更多数字格式
-    const tokens = expression.match(/([0-9]*\.?[0-9]+)|[+\-*/%()!]|\/\/|\*\*|sin|cos|tan|log|ln/g);
-    
-    // 定义运算符优先级
-    const precedence = {
-        '+': 1,
-        '-': 1,
-        '*': 2,
-        '/': 2,
-        '//': 2,
-        '%': 2,
-        '**': 3, // 幂运算优先级最高
+    // 定义数学常量
+    const constants = {
+        'pi': Math.PI,
+        'e': Math.E
     };
-    
-    // 数字栈和运算符栈
-    const numbers = [];
-    const operators = [];
-    
-    // 处理运算符和数字
-    for (let i = 0; i < tokens.length; i++) {
-        let token = tokens[i];
-        
-        // 检查是否是双字符运算符
-        if (token === '/' && i + 1 < tokens.length && tokens[i + 1] === '/') {
-            token = '//';
-            i++;
-        } else if (token === '*' && i + 1 < tokens.length && tokens[i + 1] === '*') {
-            token = '**';
-            i++;
-        }
-        
-        // 处理函数
-        if (['sin', 'cos', 'tan', 'log', 'ln'].includes(token)) {
-            let j = i + 1;
-            let bracketCount = 1;
-            let innerExp = '';
-            
-            // 跳过左括号
-            if (tokens[j] === '(') j++;
-            
-            // 获取函数参数
-            while (j < tokens.length && bracketCount > 0) {
-                if (tokens[j] === '(') bracketCount++;
-                if (tokens[j] === ')') bracketCount--;
-                if (bracketCount > 0) innerExp += tokens[j];
-                j++;
-            }
-            
-            // 计算函数结果
-            const value = calculateFunction(token, calculate(innerExp));
-            numbers.push(value);
-            i = j - 1;
-            continue;
-        }
-        
-        if (!isNaN(token)) {
-            numbers.push(parseFloat(token));
-        } else if (token === '(') {
-            operators.push(token);
-        } else if (token === ')') {
-            while (operators.length && operators[operators.length - 1] !== '(') {
-                calculate_top(numbers, operators);
-            }
-            operators.pop(); // 移除左括号
-        } else {
-            while (
-                operators.length > 0 &&
-                operators[operators.length - 1] !== '(' &&
-                precedence[operators[operators.length - 1]] >= precedence[token]
-            ) {
-                calculate_top(numbers, operators);
-            }
-            operators.push(token);
-        }
-    }
-    
-    while (operators.length > 0) {
-        calculate_top(numbers, operators);
-    }
-    
-    return numbers[0];
-}
 
-function calculate_top(numbers, operators) {
-    const operator = operators.pop();
-    const b = numbers.pop();
-    const a = numbers.pop();
-    
-    switch (operator) {
-        case '+':
-            numbers.push(a + b);
-            break;
-        case '-':
-            numbers.push(a - b);
-            break;
-        case '*':
-            numbers.push(a * b);
-            break;
-        case '/':
-            if (b === 0) throw new Error('除数不能为0');
-            numbers.push(a / b);
-            break;
-        case '//':
-            if (b === 0) throw new Error('除数不能为0');
-            numbers.push(Math.floor(a / b));
-            break;
-        case '%':
-            if (b === 0) throw new Error('除数不能为0');
-            numbers.push(a % b);
-            break;
-        case '**':
-            numbers.push(Math.pow(a, b));
-            break;
-    }
-}
+    // 存储警告信息
+    let warnings = [];
 
-function calculateFunction(func, value) {
-    switch (func) {
-        case 'sin':
-            if (String(value).toLowerCase().includes('pi') || String(value).includes('π')) {
-                return Math.sin(value);
-            }
-            return Math.sin(value * Math.PI / 180);
-        case 'cos':
-            if (String(value).toLowerCase().includes('pi') || String(value).includes('π')) {
-                return Math.cos(value);
-            }
-            return Math.cos(value * Math.PI / 180);
-        case 'tan':
-            if (String(value).toLowerCase().includes('pi') || String(value).includes('π')) {
-                return Math.tan(value);
-            }
-            return Math.tan(value * Math.PI / 180);
-        case 'log':
-            if (value <= 0) throw new Error('对数参数必须大于0');
-            return Math.log10(value);
-        case 'ln':
-            if (value <= 0) throw new Error('对数参数必须大于0');
-            return Math.log(value);
-        default:
-            throw new Error('未知函数');
-    }
-}
-
-function handleFactorial(expression) {
-    // 处理阶乘
-    return expression.replace(/(\d+)!/g, (match, number) => {
-        let result = 1;
-        number = parseInt(number);
-        if (number > 170) throw new Error('阶乘太大');
-        for (let i = 2; i <= number; i++) {
-            result *= i;
+    // 检查不合法的进制前缀
+    const prefixRegex = /\b[0o][a-zA-Z][0-9a-fA-F]*\b|\b0[a-zA-Z][0-9a-fA-F]*\b/i;
+    const invalidPrefixMatch = expression.match(prefixRegex);
+    if (invalidPrefixMatch) {
+        const match = invalidPrefixMatch[0];
+        // 排除合法的前缀和需要警告的前缀
+        if (!/^0[boxBOX]/i.test(match) && !/^o[boxBOX]/i.test(match)) {
+            throw new Error(`"${match}" 不是合法的进制表示，支持：0b、0o、0x`);
         }
-        return result.toString();
+    }
+
+    // 检查并转换错误的进制前缀
+    expression = expression.replace(/\bob([01]+)\b/ig, (match, num) => {
+        warnings.push('?已显示二进制0b');
+        return '0b' + num;
     });
+    expression = expression.replace(/\boo([0-7]+)\b/ig, (match, num) => {
+        warnings.push('?已显示八进制0o');
+        return '0o' + num;
+    });
+    expression = expression.replace(/\box([0-9a-fA-F]+)\b/ig, (match, num) => {
+        warnings.push('?已显示十六进制0x');
+        return '0x' + num;
+    });
+
+    // 先处理不同进制的整数
+    expression = expression.replace(/0[bB][01]+/g, match => parseInt(match.slice(2), 2));  // 二进制
+    expression = expression.replace(/0[oO][0-7]+/g, match => {
+        const octalStr = match.slice(2);
+        const decimalValue = parseInt(octalStr, 8);
+        if (isNaN(decimalValue)) {
+            throw new Error('无效的八进制数');
+        }
+        return decimalValue;
+    });  // 八进制
+    expression = expression.replace(/0[xX][0-9a-fA-F]+/g, match => parseInt(match.slice(2), 16));  // 十六进制
+
+    // 处理进制转换函数
+    if (/\b(hex|oct|bin)\(/.test(expression)) {
+        // 如果表达式包含进制转换函数，先计算括号内的表达式
+        let match;
+        if (match = expression.match(/\bhex\((.*?)\)/)) {
+            const num = calculate(match[1]);
+            if (!Number.isInteger(num)) {
+                throw new Error('进制转换只支持整数');
+            }
+            return '0x' + Math.abs(num).toString(16).toUpperCase();
+        }
+        if (match = expression.match(/\boct\((.*?)\)/)) {
+            const num = calculate(match[1]);
+            if (!Number.isInteger(num)) {
+                throw new Error('进制转换只支持整数');
+            }
+            return '0o' + Math.abs(num).toString(8);
+        }
+        if (match = expression.match(/\bbin\((.*?)\)/)) {
+            const num = calculate(match[1]);
+            if (!Number.isInteger(num)) {
+                throw new Error('进制转换只支持整数');
+            }
+            return '0b' + Math.abs(num).toString(2);
+        }
+    }
+
+    // 处理 exp 函数
+    if (/\bexp\(/.test(expression)) {
+        let match = expression.match(/\bexp\((.*?)\)/);
+        if (match) {
+            const num = calculate(match[1]);
+            return Math.exp(num);
+        }
+    }
+
+    // 处理 root 函数
+    if (/\broot\(/.test(expression)) {
+        let match = expression.match(/\broot\((.*?),(.*?)\)/);
+        if (match) {
+            const x = calculate(match[1]);  // 被开方数
+            const n = calculate(match[2]);  // 次数
+            
+            if (!Number.isInteger(n) || n <= 0) {
+                throw new Error('root函数的次数必须是正整数');
+            }
+            if (n % 2 === 0 && x < 0) {
+                throw new Error('偶次方根不支持负数');
+            }
+            
+            // 使用幂运算来计算 n 次方根：x^(1/n)
+            return Math.pow(Math.abs(x), 1/n) * (x < 0 ? -1 : 1);
+        }
+    }
+
+    // 处理 sqrt 函数（作为 root(2,x) 的特例）
+    if (/\bsqrt\(/.test(expression)) {
+        let match = expression.match(/\bsqrt\((.*?)\)/);
+        if (match) {
+            const num = calculate(match[1]);
+            if (num < 0) {
+                throw new Error('sqrt函数不支持负数');
+            }
+            return Math.sqrt(num);
+        }
+    }
+
+    // 处理其他数学函数
+    expression = expression.replace(/\bsin\((.*?)\)/g, 'Math.sin($1)');
+    expression = expression.replace(/\bcos\((.*?)\)/g, 'Math.cos($1)');
+    expression = expression.replace(/\btan\((.*?)\)/g, 'Math.tan($1)');
+    expression = expression.replace(/\blog\((.*?)\)/g, 'Math.log10($1)');
+    expression = expression.replace(/\bln\((.*?)\)/g, 'Math.log($1)');
+
+    // 将表达式中的常��替换为其数值
+    for (const [constant, value] of Object.entries(constants)) {
+        const regex = new RegExp(`\\b${constant}\\b`, 'gi');
+        expression = expression.replace(regex, value);
+    }
+
+    // 处理角度值（例如：90d -> pi/2）
+    expression = expression.replace(/(\d+(?:\.\d+)?)d\b/g, (match, num) => {
+        return `(${num} * Math.PI / 180)`;
+    });
+
+    // 处理乘法符号 'x'
+    expression = expression.replace(/x/gi, '*');
+
+    // 处理整除
+    expression = expression.replace(/\/\//g, '|');
+    
+    try {
+        // 执行计算
+        let result = Function('"use strict";return (' + expression + ')')();
+        
+        // 处理整除的结果
+        if (expression.includes('|')) {
+            result = Math.floor(result);
+        }
+        
+        // 格式化结果，处理精度问题
+        if (Number.isFinite(result)) {
+            if (Number.isInteger(result)) {
+                result = result;
+            } else {
+                result = parseFloat(result.toFixed(6));
+            }
+            // 如果有警告，将警告添加到结果中
+            if (warnings.length > 0) {
+                return { value: result, warning: warnings[0] };
+            }
+            return result;
+        } else {
+            throw new Error('计算结果无效');
+        }
+    } catch (error) {
+        throw new Error('表达式无效');
+    }
 }
 
 // 使用示例
