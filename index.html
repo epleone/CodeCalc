@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>实时计算器</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            font-size: 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 90%;
+            margin: 0 auto;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            background-color: white;
+            box-shadow: 0 0.125rem 0.625rem rgba(0,0,0,0.1);
+            height: calc(100vh - 5rem);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .expression-line {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.0625rem;
+            border-radius: 0.375rem;
+            background-color: #f8f9fa;
+            gap: 0.625rem;
+        }
+
+        .expression-line:nth-child(even) {
+            background-color: #e9ecef;
+        }
+
+        .input {
+            flex: 1;
+            font-size: 1.5rem;
+            font-family: monospace;
+            border: none;
+            background: transparent;
+            outline: none;
+            padding: 0;
+        }
+
+        .result {
+            font-size: 1.5rem;
+            font-family: monospace;
+            margin-left: 0.625rem;
+            padding-left: 0.625rem;
+            border-left: 0.0625rem solid #dee2e6;
+            min-width: 7.5rem;
+            text-align: right;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+
+        #expression-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2.5rem;
+            background-color: white;
+            box-shadow: 0 -0.125rem 0.625rem rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 1.25rem;
+            z-index: 100;
+            justify-content: space-between;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .tooltip-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            position: absolute;
+            bottom: 2.8125rem;
+            left: 0;
+            transform: translateX(0);
+            margin-bottom: 0.625rem;
+            padding: 0.625rem;
+            background-color: #333;
+            color: white;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            box-shadow: 0 0.125rem 0.3125rem rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 101;
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 0.75rem;
+            margin-left: 0;
+            border-width: 0.3125rem;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .clear-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
+        }
+
+        .clear-button:hover {
+            background-color: #c82333;
+        }
+
+        /* 响应式设计 */
+        @media screen and (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+            
+            .container {
+                padding: 1rem;
+                max-width: 95%;
+            }
+            
+            .input, .result {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            body {
+                font-size: 12px;
+                padding: 1vh;
+            }
+            
+            .container {
+                padding: 0.5rem;
+            }
+            
+            .input, .result {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="expression-container">
+            <div class="expression-line">
+                <input type="text" class="input" placeholder="输入表达式，例如: 2 + 3 * 4" 
+                       oninput="calculateLine(this)" 
+                       onkeydown="handleKeyDown(event, this)">
+                <div class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="tooltip">
+            <div class="tooltip-icon">?</div>
+            <div class="tooltip-text">
+                支持的运算：<br>
+                • 加法：2 + 3 = 5<br>
+                • 减法：5 - 2 = 3<br>
+                • 乘法：3 * 4 或 3 x 4 = 12<br>
+                • 除法：10 / 2 = 5<br>
+                • 整除：7 // 2 = 3<br>
+                • 取余：7 % 2 = 1<br>
+                • 幂���2 ** 3 = 8<br>
+                • 括号：(2 + 3) * 4 = 20<br>
+                • 三角函数：sin(30) = 0.5<br>
+                • 对数：log(100) = 2<br>
+                • 自然对数：ln(e) = 1<br>
+                • 阶乘：5! = 120<br>
+                • 常数：pi = 3.14159, e = 2.71828
+            </div>
+        </div>
+        <button class="clear-button" onclick="clearAll()">清空</button>
+    </div>
+
+    <script src="calculator.js"></script>
+    <script>
+        function calculateLine(input) {
+            const result = input.parentElement.querySelector('.result');
+            const expression = input.value.trim();
+            
+            if (expression === '') {
+                result.textContent = '';
+                return;
+            }
+
+            try {
+                const value = calculate(expression);
+                result.textContent = `= ${value}`;
+                result.classList.remove('error');
+            } catch (error) {
+                result.textContent = error.message;
+                result.classList.add('error');
+            }
+        }
+
+        function addNewLine() {
+            const container = document.getElementById('expression-container');
+            const newLine = document.createElement('div');
+            newLine.className = 'expression-line';
+            newLine.innerHTML = `
+                <input type="text" class="input" placeholder="输入表达式" 
+                       oninput="calculateLine(this)"
+                       onkeydown="handleKeyDown(event, this)">
+                <div class="result"></div>
+            `;
+            container.appendChild(newLine);
+            newLine.querySelector('.input').focus();
+        }
+
+        function handleKeyDown(event, input) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // 阻止默认的回车行为
+                
+                const expression = input.value.trim();
+                const result = input.parentElement.querySelector('.result');
+                const hasResult = result.textContent.trim() !== '';
+                
+                // 只有当前行有内容且有有效结果时才添加新行
+                if (expression !== '' && hasResult) {
+                    const lines = document.querySelectorAll('.expression-line');
+                    const isLastLine = input === lines[lines.length - 1].querySelector('.input');
+                    
+                    if (isLastLine) {
+                        addNewLine();
+                    } else {
+                        // 如果不是最后一行，移动焦点到下一行
+                        const nextLine = input.parentElement.nextElementSibling;
+                        if (nextLine) {
+                            nextLine.querySelector('.input').focus();
+                        }
+                    }
+                }
+            }
+        }
+
+        // 初始聚焦到输入框
+        document.querySelector('.input').focus();
+
+        function clearAll() {
+            const container = document.getElementById('expression-container');
+            // 保留第一行，清空其内容
+            const firstLine = container.querySelector('.expression-line');
+            container.innerHTML = '';
+            container.appendChild(firstLine);
+            
+            // 清空第一行的输入和结果
+            const input = firstLine.querySelector('.input');
+            const result = firstLine.querySelector('.result');
+            input.value = '';
+            result.textContent = '';
+            
+            // 聚焦到输入框
+            input.focus();
+        }
+    </script>
+</body>
+</html> 
