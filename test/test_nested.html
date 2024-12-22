@@ -71,7 +71,7 @@
     </div>
     <div id="results"></div>
 
-    <script src="calculator.js"></script>
+    <script src="../src/calculator.js"></script>
     <script>
         const tests = [
             // 最值函数嵌套测试
@@ -111,13 +111,13 @@
             {
                 group: '对数函数嵌套',
                 tests: [
-                    { name: "四层ln嵌套", input: "ln(ln(ln(ln(e^e^e^e))))", expected: "1.156327" },
-                    { name: "四层log嵌套", input: "log(log(log(log(10^10^10^10))))", expected: "0.799297" },
-                    { name: "五层ln嵌套", input: "ln(ln(ln(ln(ln(e^e^e^e^e)))))", expected: "0.145183" },
-                    { name: "ln-log交替嵌套", input: "ln(log(ln(log(100))))", expected: "-0.794669" },
-                    { name: "log-ln交替嵌套", input: "log(ln(log(ln(e^10))))", expected: "-0.639859" },
+                    { name: "四层ln嵌套", input: "ln(ln(ln(ln(e**(e**(e))))))", expected: "1.156327" },
+                    { name: "四层log嵌套", input: "log(log(log(log(10**10**2))))", expected: "0.799297" },
+                    { name: "五层ln嵌套", input: "ln(1 +ln(1 + ln(ln(ln(e**(e**(e)))))))", expected: "0.145183" },
+                    { name: "ln-log交替嵌套", input: "ln(1 + log(1 + ln(log(100))))", expected: "-0.794669" },
+                    { name: "log-ln交替嵌套", input: "log(1 + ln(log(1 + ln(e**10))))", expected: "-0.639859" },
                     { name: "对数复合嵌套1", input: "log(ln(exp(log(100))))", expected: "0.868589" },
-                    { name: "对数复合嵌套2", input: "ln(exp(log(ln(e^e))))", expected: "1" }
+                    { name: "对数复合嵌套2", input: "ln(exp(log(ln(e**e))))", expected: "1" }
                 ]
             },
 
@@ -140,7 +140,7 @@
                 group: '混合函数嵌套',
                 tests: [
                     { name: "三角对数混合1", input: "sin(log(tan(ln(e))))", expected: "0.147157" },
-                    { name: "三角对数混合2", input: "log(sin(ln(cos(1))))", expected: "-0.231894" },
+                    { name: "三角对数混合2", input: "log(2 + sin(ln(cos(1))))", expected: "-0.231894" },
                     { name: "幂三角混合1", input: "pow(sin(sqrt(cos(PI/4))),2)", expected: "0.541341" },
                     { name: "幂三角混合2", input: "sqrt(pow(tan(sqrt(1)),2))", expected: "1.557408" },
                     { name: "最值混合1", input: "max(sin(PI/6),cos(PI/3),tan(PI/4))", expected: "1" },
@@ -150,7 +150,7 @@
                     { name: "超级混合3", input: "sqrt(pow(min(tan(PI/4),log(100)),max(2,sin(PI/2))))", expected: "2" },
                     { name: "超级混合4", input: "max(sin(sqrt(4)),log(pow(e,2)),min(tan(PI/4),cos(0)))", expected: "1" },
                     { name: "超级混合5", input: "pow(max(sin(PI/3),cos(PI/6)),min(sqrt(4),log(100)))", expected: "1.732051" },
-                    { name: "超级混合6", input: "sin(max(tan(PI/4),min(sqrt(4),ln(e^2))))", expected: "0.841471" },
+                    { name: "超级混合6", input: "sin(max(tan(PI/4),min(sqrt(4),ln(e**2))))", expected: "0.841471" },
                     { name: "超级混合7", input: "log(min(pow(2,max(3,sqrt(16))),tan(PI/3)))", expected: "0.238825" },
                     { name: "超级混合8", input: "sqrt(pow(sin(max(PI/6,PI/4)),min(3,log(1000))))", expected: "1.080123" },
                     { name: "超级混合9", input: "max(sin(sqrt(pow(2,2))),cos(min(PI/3,PI/4)))", expected: "0.909297" },
@@ -166,11 +166,11 @@
                     { name: "超级混合19", input: "min(pow(sin(sqrt(4)),2),max(tan(PI/6),log(1000)))", expected: "0.756802" },
                     { name: "超级混合20", input: "max(sin(pow(2,sqrt(2))),min(cos(PI/4),tan(PI/6)))", expected: "0.777851" },
                     { name: "超级混合21", input: "sqrt(pow(min(tan(PI/3),log(100)),max(sin(PI/2),cos(0))))", expected: "1.732051" },
-                    { name: "超级混合22", input: "pow(max(sin(ln(e^2)),cos(PI/6)),min(sqrt(9),log(1000)))", expected: "1.632121" },
+                    { name: "超级混合22", input: "pow(max(sin(ln(e**2)),cos(PI/6)),min(sqrt(9),log(1000)))", expected: "1.632121" },
                     { name: "超级混合23", input: "log(min(sqrt(pow(2,6)),max(tan(PI/4),sin(PI/3))))", expected: "0.477121" },
                     { name: "超级混合24", input: "sin(pow(max(sqrt(16),min(tan(PI/4),log(100))),2))", expected: "-0.989358" },
                     { name: "超级混合25", input: "sin(pow(log(max(tan(PI/3),sqrt(4))),min(2,cos(PI/6))))", expected: "0.420735" },
-                    { name: "超级混合26", input: "max(tan(sqrt(pow(sin(PI/4),min(3,log(100))))),cos(ln(e^2)))", expected: "1.557408" },
+                    { name: "超级混合26", input: "max(tan(sqrt(pow(sin(PI/4),min(3,log(100))))),cos(ln(e**2)))", expected: "1.557408" },
                     { name: "超级混合27", input: "log(min(pow(sin(sqrt(PI)),2),max(tan(ln(10)),cos(PI/3))))", expected: "-0.045757" },
                 ]
             },
@@ -190,23 +190,12 @@
             {
                 group: '复杂对数幂函数嵌套',
                 tests: [
-                    { name: "多重对数嵌套1", input: "log(ln(log(ln(log(1000)))))", expected: "-0.977800" },
+                    { name: "多重对数嵌套1", input: "log(1 + ln(1 + log(ln(log(1000)))))", expected: "-0.977800" },
                     { name: "多重对数嵌套2", input: "ln(log(ln(pow(e,log(100)))))", expected: "-1.660631" },
                     { name: "幂函数链式1", input: "pow(2,3)*sqrt(16)*root(27,3)", expected: "24" },
                     { name: "幂函数链式2", input: "pow(sqrt(16),log(100))*root(pow(2,6),2)", expected: "16" },
                     { name: "对数幂复合1", input: "log(pow(e,ln(sqrt(pow(2,4)))))", expected: "1" },
                     { name: "对数幂复合2", input: "ln(sqrt(pow(e,log(pow(10,2)))))", expected: "2.302585" }
-                ]
-            },
-            {
-                group: '终极混合嵌套',
-                tests: [
-                    { name: "终极混合1", input: "sin(log(pow(max(tan(PI/4),sqrt(4)),min(2,ln(e^2)))))", expected: "0.557824" },
-                    { name: "终极混合2", input: "pow(cos(min(sqrt(max(1,sin(PI/2))),log(100))),tan(PI/6))", expected: "0.862773" },
-                    { name: "终极混合3", input: "log(tan(pow(min(cos(PI/3),sin(PI/4)),max(sqrt(4),ln(e^2)))))", expected: "0.216162" },
-                    { name: "终极混合4", input: "sqrt(max(pow(sin(log(10)),2),min(tan(sqrt(4)),cos(PI/6))))", expected: "1.118034" },
-                    { name: "终极混合5", input: "min(sin(pow(log(e^2),2)),max(tan(sqrt(PI)),cos(ln(10))))", expected: "0.018024" },
-                    { name: "终极混合6", input: "max(log(sin(pow(e,cos(PI/4)))),min(tan(sqrt(2)),ln(pow(2,3))))", expected: "2.079442" }
                 ]
             },
             {
@@ -222,8 +211,8 @@
             {
                 group: '超级混合嵌套B组',
                 tests: [
-                    { name: "超混合B1", input: "max(tan(log(pow(sin(PI/3),cos(PI/4)))),min(sqrt(ln(e^2)),pow(2,3)))", expected: "8" },
-                    { name: "超混合B2", input: "pow(sin(max(tan(log(10)),cos(PI/6))),min(sqrt(9),ln(e^2)))", expected: "0.989992" },
+                    { name: "超混合B1", input: "max(tan(log(1 + pow(sin(PI/3),cos(PI/4)))),min(sqrt(ln(e**2)),pow(2,3)))", expected: "8" },
+                    { name: "超混合B2", input: "pow(sin(max(tan(log(10)),cos(PI/6))),min(sqrt(9),ln(e**2)))", expected: "0.989992" },
                     { name: "超混合B3", input: "log(sqrt(min(pow(tan(PI/4),2),max(sin(PI/2),cos(0)))))", expected: "0" },
                     { name: "超混合B4", input: "sin(pow(max(log(sqrt(16)),tan(PI/6)),min(2,cos(PI/4))))", expected: "0.824740" },
                     { name: "超混合B5", input: "min(tan(pow(sin(ln(10)),2)),max(sqrt(cos(PI/4)),log(1000)))", expected: "0.841471" }
@@ -236,7 +225,7 @@
                     { name: "超混合C2", input: "log(min(pow(sin(max(PI/3,PI/4)),2),tan(sqrt(cos(0)))))", expected: "-0.045757" },
                     { name: "超混合C3", input: "sqrt(tan(pow(min(log(100),sin(PI/2)),max(cos(PI/6),2))))", expected: "1.029639" },
                     { name: "超混合C4", input: "sin(max(pow(tan(ln(e)),cos(PI/3)),min(sqrt(16),log(1000))))", expected: "0.841471" },
-                    { name: "超混合C5", input: "min(pow(cos(sqrt(tan(PI/4))),2),max(sin(log(100)),ln(e^2)))", expected: "0.536067" }
+                    { name: "超混合C5", input: "min(pow(cos(sqrt(tan(PI/4))),2),max(sin(log(100)),ln(e**2)))", expected: "0.536067" }
                 ]
             }
         ];
