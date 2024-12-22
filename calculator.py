@@ -1,5 +1,6 @@
 from graphviz import Digraph
 import os
+from operators import OPERATORS, FUNCTIONS
 
 class Node:
     def __init__(self, value):
@@ -8,15 +9,8 @@ class Node:
 
 class Calculator:
     def __init__(self):
-        self.operators = {
-            '+': {'precedence': 1, 'args': 2},
-            '-': {'precedence': 1, 'args': 2},
-            '*': {'precedence': 2, 'args': 2},
-            '/': {'precedence': 2, 'args': 2},
-            '#': {'precedence': 3, 'args': 1},  # 后缀自增
-        }
-        
-        self.functions = {'max', 'min'}  # 函数集合
+        self.operators = OPERATORS
+        self.functions = set(FUNCTIONS.keys())
     
     def parse_expr(self, expr):
         tokens = self._tokenize(expr)
@@ -126,15 +120,12 @@ class Calculator:
         args = [self.evaluate(arg) for arg in node.args]
         
         # 处理运算符
-        if node.value == '+': return args[0] + args[1]
-        if node.value == '-': return args[0] - args[1]
-        if node.value == '*': return args[0] * args[1]
-        if node.value == '/': return args[0] / args[1] if args[1] != 0 else float('inf')
-        if node.value == '#': return args[0] + 1
+        if node.value in self.operators:
+            return self.operators[node.value]['func'](*args)
         
         # 处理函数
-        if node.value == 'max': return max(args)
-        if node.value == 'min': return min(args)
+        if node.value in self.functions:
+            return FUNCTIONS[node.value]['func'](*args)
         
         raise ValueError(f"未知的操作符或函数: {node.value}")
 
