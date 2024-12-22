@@ -4,198 +4,139 @@ import os
 class Node:
     def __init__(self, value):
         self.value = value
-        self.args = []  # 所有节点都使用args存储参数
+        self.args = []
 
 class Calculator:
     def __init__(self):
-        self.pos = 0
-        # 重构函数字典，保持所有键值格式统一
-        self.functions = {
-            '+': {
-                'impl': lambda args: args[0] + args[1],
-                'arg_count': 2,
-                'type': 'binary_operator',
-                'precedence': 1,
-                'description': '加法运算'
-            },
-            '-': {
-                'impl': lambda args: args[0] - args[1],
-                'arg_count': 2,
-                'type': 'binary_operator',
-                'precedence': 1,
-                'description': '减法运算'
-            },
-            '*': {
-                'impl': lambda args: args[0] * args[1],
-                'arg_count': 2,
-                'type': 'binary_operator',
-                'precedence': 2,
-                'description': '乘法运算'
-            },
-            '/': {
-                'impl': lambda args: args[0] / args[1] if args[1] != 0 else float('inf'),
-                'arg_count': 2,
-                'type': 'binary_operator',
-                'precedence': 2,
-                'description': '除法运算'
-            },
-            'max': {
-                'impl': lambda args: max(args),
-                'arg_count': -1,
-                'type': 'function',
-                'precedence': 3,
-                'description': '返回参数中的最大值'
-            },
-            'min': {
-                'impl': lambda args: min(args),
-                'arg_count': -1,
-                'type': 'function',
-                'precedence': 3,
-                'description': '返回参数中的最小值'
-            },
-            '#': {
-                'impl': lambda args: args[0] + 1,
-                'arg_count': 1,
-                'type': 'unary_operator',
-                'position': 'postfix',
-                'precedence': 3,
-                'description': '自增运算，将数值加1'
-            }
+        self.operators = {
+            '+': {'precedence': 1, 'args': 2},
+            '-': {'precedence': 1, 'args': 2},
+            '*': {'precedence': 2, 'args': 2},
+            '/': {'precedence': 2, 'args': 2},
+            '#': {'precedence': 3, 'args': 1},  # 后缀自增
         }
-        # 按优先级分组
-        self.precedence_groups = {}
-        for func_name, func_info in self.functions.items():
-            prec = func_info['precedence']
-            if prec not in self.precedence_groups:
-                self.precedence_groups[prec] = []
-            self.precedence_groups[prec].append(func_name)
+        
+        self.functions = {'max', 'min'}  # 函数集合
     
     def parse_expr(self, expr):
-        self.expr = expr.replace(' ', '')  # 只需要移除空格
-        self.pos = 0
-        return self._parse_expr()
+        tokens = self._tokenize(expr)
+        return self._build_ast(tokens)
     
-    def _parse_expr(self):
-        return self._parse_by_precedence(min(self.precedence_groups.keys()))
-    
-    def _parse_by_precedence(self, precedence):
-        if precedence > max(self.precedence_groups.keys()):
-            return self._parse_primary()  # 改用_parse_primary替代_parse_number
-            
-        # 先尝试解析函数调用
-        for func_name, func_info in self.functions.items():
-            if func_info['type'] == 'function':
-                if (self.pos + len(func_name) <= len(self.expr) and 
-                    self.expr[self.pos:self.pos+len(func_name)+1] == f"{func_name}("):
-                    self.pos += len(func_name) + 1
-                    node = Node(func_name)
-                    node.args = []
-                    
-                    while True:
-                        arg = self._parse_by_precedence(1)  # 从最低优先级开始解析参数
-                        if arg:
-                            node.args.append(arg)
-                        
-                        if self.pos >= len(self.expr):
-                            raise ValueError(f"函数 {func_name} 缺少右括号")
-                        
-                        if self.expr[self.pos] == ')':
-                            self.pos += 1
-                            break
-                        elif self.expr[self.pos] == ',':
-                            self.pos += 1
-                        else:
-                            raise ValueError(f"函数 {func_name} 参数格式错误")
-                    
-                    arg_count = func_info['arg_count']
-                    if arg_count != -1 and len(node.args) != arg_count:
-                        raise ValueError(f"函数 {func_name} 需要 {arg_count} 个参数")
-                        
-                    return node
+    def _tokenize(self, expr):
+        """将表达式转换为标记列表"""
+        tokens = []
+        i = 0
+        expr = expr.replace(' ', '')
         
-        # 然后处理运算符
-        left = self._parse_by_precedence(precedence + 1)
-        if left is None:
-            return None
+        while i < len(expr):
+            char = expr[i]
             
-        while self.pos < len(self.expr):
-            matched = False
-            for func_name in self.precedence_groups[precedence]:
-                func_info = self.functions[func_name]
+            # 处理数字
+            if char.isdigit():
+                num = ''
+                while i < len(expr) and (expr[i].isdigit() or expr[i] == '.'):
+                    num += expr[i]
+                    i += 1
+                tokens.append(('number', float(num)))
+                continue
                 
-                if func_info['type'] in ['binary_operator', 'unary_operator']:
-                    if self.expr[self.pos] == func_name:
-                        self.pos += 1
-                        if func_info['type'] == 'unary_operator':
-                            # 一元运算符处理
-                            node = Node(func_name)
-                            if func_info['position'] == 'postfix':
-                                node.args = [left]
-                            else:  # prefix
-                                right = self._parse_by_precedence(precedence + 1)
-                                node.args = [right]
-                            left = node
-                        else:  # binary_operator
-                            # 二元运算符处理
-                            right = self._parse_by_precedence(precedence + 1)
-                            node = Node(func_name)
-                            node.args = [left, right]
-                            left = node
-                        matched = True
-                        break
-                        
-            if not matched:
-                break
+            # 处理函数名和括号
+            if char.isalpha():
+                func = ''
+                while i < len(expr) and expr[i].isalpha():
+                    func += expr[i]
+                    i += 1
+                if func in self.functions:
+                    tokens.append(('function', func))
+                continue
                 
-        return left
+            # 处理运算符和括号
+            if char in '+-*/#()':
+                tokens.append(('operator', char))
+            elif char == ',':
+                tokens.append(('separator', char))
+                
+            i += 1
+            
+        return tokens
     
-    def _parse_primary(self):
-        """解析基本表达式：数字或带括号的表达式"""
-        if self.pos >= len(self.expr):
-            return None
-            
-        # 处理括号
-        if self.expr[self.pos] == '(':
-            self.pos += 1  # 跳过左括号
-            expr = self._parse_expr()  # 解析括号内的表达式
-            
-            if self.pos >= len(self.expr) or self.expr[self.pos] != ')':
-                raise ValueError("缺少右括号")
-            
-            self.pos += 1  # 跳过右括号
-            return expr
+    def _build_ast(self, tokens):
+        """使用调度场算法构建AST"""
+        output = []  # 输出队列
+        operators = []  # 运算符栈
         
-        # 处理函数调用
-        for func_name, func_info in self.functions.items():
-            if (func_info['type'] == 'function' and 
-                self.pos + len(func_name) <= len(self.expr) and 
-                self.expr[self.pos:self.pos+len(func_name)] == func_name):
-                # 函数调用的处理逻辑...
-                pass
+        for token_type, token in tokens:
+            if token_type == 'number':
+                output.append(Node(token))
+            
+            elif token_type == 'function':
+                operators.append(token)
+            
+            elif token_type == 'operator':
+                if token == '(':
+                    operators.append(token)
+                elif token == ')':
+                    while operators and operators[-1] != '(':
+                        self._process_operator(operators, output)
+                    if operators:  # 弹出左括号
+                        operators.pop()
+                        if operators and operators[-1] in self.functions:
+                            self._process_operator(operators, output)
+                else:  # 其他运算符
+                    while (operators and operators[-1] != '(' and
+                           operators[-1] in self.operators and
+                           self.operators[operators[-1]]['precedence'] >= 
+                           self.operators[token]['precedence']):
+                        self._process_operator(operators, output)
+                    operators.append(token)
         
-        # 解析数字
-        if self.expr[self.pos].isdigit() or self.expr[self.pos] == '.':
-            start = self.pos
-            while self.pos < len(self.expr) and (self.expr[self.pos].isdigit() or self.expr[self.pos] == '.'):
-                self.pos += 1
-            return Node(float(self.expr[start:self.pos]))
+        # 处理剩余的运算符
+        while operators:
+            self._process_operator(operators, output)
+            
+        return output[0] if output else None
+    
+    def _process_operator(self, operators, output):
+        """处理运算符"""
+        op = operators.pop()
+        node = Node(op)
         
-        return None
+        if op in self.operators:
+            args_count = self.operators[op]['args']
+            node.args = [output.pop() for _ in range(args_count)]
+            node.args.reverse()
+        elif op in self.functions:
+            # 收集函数参数直到遇到分隔符
+            args = []
+            while output and output[-1].value != ',':
+                args.append(output.pop())
+            node.args = list(reversed(args))
+            
+        output.append(node)
 
     def evaluate(self, node):
         if node is None:
             return 0
             
-        # 如果是叶子节点（数字）
-        if not node.args:
+        # 如果是数字节点
+        if isinstance(node.value, (int, float)):
             return node.value
             
-        # 如果是函数调用
-        if node.value in self.functions:
-            arg_values = [self.evaluate(arg) for arg in node.args]
-            return self.functions[node.value]['impl'](arg_values)
-            
-        raise ValueError(f"未知的函数: {node.value}")
+        # 计算子节点
+        args = [self.evaluate(arg) for arg in node.args]
+        
+        # 处理运算符
+        if node.value == '+': return args[0] + args[1]
+        if node.value == '-': return args[0] - args[1]
+        if node.value == '*': return args[0] * args[1]
+        if node.value == '/': return args[0] / args[1] if args[1] != 0 else float('inf')
+        if node.value == '#': return args[0] + 1
+        
+        # 处理函数
+        if node.value == 'max': return max(args)
+        if node.value == 'min': return min(args)
+        
+        raise ValueError(f"未知的操作符或函数: {node.value}")
 
     def visualize_ast(self, node, output_file='ast'):
         """
@@ -220,14 +161,15 @@ class Calculator:
             if isinstance(node.value, (int, float)):
                 # 数值节点使用椭圆形
                 dot.node(node_id, str(node.value), shape='ellipse')
+            elif node.value in self.operators:
+                # 运算符节点使用矩形
+                dot.node(node_id, node.value, shape='box')
             elif node.value in self.functions:
-                func_info = self.functions[node.value]
-                if func_info['type'] == 'function':
-                    # 函数节点使用菱形
-                    dot.node(node_id, node.value, shape='diamond')
-                else:
-                    # 运算符节点使用矩形
-                    dot.node(node_id, node.value, shape='box')
+                # 函数节点使用菱形
+                dot.node(node_id, node.value, shape='diamond')
+            else:
+                # 其他节点使用默认形状
+                dot.node(node_id, str(node.value))
             
             # 如果有父节点，添加边
             if parent_id is not None:
