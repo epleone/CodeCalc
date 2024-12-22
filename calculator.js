@@ -11,34 +11,74 @@ const reservedFunctions = [
     'bin', 'oct', 'hex'
 ];
 
-// 添加一个辅助函数来检查大数运算是否会溢出
-function checkBigIntOperation(expression) {
-    // 检查大整数
-    const bigIntPattern = /\b\d{15,}\b|\b\d{15,}(?=\.)/;
-    if (!bigIntPattern.test(expression)) return false;
+// 在文件开头定义常量
+const MATH_CONSTANTS = {
+    'PI': '3.141592653589793',
+    'e': '2.718281828459045'
+};
 
-    // 检查是否包含可能导致溢出的运算
-    if (!/\*|\*\*|\^/.test(expression)) return false;
+// 声明 calculate 函数（移到前面）
+let calculate;
 
-    try {
-        const result = Function('"use strict";return BigInt(' + 
-            expression.replace(/\*\*/g, '^')
-                     .replace(/\^/g, '**') + 
-            ')')();
+// 修改数学函数处理部分
+function processMathFunction(expression, funcName, mathFunc) {
+    const pattern = `\\b(?:${funcName}|${funcName.toUpperCase()}|${funcName[0].toUpperCase()}${funcName.slice(1)})\\(((?:\\([^()]*\\)|[^()])*?)\\)`;
+    const regex = new RegExp(pattern, 'g');
+    
+    return expression.replace(regex, function(match, args) {
+        // 如果参数中还包含任何函数调用，就先不处理这层
+        if (/\b(?:sin|cos|tan|log|ln|exp|sqrt|pow|max|min)\s*\(/i.test(args)) {
+            return match;
+        }
         
-        return !(result > BigInt(Number.MAX_SAFE_INTEGER) || 
-                result < BigInt(Number.MIN_SAFE_INTEGER));
-    } catch {
-        return false;
-    }
+        try {
+            // 计算参数值
+            const result = calculate(args);
+            const value = typeof result === 'object' ? Number(result.value) : Number(result);
+            
+            if (isNaN(value)) {
+                throw new Error('无效的参数');
+            }
+            
+            // 对数函数的特殊处理
+            if ((funcName === 'ln' || funcName === 'log') && value <= 0) {
+                throw new Error(`${funcName}函数的参数必须大于0`);
+            }
+            
+            // 计算函数结果
+            const funcResult = mathFunc(value);
+            
+            if (!Number.isFinite(funcResult)) {
+                throw new Error('计算结果无效');
+            }
+            
+            // 格式化结果
+            const formattedResult = Number(funcResult.toFixed(6));
+            
+            // 处理特殊情况
+            if (Math.abs(formattedResult) < 1e-10) {
+                return '0';
+            }
+            
+            // 返回结果（带括号）
+            return `(${formattedResult})`;
+            
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    });
 }
 
-function calculate(expression) {
+// 定义 calculate 函数
+calculate = function(expression) {
     // 定义数学常量
-    const constants = {
-        'PI': Math.PI,
-        'e': Math.E
-    };
+    const constants = MATH_CONSTANTS;
+
+    // 检查是否直接是常量
+    const trimmedExpr = expression.trim();
+    if (Object.keys(MATH_CONSTANTS).includes(trimmedExpr)) {
+        return MATH_CONSTANTS[trimmedExpr];
+    }
 
     // 检查是否是赋值表达式（包括复合赋值）
     const assignmentMatch = expression.match(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([+\-*/])?=\s*(.+)\s*$/);
@@ -58,49 +98,49 @@ function calculate(expression) {
             throw new Error(`不能使用乘法符号 "x" 作为变量名`);
         }
 
-        // 计算右边的表达式
         try {
-            let value;
-            // 对右边的表达式进行常量替换和计算
+            // 计算右边的表达式
             let processedExpression = valueExpression;
             
             // 替换常量
             for (const [name, val] of tempConstants) {
                 const regex = new RegExp(`\\b${name}\\b`, 'g');
-                processedExpression = processedExpression.replace(regex, `(${val})`);
+                processedExpression = processedExpression.replace(regex, val);
             }
             for (const [constant, val] of Object.entries(constants)) {
                 const regex = new RegExp(`\\b${constant}\\b`, 'g');
-                processedExpression = processedExpression.replace(regex, `(${val})`);
+                processedExpression = processedExpression.replace(regex, val);
             }
 
-            value = calculate(processedExpression);
-            const newValue = typeof value === 'object' ? value.value : value;
+            let value = calculate(processedExpression);
+            value = typeof value === 'object' ? value.value : value;
 
             // 处理复合赋值运算
             if (operator) {
                 if (!tempConstants.has(variableName)) {
                     throw new Error(`未定义的变量 ${variableName}`);
                 }
-                const oldValue = tempConstants.get(variableName);
+                const oldValue = Number(tempConstants.get(variableName));
+                const newValue = Number(value);
+                
                 switch (operator) {
                     case '+': value = oldValue + newValue; break;
                     case '-': value = oldValue - newValue; break;
                     case '*': value = oldValue * newValue; break;
-                    case '/':
+                    case '/': 
                         if (newValue === 0) throw new Error('除数不能为零');
-                        value = oldValue / newValue;
+                        value = oldValue / newValue; 
                         break;
+                    default:
+                        throw new Error(`不支持的运算符 "${operator}="`);
                 }
-            } else {
-                value = newValue;
             }
 
             // 存储到临时常量字典中
-            tempConstants.set(variableName, value);
+            tempConstants.set(variableName, value.toString());
 
             return {
-                value: value,
+                value: value.toString(),
                 success: `变量 ${variableName}：${value}`
             };
         } catch (error) {
@@ -109,18 +149,156 @@ function calculate(expression) {
     }
 
     // 非赋值表达式的处理
+    // 先处理单独的角度值
+    if (/^\s*-?\d+(\.\d+)?d\s*$/.test(expression)) {  // 检查是否只有个角度值
+        const match = expression.match(/(-?\d+(?:\.\d+)?)d/);
+        const degrees = parseFloat(match[1]);
+        const radians = degrees * Math.PI / 180;  // 实际的弧度值
+        const piRatio = degrees / 180;  // 转换为 PI 的倍数
+        
+        if (piRatio === 0) return '0';
+        const piFormat = simplifyPiFraction(piRatio);
+        return {
+            value: piFormat,
+            success: `${radians.toFixed(6)} 弧度`
+        };
+    }
+
     // 替换常量
     for (const [name, value] of tempConstants) {
         const regex = new RegExp(`\\b${name}\\b`, 'g');
-        expression = expression.replace(regex, `(${value})`);
+        expression = expression.replace(regex, value);
     }
     for (const [constant, value] of Object.entries(constants)) {
         const regex = new RegExp(`\\b${constant}\\b`, 'g');
-        expression = expression.replace(regex, `(${value})`);
+        expression = expression.replace(regex, value);
     }
 
     // 存储警告信息
     let warnings = [];
+
+    // 处理表达式中的角度值
+    expression = expression.replace(/(-?\d+(?:\.\d+)?)d\b/g, (match, num) => {
+        const degrees = parseFloat(num);
+        const piRatio = degrees / 180;
+        if (piRatio === 0) return '0';
+        return `(${piRatio}*PI)`;  // 直接使用 PI 而不是数值
+    });
+
+    // 然后处理所有函数调用，从内到外
+    let prevExpression;
+    do {
+        prevExpression = expression;
+
+        // 处理所有基本数学函数（包括三角函数、对数函数等）
+        const mathFunctions = [
+            { name: 'sin', func: Math.sin },
+            { name: 'cos', func: Math.cos },
+            { name: 'tan', func: Math.tan },
+            { name: 'log', func: Math.log10 },
+            { name: 'ln', func: Math.log },
+            { name: 'exp', func: Math.exp }
+        ];
+
+        // 处理所有基本数学函数
+        for (const { name, func } of mathFunctions) {
+            const pattern = `\\b${name}\\s*\\(((?:\\([^()]*\\)|[^()])*?)\\)`;
+            const regex = new RegExp(pattern, 'gi');
+            
+            expression = expression.replace(regex, (match, args) => {
+                try {
+                    // 计算参数值
+                    const result = calculate(args);
+                    const value = typeof result === 'object' ? Number(result.value) : Number(result);
+                    
+                    if (isNaN(value)) {
+                        throw new Error('无效的参数');
+                    }
+                    
+                    // 对数函数的特殊处理
+                    if ((name === 'ln' || name === 'log') && value <= 0) {
+                        throw new Error(`${name}函数的参数必须大于0`);
+                    }
+                    
+                    // 计算函数结果
+                    const funcResult = func(value);
+                    
+                    if (!Number.isFinite(funcResult)) {
+                        throw new Error('计算结果无效');
+                    }
+                    
+                    // 格式化结果
+                    const formattedResult = Number(funcResult.toFixed(6));
+                    
+                    // 处理特殊情况
+                    if (Math.abs(formattedResult) < 1e-10) {
+                        return '0';
+                    }
+                    
+                    // 返回结果（带括号）
+                    return `(${formattedResult})`;
+                    
+                } catch (error) {
+                    throw new Error(error.message);
+                }
+            });
+        }
+
+        // 处理 max 和 min 函数
+        expression = expression.replace(/\b(max|min)\s*\(((?:[^(),]|\([^()]*\))*(?:\s*,\s*(?:[^(),]|\([^()]*\))*)*)\)/gi,
+            (match, func, args) => {
+                try {
+                    // 分割参数并计算每个值
+                    const values = args.split(',').map(arg => {
+                        const result = calculate(arg.trim());
+                        return typeof result === 'object' ? Number(result.value) : Number(result);
+                    });
+
+                    if (values.length < 2) {
+                        throw new Error(`${func}函数需要至少两个参数`);
+                    }
+
+                    if (values.some(v => !Number.isFinite(v))) {
+                        throw new Error('参数无效');
+                    }
+
+                    const result = func.toLowerCase() === 'max' ?
+                        Math.max(...values) : Math.min(...values);
+
+                    return `(${result})`;
+                } catch (error) {
+                    throw new Error(error.message);
+                }
+            });
+
+    } while (expression !== prevExpression);
+
+    // 然后处理其他数学函数
+    // sqrt 函数
+    expression = expression.replace(/\b(?:sqrt|SQRT|Sqrt)\((.*?)\)/g, (match, p1) => {
+        try {
+            const innerResult = calculate(p1);
+            const value = Number(innerResult);
+            if (isNaN(value)) return innerResult;
+            if (value < 0) throw new Error('sqrt函数不支持负数');
+            const result = Math.sqrt(value);
+            return `(${result})`;
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    });
+
+    // pow 函数
+    expression = expression.replace(/\b(?:pow|POW|Pow)\((.*?),(.*?)\)/g, (match, p1, p2) => {
+        try {
+            const base = calculate(p1);
+            const exponent = calculate(p2);
+            const result = Math.pow(Number(base), Number(exponent));
+            return `(${result})`;
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    });
 
     // 检查不合法的进制前缀
     const prefixRegex = /\b[0o][a-zA-Z][0-9a-fA-F]*\b|\b0[a-zA-Z][0-9a-fA-F]*\b/i;
@@ -229,86 +407,6 @@ function calculate(expression) {
         }
     }
 
-    // 处理 exp 函数
-    if (/\bexp\(/.test(expression)) {
-        let match = expression.match(/\bexp\((.*?)\)/);
-        if (match) {
-            const num = calculate(match[1]);
-            return Math.exp(num);
-        }
-    }
-
-    // 处理 root 函数
-    if (/\broot\(/.test(expression)) {
-        let match = expression.match(/\broot\((.*?),(.*?)\)/);
-        if (match) {
-            const x = calculate(match[1]);  // 被开方数
-            const n = calculate(match[2]);  // 次数
-            
-            if (!Number.isInteger(n) || n <= 0) {
-                throw new Error('root函数的次数必须是正整数');
-            }
-            if (n % 2 === 0 && x < 0) {
-                throw new Error('偶次方根不支持负数');
-            }
-            
-            // 使用幂运算来计算 n 次方根：x^(1/n)
-            return Math.pow(Math.abs(x), 1/n) * (x < 0 ? -1 : 1);
-        }
-    }
-
-    // 处理 sqrt 函数（作为 root(2,x) 的特例）
-    if (/\bsqrt\(/.test(expression)) {
-        let match = expression.match(/\bsqrt\((.*?)\)/);
-        if (match) {
-            const num = calculate(match[1]);
-            if (num < 0) {
-                throw new Error('sqrt函数不支持负数');
-            }
-            return Math.sqrt(num);
-        }
-    }
-
-    // 处理 pow 函数
-    if (/\bpow\(/.test(expression)) {
-        let match = expression.match(/\bpow\((.*?),(.*?)\)/);
-        if (match) {
-            const base = calculate(match[1]);  // 底数
-            const exponent = calculate(match[2]);  // 指数
-            return Math.pow(base, exponent);
-        }
-    }
-
-    // 处理 max 函数
-    if (/\bmax\(/.test(expression)) {
-        let match = expression.match(/\bmax\((.*?)\)/);
-        if (match) {
-            const args = match[1].split(',').map(arg => {
-                const value = calculate(arg.trim());
-                return typeof value === 'object' ? value.value : value;
-            });
-            if (args.length < 2) {
-                throw new Error('max函数需要至少两个参数');
-            }
-            return Math.max(...args);
-        }
-    }
-
-    // 处理 min 函数
-    if (/\bmin\(/.test(expression)) {
-        let match = expression.match(/\bmin\((.*?)\)/);
-        if (match) {
-            const args = match[1].split(',').map(arg => {
-                const value = calculate(arg.trim());
-                return typeof value === 'object' ? value.value : value;
-            });
-            if (args.length < 2) {
-                throw new Error('min函数需要至少两个参数');
-            }
-            return Math.min(...args);
-        }
-    }
-
     // 处理反三角函数
     if (/\basin\(/.test(expression)) {
         let match = expression.match(/\basin\((.*?)\)/);
@@ -317,7 +415,7 @@ function calculate(expression) {
             const radians = Math.asin(num);
             const degrees = radians * 180 / Math.PI;
             return {
-                value: radians,
+                value: radians.toFixed(6),
                 success: `${degrees.toFixed(6)}°`
             };
         }
@@ -330,7 +428,7 @@ function calculate(expression) {
             const radians = Math.acos(num);
             const degrees = radians * 180 / Math.PI;
             return {
-                value: radians,
+                value: radians.toFixed(6),
                 success: `${degrees.toFixed(6)}°`
             };
         }
@@ -343,53 +441,76 @@ function calculate(expression) {
             const radians = Math.atan(num);
             const degrees = radians * 180 / Math.PI;
             return {
-                value: radians,
+                value: radians.toFixed(6),
                 success: `${degrees.toFixed(6)}°`
             };
         }
     }
 
-    // 处理数学函数（不区分大小写）
-    expression = expression.replace(/\b(?:sin|SIN|Sin)\((.*?)\)/g, 'Math.sin($1)');
-    expression = expression.replace(/\b(?:cos|COS|Cos)\((.*?)\)/g, 'Math.cos($1)');
-    expression = expression.replace(/\b(?:tan|TAN|Tan)\((.*?)\)/g, 'Math.tan($1)');
-    expression = expression.replace(/\b(?:log|LOG|Log)\((.*?)\)/g, 'Math.log10($1)');
-    expression = expression.replace(/\b(?:ln|LN|Ln)\((.*?)\)/g, 'Math.log($1)');
-    expression = expression.replace(/\b(?:exp|EXP|Exp)\((.*?)\)/g, 'Math.exp($1)');
-    expression = expression.replace(/\b(?:sqrt|SQRT|Sqrt)\((.*?)\)/g, 'Math.sqrt($1)');
-    expression = expression.replace(/\b(?:pow|POW|Pow)\((.*?),(.*?)\)/g, 'Math.pow($1,$2)');
-
-    // 处理角度值（例如：90d -> pi/2）
-    if (/^\s*-?\d+(\.\d+)?d\s*$/.test(expression)) {  // 检查是否只有个角度值
-        const match = expression.match(/(-?\d+(?:\.\d+)?)d/);
-        const degrees = parseFloat(match[1]);
-        const radians = degrees * Math.PI / 180;  // 实际的弧度值
-        const piRatio = degrees / 180;  // 转换为 PI 的倍数
-        
-        if (piRatio === 0) return '0';
-        const piFormat = simplifyPiFraction(piRatio);
-        return {
-            value: piFormat,
-            success: `${radians.toFixed(6)} 弧度`  // 添加实际的弧度值
-        };
-    }
-
-    // 其他情况下的角度转换
-    expression = expression.replace(/(-?\d+(?:\.\d+)?)d\b/g, (match, num) => {
-        return `(${num} * Math.PI / 180)`;
+    // 处理整除运算
+    expression = expression.replace(/(\d*\.?\d+|\([^)]+\))\s*\/\/\s*(\d*\.?\d+|\([^)]+\))/g, (match, n1, n2) => {
+        try {
+            const num1 = calculate(n1);
+            const num2 = calculate(n2);
+            
+            // 检查除数是否为0
+            if (Number(num2) === 0) {
+                throw new Error('除数不能为零');
+            }
+            
+            // 计算整除结果
+            const result = Math.floor(Number(num1) / Number(num2));
+            return result < 0 ? `(${result})` : result.toString();
+        } catch (error) {
+            throw new Error(`整除运算错误: ${error.message}`);
+        }
     });
 
     // 处理乘法符号 'x'
     expression = expression.replace(/x/gi, '*');
 
-    // 处理整除
-    expression = expression.replace(/\/\//g, '|');
-    
+    // 处理 root 函数
+    expression = expression.replace(/\broot\s*\((.*?),(.*?)\)/g, (match, x, n) => {
+        try {
+            // 计算参数
+            const base = calculate(x);  // 被开方数
+            const power = calculate(n); // 次数
+            
+            // 验证次数必须是正整数
+            const powerValue = Number(power);
+            if (!Number.isInteger(powerValue) || powerValue <= 0) {
+                throw new Error('root函数的次数必须是正整数');
+            }
+
+            // 验证被开方数
+            const baseValue = Number(base);
+            if (powerValue % 2 === 0 && baseValue < 0) {
+                throw new Error('偶次方根不支持负数');
+            }
+            
+            // 使用幂运算来计算 n 次方根：x^(1/n)
+            const result = Math.pow(Math.abs(baseValue), 1/powerValue) * (baseValue < 0 ? -1 : 1);
+            
+            // 格式化结果
+            const formattedResult = Number(result.toFixed(6));
+            
+            // 返回结果（带括号）
+            return `(${formattedResult})`;
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    });
+
     try {
         let result;
         if (/^-?\d+$/.test(expression)) {
             result = expression;
         } else {
+            // 检查除零操作
+            if (/\/\s*0(?!\d)/.test(expression)) {
+                throw new Error('除数不能为零');
+            }
+            
             try {
                 result = Function('"use strict";return (' + expression + ')')();
             } catch (error) {
@@ -407,22 +528,19 @@ function calculate(expression) {
             }
         }
 
-        // 处理整除
-        if (expression.includes('|')) {
-            result = Math.floor(result);
+        // 检查结果是否为无穷大（可能是由除零导致的）
+        if (!Number.isFinite(result) && typeof result === 'number') {
+            throw new Error('除数不能为零');
         }
 
         // 格式化结果，处理精度问题
         if (Number.isFinite(result)) {
             if (Number.isInteger(result)) {
-                // 对于整数，直接转为字符串，避免科学计数法
                 result = result.toString();
             } else {
-                // 对于小数，保留6位小数
                 result = parseFloat(result.toFixed(6));
             }
         } else if (typeof result === 'string') {
-            // 已经是字符串形式的大整数
             result = result;
         } else {
             throw new Error('计算结果无效');
@@ -440,6 +558,28 @@ function calculate(expression) {
         }
         // 对于其他未知错误，返回通用错误信息
         throw new Error('表达式无效');
+    }
+};
+
+// 添加一个辅助函数检查大数运算是否会溢出
+function checkBigIntOperation(expression) {
+    // 检查大整数
+    const bigIntPattern = /\b\d{15,}\b|\b\d{15,}(?=\.)/;
+    if (!bigIntPattern.test(expression)) return false;
+
+    // 检查是否包含可能导致溢出的运算
+    if (!/\*|\*\*|\^/.test(expression)) return false;
+
+    try {
+        const result = Function('"use strict";return BigInt(' + 
+            expression.replace(/\*\*/g, '^')
+                     .replace(/\^/g, '**') + 
+            ')')();
+        
+        return !(result > BigInt(Number.MAX_SAFE_INTEGER) || 
+                result < BigInt(Number.MIN_SAFE_INTEGER));
+    } catch {
+        return false;
     }
 }
 

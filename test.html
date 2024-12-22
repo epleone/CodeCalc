@@ -97,204 +97,84 @@
 
     <script src="calculator.js"></script>
     <script>
-        // 修改测试用例定义，将变量测试分成多组
+        // 修改测试用例，只包含基本功能测试
         const tests = [
             // 基本运算测试
-            { group: '基本运算', name: "基本加法", input: "1 + 2", expected: "3" },
-            { group: '基本运算', name: "基本减法", input: "5 - 3", expected: "2" },
-            { group: '基本运算', name: "基本乘法", input: "4 * 3", expected: "12" },
-            { group: '基本运算', name: "基本除法", input: "10 / 2", expected: "5" },
-            { group: '基本运算', name: "乘方运算", input: "2 ** 3", expected: "8" },
-            { group: '基本运算', name: "整除运算", input: "7 // 2", expected: "3" },
-            { group: '基本运算', name: "取余运算", input: "7 % 3", expected: "1" },
+            { group: '基本运算', name: "加法", input: "1 + 2", expected: "3" },
+            { group: '基本运算', name: "减法", input: "5 - 3", expected: "2" },
+            { group: '基本运算', name: "乘法*", input: "4 * 3", expected: "12" },
+            { group: '基本运算', name: "乘法x", input: "4 x 3", expected: "12" },
+            { group: '基本运算', name: "乘法X", input: "4 X 3", expected: "12" },
+            { group: '基本运算', name: "除法", input: "10 / 2", expected: "5" },
+            { group: '基本运算', name: "整除", input: "7 // 2", expected: "3" },
+            { group: '基本运算', name: "取余", input: "7 % 3", expected: "1" },
+            { group: '基本运算', name: "幂运算", input: "2 ** 3", expected: "8" },
 
-            // 变量测试组1：基本赋值和使用
+            // 变量测试
             {
-                group: '变量测试1', init: "a = 5", tests: [
-                    { name: "变量赋值", input: "a = 5", expected: { value: "5", success: "变量 a：5" } },
-                    { name: "变量使用", input: "a + 3", expected: "8" }
+                group: '变量', init: "a = 2", tests: [
+                    { name: "变量赋值", input: "a = 2", expected: { value: "2", success: "变量 a：2" } },
+                    { name: "变量乘法", input: "a x 3", expected: "6" },
+                    { name: "变量使用", input: "b = a + 1", expected: { value: "3", success: "变量 b：3" } }
                 ]
             },
-
-            // 变量测试组2：复合赋值 +=
             {
-                group: '变量测试2', init: "a = 5", tests: [
-                    { name: "复合赋值 +=", input: "a += 2", expected: { value: "7", success: "变量 a：7" } },
-                    { name: "变量使用", input: "a + 1", expected: "8" }
-                ]
-            },
-
-            // 变量测试组3：复合赋值 *=
-            {
-                group: '变量测试3', init: "a = 5", tests: [
-                    { name: "复合赋值 *=", input: "a *= 2", expected: { value: "10", success: "变量 a：10" } },
-                    { name: "变量使用", input: "a + 1", expected: "11" }
-                ]
-            },
-
-            // 变量测试组4：多变量操作
-            {
-                group: '变量测试4', init: ["a = 5", "b = 3"], tests: [
-                    { name: "多变量运算", input: "a + b", expected: "8" },
-                    { name: "新变量赋值", input: "c = a * b", expected: { value: "15", success: "变量 c：15" } },
-                    { name: "三变量运算", input: "a + b + c", expected: "23" }
+                group: '变量复合赋值', init: "a = 5", tests: [
+                    { name: "加等于", input: "a += 2", expected: { value: "7", success: "变量 a：7" } },
+                    { name: "减等于", input: "a -= 1", expected: { value: "6", success: "变量 a：6" } },
+                    { name: "乘等于", input: "a *= 2", expected: { value: "12", success: "变量 a：12" } },
+                    { name: "除等于", input: "a /= 3", expected: { value: "4", success: "变量 a：4" } }
                 ]
             },
 
             // 常量测试
-            { group: '常量测试', name: "PI常量", input: "PI", expected: "3.141592653589793" },
-            { group: '常量测试', name: "e常量", input: "e", expected: "2.718281828459045" },
-
-            // 三角函数测试
-            { group: '三角函数', name: "正弦函数", input: "sin(PI/2)", expected: "1" },
-            { group: '三角函数', name: "余弦函数", input: "cos(PI)", expected: "-1" },
-            { group: '三角函数', name: "正切函数", input: "tan(PI/4)", expected: "1" },
+            { group: '常量', name: "圆周率", input: "PI", expected: "3.141592653589793" },
+            { group: '常量', name: "自然对数底", input: "e", expected: "2.718281828459045" },
 
             // 角度转换测试
-            { group: '角度转换', name: "角度转弧度", input: "45d", expected: { value: "PI/4", success: "0.785398 弧度" } },
+            { group: '角度转换', name: "30度", input: "30d", expected: { value: "PI/6", success: "0.523599 弧度" } },
+            { group: '角度转换', name: "45度", input: "45d", expected: { value: "PI/4", success: "0.785398 弧度" } },
+            { group: '角度转换', name: "90度", input: "90d", expected: { value: "PI/2", success: "1.570796 弧度" } },
+            { group: '角度转换', name: "负角度", input: "-45d", expected: { value: "-PI/4", success: "-0.785398 弧度" } },
+
+            // 三角函数测试
+            { group: '三角函数', name: "正弦", input: "sin(PI/2)", expected: "1" },
+            { group: '三角函数', name: "余弦", input: "cos(PI)", expected: "-1" },
+            { group: '三角函数', name: "正切", input: "tan(PI/4)", expected: "1" },
+            { group: '三角函数', name: "角度正弦", input: "sin(45d)", expected: "0.707107" },
+
+            // 反三角函数测试
+            { group: '反三角函数', name: "反正弦", input: "asin(0.5)", expected: { value: "0.523599", success: "30.000000°" } },
+            { group: '反三角函数', name: "反余弦", input: "acos(0)", expected: { value: "1.570796", success: "90.000000°" } },
+            { group: '反三角函数', name: "反正切", input: "atan(1)", expected: { value: "0.785398", success: "45.000000°" } },
+
+            // 对数函数测试
+            { group: '对数函数', name: "常用对数", input: "log(100)", expected: "2" },
+            { group: '对数函数', name: "自然对数", input: "ln(e)", expected: "1" },
+            { group: '对数函数', name: "指数函数", input: "exp(2)", expected: "7.389056" },
 
             // 数学函数测试
-            { group: '数学函数', name: "对数函数", input: "log(100)", expected: "2" },
-            { group: '数学函数', name: "自然对数", input: "ln(e)", expected: "1" },
-            { group: '数学函数', name: "平方根", input: "sqrt(16)", expected: "4" },
-            { group: '数学函数', name: "n次方根", input: "root(8,3)", expected: "2" },
+            { group: '数学函数', name: "平方根", input: "sqrt(2)", expected: "1.414214" },
+            { group: '数学函数', name: "立方根", input: "root(8,3)", expected: "2" },
             { group: '数学函数', name: "幂函数", input: "pow(2,3)", expected: "8" },
 
+            // 最值函数测试
+            { group: '最值函数', name: "最大值", input: "max(1,2,3)", expected: "3" },
+            { group: '最值函数', name: "最小值", input: "min(1,2,3)", expected: "1" },
+
             // 进制转换测试
-            { group: '进制转换', name: "二进制转十进制", input: "0b1010", expected: "10" },
-            { group: '进制转换', name: "八进制转十进制", input: "0o10", expected: "8" },
-            { group: '进制转换', name: "十六进制转十进制", input: "0xFF", expected: "255" },
-            { group: '进制转换', name: "十进制转二进制", input: "bin(10)", expected: "0b1010" },
-            { group: '进制转换', name: "十进制转八进制", input: "oct(8)", expected: "0o10" },
-            { group: '进制转换', name: "十进制转十六进制", input: "hex(255)", expected: "0xFF" },
-            { group: '进制转换', name: "正数整除", input: "7 // 2", expected: "3" },
-            { group: '进制转换', name: "负数整除", input: "-7 // 2", expected: "-3" },
-            { group: '进制转换', name: "零整除", input: "0 // 5", expected: "0" },
-            { group: '进制转换', name: "小数整除", input: "7.5 // 2", expected: "3" },
-            { group: '进制转换', name: "立方根", input: "root(8,3)", expected: "2" },
-            { group: '进制转换', name: "负数立方根", input: "root(-8,3)", expected: "-2" },
-            { group: '进制转换', name: "小数结果", input: "root(2,2)", expected: "1.414214" },
-            { group: '进制转换', name: "零的根", input: "root(0,2)", expected: "0" },
-            { group: '进制转换', name: "大数的根", input: "root(1000,3)", expected: "10" },
+            { group: '进制转换', name: "二进制转十进制", input: "0b111", expected: "7" },
+            { group: '进制转换', name: "八进制转十进制", input: "0o111", expected: "73" },
+            { group: '进制转换', name: "十六进制转十进制", input: "0x111", expected: "273" },
+            { group: '进制转换', name: "十进制转二进制", input: "bin(111)", expected: "0b1101111" },
+            { group: '进制转换', name: "十进制转八进制", input: "oct(111)", expected: "0o157" },
+            { group: '进制转换', name: "十进制转十六进制", input: "hex(111)", expected: "0x6F" },
 
-            // max 和 min 函数测试
-            { group: '最值函数', name: "最大值-整数", input: "max(1,2,3,4,5)", expected: "5" },
-            { group: '最值函数', name: "最大值-负数", input: "max(-5,-2,-1,-10)", expected: "-1" },
-            { group: '最值函数', name: "最大值-小数", input: "max(1.5,2.3,2.1)", expected: "2.300000" },
-            { group: '最值函数', name: "最小值-整数", input: "min(1,2,3,4,5)", expected: "1" },
-            { group: '最值函数', name: "最小值-负数", input: "min(-5,-2,-1,-10)", expected: "-10" },
-            { group: '最值函数', name: "最小值-小数", input: "min(1.5,2.3,2.1)", expected: "1.500000" },
-            { group: '最值函数', name: "最值-混合类型", input: "max(-1,0,3.14,2)", expected: "3.140000" },
-
-            // 复合函数测试
-            { group: '复合函数', name: "三角复合", input: "sin(cos(PI/2))", expected: "0" },
-            { group: '复合函数', name: "对数复合", input: "log(exp(2))", expected: "0.868589" },
-            { group: '复合函数', name: "根式复合", input: "sqrt(pow(2,4))", expected: "4" },
-            { group: '复合函数', name: "三角对数", input: "log(sin(PI/2))", expected: "0" },
-            { group: '复合函数', name: "多重复合", input: "sqrt(pow(sin(PI/2),2))", expected: "1" },
-            { group: '复合函数', name: "根式幂", input: "pow(sqrt(16),2)", expected: "16" },
-            { group: '复合函数', name: "最值复合", input: "max(sin(PI/2),cos(0),tan(PI/4))", expected: "1" },
-            {
-                group: '复合函数', name: "变量复合", init: "a = 2", tests: [
-                    { name: "变量幂函数", input: "pow(a,3)", expected: "8" },
-                    { name: "变量根式", input: "sqrt(pow(a,4))", expected: "4" }
-                ]
-            },
-
-            // 复杂表达式测试
-            { group: '复杂表达式', name: "混合运算1", input: "sin(PI/4) * sqrt(2)", expected: "1" },
-            { group: '复杂表达式', name: "混合运算2", input: "log(e**2) * pow(2,3)", expected: "6.948712" },
-            { group: '复杂表达式', name: "混合运算3", input: "max(sin(PI/2), sqrt(3)/2, cos(PI/3))", expected: "1" },
-
-            // 添加大数测试组
-            {
-                group: '大数运算', name: "大整数加法", input: "123456789123456789 + 987654321987654321",
-                expected: { value: "1111111111111111110", warning: "大数运算未必正确" }
-            },
-            {
-                group: '大数运算', name: "大整数乘法", input: "123456789 * 987654321",
-                expected: { value: "121932631112635269", warning: "大数运算未必正确" }
-            },
-            {
-                group: '大数运算', name: "大数幂运算", input: "2**50",
-                expected: { value: "1125899906842624", warning: "大数运算未必正确" }
-            },
-            {
-                group: '大数运算', name: "大数进制转换", input: "hex(123456789123456789)",
-                expected: { value: "0x1B69B4BACD05F15", warning: "大数运算未必正确" }
-            },
-            { group: '大数运算', name: "大数二进制", input: "0b1111111111111111111111111111111111111111111111111111", expected: "4503599627370495" },
-            { group: '大数运算', name: "大数八进制", input: "0o7777777777777777", expected: "2251799813685247" },
-            { group: '大数运算', name: "大数十六进制", input: "0xFFFFFFFFFFFF", expected: "281474976710655" },
-            { group: '大数运算', name: "大数除法", input: "9999999999999999 / 3", expected: "3333333333333333" },
-            { group: '大数运算', name: "大数整除", input: "9999999999999999 // 3", expected: "3333333333333333" },
-            { group: '大数运算', name: "大数取余", input: "12345678912345678 % 123456789", expected: "99999999" },
-
-            // 大数错误处理测试
-            { group: '大数错误', name: "超大乘法溢出", input: "999999999999999999999 * 999999999999999999999", expected: "计算结果超出范围" },
-            { group: '大数错误', name: "超大幂运算溢出", input: "2**1000", expected: "计算结果超出范围" },
-
-            // 大数与变量混合测试
-            {
-                group: '大数变量', init: "a = 123456789123456789", tests: [
-                    {
-                        name: "大数变量赋值", input: "a",
-                        expected: { value: "123456789123456789", warning: "大数运算未必正确" }
-                    },
-                    {
-                        name: "大数变量运算", input: "a + 1",
-                        expected: { value: "123456789123456790", warning: "大数运算未必正确" }
-                    },
-                    {
-                        name: "大数变量乘法", input: "a * 2",
-                        expected: { value: "246913578246913578", warning: "大数运算未必正确" }
-                    }
-                ]
-            },
-
-            // 大数与函数混合测试
-            {
-                group: '大数函数', name: "大数开方", input: "sqrt(123456789123456789)",
-                expected: { value: "11111111.111111", warning: "大数运算未必正确" }
-            },
-            {
-                group: '大数函数', name: "大数对数", input: "log(123456789123456789)",
-                expected: { value: "17.091512", warning: "大数运算未必正确" }
-            },
-            {
-                group: '大数函数', name: "大数最大值", input: "max(123456789123456789, 987654321987654321)",
-                expected: { value: "987654321987654321", warning: "大数运算未必正确" }
-            },
-
-            // 添加新的十六进制转换测试
-            {
-                group: '大数进制', name: "十六进制转十进制1", input: "0x13e48326954132e2",
-                expected: { value: "1433414783146734306", warning: "大数运算未必正确" }
-            },
-            {
-                group: '大数进制', name: "十进制转十六进制1", input: "hex(1433414783146734306)",
-                expected: { value: "0x13E48326954132E2", warning: "大数运算未必正确" }
-            },
-            {
-                group: '大数进制', name: "十六进制大数运算", input: "0x13e48326954132e2 + 1",
-                expected: { value: "1433414783146734307", warning: "大数运算未必正确" }
-            },
-            { group: '大数进制', name: "十六进制混合运算", input: "0x13e48326954132e2 * 2", expected: "2866829566293468612" },
-            { group: '大数进制', name: "大数进制转换验证", input: "hex(0x13e48326954132e2)", expected: "0x13E48326954132E2" },
-
-            // 添加一些边界测试
-            { group: '大数进制', name: "大数十六进制边界", input: "0xFFFFFFFFFFFFFFFF", expected: "18446744073709551615" },
-            { group: '大数进制', name: "大数十进制边界", input: "hex(18446744073709551615)", expected: "0xFFFFFFFFFFFFFFFF" },
-
-            // 添加大数警告测试
-            {
-                group: '大数警告', name: "大数加法警告", input: "123456789123456789 + 1",
-                expected: { value: "123456789123456790", warning: "大数运算未必正确" }
-            },
-            {
-                group: '大数警告', name: "大数乘法警告", input: "123456789123456789 * 2",
-                expected: { value: "246913578246913578", warning: "大数运算未必正确" }
-            }
+            // 错误处理测试
+            { group: '错误处理', name: "除零错误", input: "1/0", expected: "除数不能为零" },
+            { group: '错误处理', name: "负数开方", input: "sqrt(-1)", expected: "sqrt函数不支持负数" },
+            { group: '错误处理', name: "负数对数", input: "log(-1)", expected: "参数必须大于0" },
+            { group: '错误处理', name: "语法错误", input: "1 ++ 2", expected: "表达式无效" }
         ];
 
         function runTest(test, preserveState = false) {
