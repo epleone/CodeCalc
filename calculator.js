@@ -1,3 +1,59 @@
+// 在文件开头添加数学函数定义
+function root(x, n) {
+    // 验证参数
+    if (!Number.isFinite(x) || !Number.isFinite(n)) {
+        throw new Error('参数必须是有效数字');
+    }
+    
+    // 验证次数必须是正整数
+    if (!Number.isInteger(n) || n <= 0) {
+        throw new Error('次数必须是正整数');
+    }
+
+    // 验证被开方数
+    if (n % 2 === 0 && x < 0) {
+        throw new Error('偶次方根不支持负数');
+    }
+
+    // 计算结果
+    const result = Math.pow(Math.abs(x), 1/n) * (x < 0 ? -1 : 1);
+
+    // 检查结果有效性
+    if (!Number.isFinite(result)) {
+        throw new Error('计算结果无效');
+    }
+
+    return result;
+}
+
+function pow(x, n) {
+    // 验证参数
+    if (!Number.isFinite(x) || !Number.isFinite(n)) {
+        throw new Error('参数必须是有效数字');
+    }
+
+    // 计算结果
+    const result = Math.pow(x, n);
+
+    // 检查结果有效性
+    if (!Number.isFinite(result)) {
+        throw new Error('计算结果无效');
+    }
+
+    return result;
+}
+
+// 添加其他必要的数学函数
+const sin = Math.sin;
+const cos = Math.cos;
+const tan = Math.tan;
+const log = Math.log10;
+const ln = Math.log;
+const exp = Math.exp;
+const sqrt = Math.sqrt;
+const max = Math.max;
+const min = Math.min;
+
 // 添加临时常量字典
 const tempConstants = new Map();
 
@@ -600,7 +656,7 @@ calculate = function(expression) {
             return `(${formattedResult})`;
             
         } catch (error) {
-            throw new Error(error.message);
+            throw new Error(`root函数计算错误: ${error.message}`);
         }
     });
 

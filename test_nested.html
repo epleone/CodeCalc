@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>深度嵌套函数测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-case {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-stats {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .test-group {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        .test-group h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .test-input {
+            font-family: monospace;
+            margin-bottom: 5px;
+        }
+        .test-controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>深度嵌套函数测试</h1>
+    <div id="test-stats" class="test-stats">
+        <span class="total">总测试数: 0</span>
+        <span class="passed">通过: 0</span>
+        <span class="failed">失败: 0</span>
+    </div>
+    <div class="test-controls">
+        <button onclick="runAllTests()">运行所有测试</button>
+        <button onclick="clearResults()">清除结果</button>
+    </div>
+    <div id="results"></div>
+
+    <script src="calculator.js"></script>
+    <script>
+        const tests = [
+            // 最值函数嵌套测试
+            { 
+                group: '最值函数嵌套', 
+                tests: [
+                    { name: "三层max嵌套", input: "max(max(max(1,2),3),4)", expected: "4" },
+                    { name: "三层min嵌套", input: "min(min(min(1,2),3),4)", expected: "1" },
+                    { name: "四层max嵌套", input: "max(max(max(max(1,2),3),4),5)", expected: "5" },
+                    { name: "四层min嵌套", input: "min(min(min(min(1,2),3),4),5)", expected: "1" },
+                    { name: "五层max嵌套", input: "max(max(max(max(max(1,2),3),4),5),6)", expected: "6" },
+                    { name: "五层min嵌套", input: "min(min(min(min(min(1,2),3),4),5),6)", expected: "1" },
+                    { name: "max-min交替嵌套", input: "max(min(max(min(1,2),3),4),5)", expected: "5" },
+                    { name: "min-max交替嵌套", input: "min(max(min(max(1,2),3),4),5)", expected: "4" },
+                    { name: "复杂最值嵌套1", input: "max(min(1,2,3),max(4,5,min(6,7)),8)", expected: "8" },
+                    { name: "复杂最值嵌套2", input: "min(max(1,2,3),min(4,5,max(6,7)),8)", expected: "3" }
+                ]
+            },
+
+            // 三角函数嵌套测试
+            {
+                group: '三角函数嵌套',
+                tests: [
+                    { name: "四层sin嵌套", input: "sin(sin(sin(sin(PI/2))))", expected: "0.67843" },
+                    { name: "四层cos嵌套", input: "cos(cos(cos(cos(0))))", expected: "0.65429" },
+                    { name: "四层tan嵌套", input: "tan(tan(tan(tan(PI/4))))", expected: "-0.86084" },
+                    { name: "五层sin嵌套", input: "sin(sin(sin(sin(sin(PI/2)))))", expected: "0.627571" },
+                    { name: "五层cos嵌套", input: "cos(cos(cos(cos(cos(0)))))", expected: "0.79348" },
+                    { name: "sin-cos交替嵌套", input: "sin(cos(sin(cos(PI/2))))", expected: "0.841471" },
+                    { name: "cos-sin交替嵌套", input: "cos(sin(cos(sin(0))))", expected: "0.666367" },
+                    { name: "三角复合嵌套1", input: "sin(cos(tan(sin(PI/4))))", expected: "0.610417" },
+                    { name: "三角复合嵌套2", input: "tan(sin(cos(tan(PI/6))))", expected: "0.919061" }
+                ]
+            },
+
+            // 对数函数嵌套测试
+            {
+                group: '对数函数嵌套',
+                tests: [
+                    { name: "四层ln嵌套", input: "ln(ln(ln(ln(e^e^e^e))))", expected: "1.156327" },
+                    { name: "四层log嵌套", input: "log(log(log(log(10^10^10^10))))", expected: "0.799297" },
+                    { name: "五层ln嵌套", input: "ln(ln(ln(ln(ln(e^e^e^e^e)))))", expected: "0.145183" },
+                    { name: "ln-log交替嵌套", input: "ln(log(ln(log(100))))", expected: "-0.794669" },
+                    { name: "log-ln交替嵌套", input: "log(ln(log(ln(e^10))))", expected: "-0.639859" },
+                    { name: "对数复合嵌套1", input: "log(ln(exp(log(100))))", expected: "0.868589" },
+                    { name: "对数复合嵌套2", input: "ln(exp(log(ln(e^e))))", expected: "1" }
+                ]
+            },
+
+            // 幂函数和根式嵌套测试
+            {
+                group: '幂根函数嵌套',
+                tests: [
+                    { name: "四层sqrt嵌套", input: "sqrt(sqrt(sqrt(sqrt(16))))", expected: "1.189207" },
+                    { name: "四层pow嵌套", input: "pow(pow(pow(pow(2,2),2),2),2)", expected: "65536" },
+                    { name: "五层sqrt嵌套", input: "sqrt(sqrt(sqrt(sqrt(sqrt(32)))))", expected: "1.149966" },
+                    { name: "复杂幂根嵌套1", input: "sqrt(pow(sqrt(pow(2,4)),2))", expected: "4" },
+                    { name: "复杂幂根嵌套2", input: "pow(sqrt(pow(sqrt(16),2)),2)", expected: "16" },
+                    { name: "root嵌套", input: "root(root(root(27,3),3),3)", expected: "1.384617" },
+                    { name: "root-pow嵌套", input: "root(pow(root(pow(8,2),3),2),4)", expected: "2" }
+                ]
+            },
+
+            // 混合函数嵌套测试
+            {
+                group: '混合函数嵌套',
+                tests: [
+                    { name: "三角对数混合1", input: "sin(log(tan(ln(e))))", expected: "0.147157" },
+                    { name: "三角对数混合2", input: "log(sin(ln(cos(1))))", expected: "-0.231894" },
+                    { name: "幂三角混合1", input: "pow(sin(sqrt(cos(PI/4))),2)", expected: "0.541341" },
+                    { name: "幂三角混合2", input: "sqrt(pow(tan(sqrt(1)),2))", expected: "1.557408" },
+                    { name: "最值混合1", input: "max(sin(PI/6),cos(PI/3),tan(PI/4))", expected: "1" },
+                    { name: "最值混合2", input: "min(log(100),sqrt(16),pow(2,3))", expected: "2" },
+                    { name: "超级混合1", input: "sin(max(log(2),pow(sqrt(2),2)))", expected: "0.909297" },
+                    { name: "超级混合2", input: "log(pow(max(sin(PI/2),cos(0)),min(2,sqrt(4))))", expected: "0.301030" },
+                    { name: "超级混合3", input: "sqrt(pow(min(tan(PI/4),log(100)),max(2,sin(PI/2))))", expected: "2" },
+                    { name: "超级混合4", input: "max(sin(sqrt(4)),log(pow(e,2)),min(tan(PI/4),cos(0)))", expected: "1" },
+                    { name: "超级混合5", input: "pow(max(sin(PI/3),cos(PI/6)),min(sqrt(4),log(100)))", expected: "1.732051" },
+                    { name: "超级混合6", input: "sin(max(tan(PI/4),min(sqrt(4),ln(e^2))))", expected: "0.841471" },
+                    { name: "超级混合7", input: "log(min(pow(2,max(3,sqrt(16))),tan(PI/3)))", expected: "0.238825" },
+                    { name: "超级混合8", input: "sqrt(pow(sin(max(PI/6,PI/4)),min(3,log(1000))))", expected: "1.080123" },
+                    { name: "超级混合9", input: "max(sin(sqrt(pow(2,2))),cos(min(PI/3,PI/4)))", expected: "0.909297" },
+                    { name: "超级混合10", input: "min(tan(max(PI/6,PI/4)),log(pow(e,sqrt(4))))", expected: "1" },
+                    { name: "超级混合11", input: "pow(sin(max(PI/4,PI/6)),log(sqrt(100)))", expected: "0.917152" },
+                    { name: "超级混合12", input: "sqrt(max(pow(sin(PI/3),2),min(log(1000),tan(PI/4))))", expected: "1.322876" },
+                    { name: "超级混合13", input: "log(pow(max(sin(PI/2),cos(0)),min(sqrt(16),ln(e^3))))", expected: "0.477121" },
+                    { name: "超级混合14", input: "sin(sqrt(pow(max(tan(PI/4),log(10)),2)))", expected: "-0.279415" },
+                    { name: "超级混合15", input: "cos(min(pow(2,sqrt(4)),max(sin(PI/2),log(100))))", expected: "0.540302" },
+                    { name: "超级混合16", input: "tan(max(sqrt(min(16,pow(2,4))),log(e^3)))", expected: "1.347819" },
+                    { name: "超级混合17", input: "pow(min(sin(max(PI/3,PI/4)),sqrt(4)),tan(PI/4))", expected: "1.316807" },
+                    { name: "超级混合18", input: "log(sqrt(pow(max(sin(PI/6),cos(PI/3)),min(4,ln(e^5)))))", expected: "0.176091" },
+                    { name: "超级混合19", input: "min(pow(sin(sqrt(4)),2),max(tan(PI/6),log(1000)))", expected: "0.756802" },
+                    { name: "超级混合20", input: "max(sin(pow(2,sqrt(2))),min(cos(PI/4),tan(PI/6)))", expected: "0.777851" },
+                    { name: "超级混合21", input: "sqrt(pow(min(tan(PI/3),log(100)),max(sin(PI/2),cos(0))))", expected: "1.732051" },
+                    { name: "超级混合22", input: "pow(max(sin(ln(e^2)),cos(PI/6)),min(sqrt(9),log(1000)))", expected: "1.632121" },
+                    { name: "超级混合23", input: "log(min(sqrt(pow(2,6)),max(tan(PI/4),sin(PI/3))))", expected: "0.477121" },
+                    { name: "超级混合24", input: "sin(pow(max(sqrt(16),min(tan(PI/4),log(100))),2))", expected: "-0.989358" },
+                    { name: "超级混合25", input: "sin(pow(log(max(tan(PI/3),sqrt(4))),min(2,cos(PI/6))))", expected: "0.420735" },
+                    { name: "超级混合26", input: "max(tan(sqrt(pow(sin(PI/4),min(3,log(100))))),cos(ln(e^2)))", expected: "1.557408" },
+                    { name: "超级混合27", input: "log(min(pow(sin(sqrt(PI)),2),max(tan(ln(10)),cos(PI/3))))", expected: "-0.045757" },
+                ]
+            },
+
+            // 在 tests 数组中添加三个新的测试组
+            {
+                group: '复杂三角函数嵌套',
+                tests: [
+                    { name: "六层三角嵌套1", input: "sin(cos(tan(sin(cos(tan(PI/4))))))", expected: "0.638659" },
+                    { name: "六层三角嵌套2", input: "cos(sin(cos(tan(sin(cos(0))))))", expected: "0.855805" },
+                    { name: "三角函数链式1", input: "sin(PI/6)*cos(PI/4)*tan(PI/3)", expected: "0.577350" },
+                    { name: "三角函数链式2", input: "sin(cos(PI/3))*tan(sin(PI/4))*cos(tan(PI/6))", expected: "0.411516" },
+                    { name: "三角复合运算1", input: "sin(PI/2-cos(PI/3))*tan(PI/4+sin(PI/6))", expected: "0.799720" },
+                    { name: "三角复合运算2", input: "cos(sin(PI/3)*tan(PI/4))*sin(cos(PI/6)*tan(PI/3))", expected: "0.403430" }
+                ]
+            },
+            {
+                group: '复杂对数幂函数嵌套',
+                tests: [
+                    { name: "多重对数嵌套1", input: "log(ln(log(ln(log(1000)))))", expected: "-0.977800" },
+                    { name: "多重对数嵌套2", input: "ln(log(ln(pow(e,log(100)))))", expected: "-1.660631" },
+                    { name: "幂函数链式1", input: "pow(2,3)*sqrt(16)*root(27,3)", expected: "24" },
+                    { name: "幂函数链式2", input: "pow(sqrt(16),log(100))*root(pow(2,6),2)", expected: "16" },
+                    { name: "对数幂复合1", input: "log(pow(e,ln(sqrt(pow(2,4)))))", expected: "1" },
+                    { name: "对数幂复合2", input: "ln(sqrt(pow(e,log(pow(10,2)))))", expected: "2.302585" }
+                ]
+            },
+            {
+                group: '终极混合嵌套',
+                tests: [
+                    { name: "终极混合1", input: "sin(log(pow(max(tan(PI/4),sqrt(4)),min(2,ln(e^2)))))", expected: "0.557824" },
+                    { name: "终极混合2", input: "pow(cos(min(sqrt(max(1,sin(PI/2))),log(100))),tan(PI/6))", expected: "0.862773" },
+                    { name: "终极混合3", input: "log(tan(pow(min(cos(PI/3),sin(PI/4)),max(sqrt(4),ln(e^2)))))", expected: "0.216162" },
+                    { name: "终极混合4", input: "sqrt(max(pow(sin(log(10)),2),min(tan(sqrt(4)),cos(PI/6))))", expected: "1.118034" },
+                    { name: "终极混合5", input: "min(sin(pow(log(e^2),2)),max(tan(sqrt(PI)),cos(ln(10))))", expected: "0.018024" },
+                    { name: "终极混合6", input: "max(log(sin(pow(e,cos(PI/4)))),min(tan(sqrt(2)),ln(pow(2,3))))", expected: "2.079442" }
+                ]
+            },
+            {
+                group: '超级混合嵌套A组',
+                tests: [
+                    { name: "超混合A1", input: "sin(max(pow(log(tan(PI/4)),min(2,sqrt(4))),cos(ln(pow(e,2)))))", expected: "0.841471" },
+                    { name: "超混合A2", input: "log(pow(sin(max(cos(PI/3),tan(PI/6))),min(sqrt(16),ln(e^3))))", expected: "-0.124939" },
+                    { name: "超混合A3", input: "sqrt(tan(pow(min(sin(PI/2),log(100)),max(2,cos(PI/4)))))", expected: "1.098478" },
+                    { name: "超混合A4", input: "pow(cos(sqrt(max(tan(PI/6),log(e)))),sin(min(2,ln(10))))", expected: "0.766239" },
+                    { name: "超混合A5", input: "min(sin(pow(log(e),tan(PI/4))),max(sqrt(cos(PI/3)),ln(pow(2,4))))", expected: "0.766044" }
+                ]
+            },
+            {
+                group: '超级混合嵌套B组',
+                tests: [
+                    { name: "超混合B1", input: "max(tan(log(pow(sin(PI/3),cos(PI/4)))),min(sqrt(ln(e^2)),pow(2,3)))", expected: "8" },
+                    { name: "超混合B2", input: "pow(sin(max(tan(log(10)),cos(PI/6))),min(sqrt(9),ln(e^2)))", expected: "0.989992" },
+                    { name: "超混合B3", input: "log(sqrt(min(pow(tan(PI/4),2),max(sin(PI/2),cos(0)))))", expected: "0" },
+                    { name: "超混合B4", input: "sin(pow(max(log(sqrt(16)),tan(PI/6)),min(2,cos(PI/4))))", expected: "0.824740" },
+                    { name: "超混合B5", input: "min(tan(pow(sin(ln(10)),2)),max(sqrt(cos(PI/4)),log(1000)))", expected: "0.841471" }
+                ]
+            },
+            {
+                group: '超级混合嵌套C组',
+                tests: [
+                    { name: "超混合C1", input: "pow(max(sin(log(tan(PI/6))),cos(sqrt(ln(e)))),min(2,tan(PI/4)))", expected: "1.414214" },
+                    { name: "超混合C2", input: "log(min(pow(sin(max(PI/3,PI/4)),2),tan(sqrt(cos(0)))))", expected: "-0.045757" },
+                    { name: "超混合C3", input: "sqrt(tan(pow(min(log(100),sin(PI/2)),max(cos(PI/6),2))))", expected: "1.029639" },
+                    { name: "超混合C4", input: "sin(max(pow(tan(ln(e)),cos(PI/3)),min(sqrt(16),log(1000))))", expected: "0.841471" },
+                    { name: "超混合C5", input: "min(pow(cos(sqrt(tan(PI/4))),2),max(sin(log(100)),ln(e^2)))", expected: "0.536067" }
+                ]
+            }
+        ];
+
+        function runTest(test) {
+            try {
+                const result = calculate(test.input);
+                const resultStr = typeof result === 'object' ?
+                    result.value : result.toString();
+                const success = Math.abs(Number(resultStr) - Number(test.expected)) < 1e-6;
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: test.expected,
+                    actual: resultStr,
+                    success: success
+                };
+            } catch (error) {
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: test.expected,
+                    actual: error.message,
+                    success: false
+                };
+            }
+        }
+
+        function runAllTests() {
+            const results = document.getElementById('results');
+            const statsDiv = document.getElementById('test-stats');
+            results.innerHTML = '';
+            let successCount = 0;
+            let totalTests = 0;
+
+            tests.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'test-group';
+                groupDiv.innerHTML = `<h3>${group.group}</h3>`;
+                results.appendChild(groupDiv);
+
+                group.tests.forEach(test => {
+                    totalTests++;
+                    const result = runTest(test);
+                    appendTestResult(groupDiv, result);
+                    if (result.success) successCount++;
+                });
+            });
+
+            statsDiv.innerHTML = `
+                <span class="total">总测试数: ${totalTests}</span>
+                <span class="passed">通过: ${successCount}</span>
+                <span class="failed">失败: ${totalTests - successCount}</span>
+            `;
+        }
+
+        function appendTestResult(container, result) {
+            const div = document.createElement('div');
+            div.className = 'test-case';
+            div.innerHTML = `
+                <div class="test-input">
+                    <strong>${result.name}</strong><br>
+                    输入: ${result.input}
+                </div>
+                <div class="test-result ${result.success ? 'success' : 'error'}">
+                    ${result.success ? '✓ 通过' : '✗ 失败'}<br>
+                    期望值: ${result.expected}<br>
+                    实际值: ${result.actual}
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('test-stats').innerHTML = `
+                <span class="total">总测试数: 0</span>
+                <span class="passed">通过: 0</span>
+                <span class="failed">失败: 0</span>
+            `;
+        }
+    </script>
+</body>
+</html> 

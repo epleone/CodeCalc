@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>变量连续赋值测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-case {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-stats {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>变量连续赋值测试</h1>
+    <div id="test-stats" class="test-stats">
+        <span class="total">总测试数: 0</span>
+        <span class="passed">通过: 0</span>
+        <span class="failed">失败: 0</span>
+    </div>
+    <div id="test-controls">
+        <button onclick="runAllTests()">运行所有测试</button>
+        <button onclick="clearResults()">清除结果</button>
+    </div>
+    <div id="results"></div>
+
+    <script src="calculator.js"></script>
+    <script>
+        const tests = [
+            {
+                group: '基本变量赋值',
+                tests: [
+                    {
+                        name: "简单赋值",
+                        steps: [
+                            { input: "a = 5", expected: "5" },
+                            { input: "a", expected: "5" }
+                        ]
+                    },
+                    {
+                        name: "连续赋值",
+                        steps: [
+                            { input: "a = 5", expected: "5" },
+                            { input: "a = a + 3", expected: "8" },
+                            { input: "a", expected: "8" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '函数连续赋值',
+                tests: [
+                    {
+                        name: "对数函数链",
+                        steps: [
+                            { input: "a = log(100)", expected: "2" },
+                            { input: "a = ln(a)", expected: "0.693147" },
+                            { input: "a = exp(a)", expected: "2" },
+                            { input: "a", expected: "2" }
+                        ]
+                    },
+                    {
+                        name: "三角函数链",
+                        steps: [
+                            { input: "a = PI/2", expected: "1.570796" },
+                            { input: "a = sin(a)", expected: "1" },
+                            { input: "a = cos(a)", expected: "0.540302" },
+                            { input: "a", expected: "0.540302" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '复杂变量运算',
+                tests: [
+                    {
+                        name: "混合运算链",
+                        steps: [
+                            { input: "a = 2", expected: "2" },
+                            { input: "a = pow(a,3)", expected: "8" },
+                            { input: "a = sqrt(a)", expected: "2.828427" },
+                            { input: "a = log(a*10)", expected: "1.451545" },
+                            { input: "a", expected: "1.451545" }
+                        ]
+                    },
+                    {
+                        name: "多变量交互",
+                        steps: [
+                            { input: "a = 2", expected: "2" },
+                            { input: "y = a + 3", expected: "5" },
+                            { input: "a = y * 2", expected: "10" },
+                            { input: "y = a / 4", expected: "2.5" },
+                            { input: "a", expected: "10" },
+                            { input: "y", expected: "2.5" }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        function runTest(test) {
+            clearTempConstants(); // 清除之前的变量
+            const results = [];
+            
+            for (const step of test.steps) {
+                try {
+                    const result = calculate(step.input);
+                    const resultStr = typeof result === 'object' ? result.value : result.toString();
+                    const success = Math.abs(Number(resultStr) - Number(step.expected)) < 1e-6;
+                    results.push({
+                        input: step.input,
+                        expected: step.expected,
+                        actual: resultStr,
+                        success: success
+                    });
+                    
+                    if (!success) {
+                        break; // 如果某一步失败，停止后续步骤
+                    }
+                } catch (error) {
+                    results.push({
+                        input: step.input,
+                        expected: step.expected,
+                        actual: error.message,
+                        success: false
+                    });
+                    break;
+                }
+            }
+            
+            return {
+                name: test.name,
+                steps: results,
+                success: results.every(r => r.success)
+            };
+        }
+
+        function runAllTests() {
+            const results = document.getElementById('results');
+            const statsDiv = document.getElementById('test-stats');
+            results.innerHTML = '';
+            let successCount = 0;
+            let totalTests = 0;
+
+            tests.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.innerHTML = `<h3>${group.group}</h3>`;
+                results.appendChild(groupDiv);
+
+                group.tests.forEach(test => {
+                    totalTests++;
+                    const result = runTest(test);
+                    appendTestResult(groupDiv, result);
+                    if (result.success) successCount++;
+                });
+            });
+
+            statsDiv.innerHTML = `
+                <span class="total">总测试数: ${totalTests}</span>
+                <span class="passed">通过: ${successCount}</span>
+                <span class="failed">失败: ${totalTests - successCount}</span>
+            `;
+        }
+
+        function appendTestResult(container, result) {
+            const div = document.createElement('div');
+            div.className = 'test-case';
+            let html = `<strong>${result.name}</strong><br>`;
+            
+            result.steps.forEach((step, index) => {
+                html += `
+                    <div class="${step.success ? 'success' : 'error'}">
+                        步骤 ${index + 1}: ${step.input}<br>
+                        期望值: ${step.expected}<br>
+                        实际值: ${step.actual}<br>
+                    </div>
+                `;
+            });
+            
+            div.innerHTML = html;
+            container.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('test-stats').innerHTML = `
+                <span class="total">总测试数: 0</span>
+                <span class="passed">通过: 0</span>
+                <span class="failed">失败: 0</span>
+            `;
+        }
+    </script>
+</body>
+</html> 
