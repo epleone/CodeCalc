@@ -1,3 +1,6 @@
+from graphviz import Digraph
+import os
+
 class Node:
     def __init__(self, value):
         self.value = value
@@ -50,13 +53,6 @@ class Calculator:
                 'precedence': 3,
                 'description': '返回参数中的最小值'
             },
-            'id': {
-                'impl': lambda args: args[0],
-                'arg_count': 1,
-                'type': 'function',
-                'precedence': 3,
-                'description': '恒等函数，返回输入值本身'
-            },
             '#': {
                 'impl': lambda args: args[0] + 1,
                 'arg_count': 1,
@@ -75,18 +71,7 @@ class Calculator:
             self.precedence_groups[prec].append(func_name)
     
     def parse_expr(self, expr):
-        # 预处理：在普通括号前添加id
-        processed_expr = ''
-        i = 0
-        while i < len(expr):
-            if expr[i] == '(' and (i == 0 or expr[i-1] not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'):
-                processed_expr += 'id('
-                i += 1
-            else:
-                processed_expr += expr[i]
-                i += 1
-                
-        self.expr = processed_expr.replace(' ', '')
+        self.expr = expr.replace(' ', '')  # 只需要移除空格
         self.pos = 0
         return self._parse_expr()
     
@@ -95,7 +80,7 @@ class Calculator:
     
     def _parse_by_precedence(self, precedence):
         if precedence > max(self.precedence_groups.keys()):
-            return self._parse_number()
+            return self._parse_primary()  # 改用_parse_primary替代_parse_number
             
         # 先尝试解析函数调用
         for func_name, func_info in self.functions.items():
@@ -164,10 +149,30 @@ class Calculator:
                 
         return left
     
-    def _parse_number(self):
+    def _parse_primary(self):
+        """解析基本表达式：数字或带括号的表达式"""
         if self.pos >= len(self.expr):
             return None
             
+        # 处理括号
+        if self.expr[self.pos] == '(':
+            self.pos += 1  # 跳过左括号
+            expr = self._parse_expr()  # 解析括号内的表达式
+            
+            if self.pos >= len(self.expr) or self.expr[self.pos] != ')':
+                raise ValueError("缺少右括号")
+            
+            self.pos += 1  # 跳过右括号
+            return expr
+        
+        # 处理函数调用
+        for func_name, func_info in self.functions.items():
+            if (func_info['type'] == 'function' and 
+                self.pos + len(func_name) <= len(self.expr) and 
+                self.expr[self.pos:self.pos+len(func_name)] == func_name):
+                # 函数调用的处理逻辑...
+                pass
+        
         # 解析数字
         if self.expr[self.pos].isdigit() or self.expr[self.pos] == '.':
             start = self.pos
@@ -192,6 +197,51 @@ class Calculator:
             
         raise ValueError(f"未知的函数: {node.value}")
 
+    def visualize_ast(self, node, output_file='ast'):
+        """
+        将抽象语法树可视化为图形
+        
+        Args:
+            node: AST的根节点
+            output_file: 输出文件名（不需要扩展名）
+        """
+        dot = Digraph(comment='Abstract Syntax Tree')
+        dot.attr(rankdir='TB')
+        
+        def add_nodes(node, parent_id=None, counter=[0]):
+            if node is None:
+                return
+            
+            # 为每个节点创建唯一ID
+            node_id = str(counter[0])
+            counter[0] += 1
+            
+            # 设置节点样式
+            if isinstance(node.value, (int, float)):
+                # 数值节点使用椭圆形
+                dot.node(node_id, str(node.value), shape='ellipse')
+            elif node.value in self.functions:
+                func_info = self.functions[node.value]
+                if func_info['type'] == 'function':
+                    # 函数节点使用菱形
+                    dot.node(node_id, node.value, shape='diamond')
+                else:
+                    # 运算符节点使用矩形
+                    dot.node(node_id, node.value, shape='box')
+            
+            # 如果有父节点，添加边
+            if parent_id is not None:
+                dot.edge(parent_id, node_id)
+            
+            # 递归处理子节点
+            for arg in node.args:
+                add_nodes(arg, node_id)
+        
+        add_nodes(node)
+        
+        # 保存图形
+        dot.render(output_file, view=True, format='png', cleanup=True)
+
 def calculate(expr):
     calc = Calculator()
     tree = calc.parse_expr(expr)
@@ -202,21 +252,25 @@ if __name__ == "__main__":
     expressions = [
         "1 + 2",
         "2 * (3 + 4)",
-        "10 / 2 + 3",
         "(1 + 2) * (3 + 4)",
         "max(1, 2, 3)",
-        "min(1, 2, 3)",
-        "max(1 + 2, 2 * 3, 10 / 2)",
-        "min(max(1, 2), 3)",
-        "1#",  # 应该返回 2
-        "(1 + 2)#",  # 应该返回 4
-        "1# + 2",  # 应该返回 4
-        "1 + 2#",  # 应该返回 4
+        "1# + 2",
     ]
     
-    for expr in expressions:
+    calc = Calculator()
+    for i, expr in enumerate(expressions):
         try:
-            result = calculate(expr)
-            print(f"{expr} = {result}")
+            print(f"\n处理表达式: {expr}")
+            tree = calc.parse_expr(expr)
+            result = calc.evaluate(tree)
+            print(f"结果: {result}")
+            
+            # 生成语法树可视化
+            filename = f"ast_{i}"
+            calc.visualize_ast(tree, filename)
+            input("按任意键继续...")
+             # 查看完后删除
+            os.remove(f"{filename}.png")
+            
         except Exception as e:
-            print(f"{expr} 计算错误: {str(e)}") 
+            print(f"错误: {str(e)}") 
