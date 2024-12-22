@@ -34,3 +34,6 @@
 ### 进制：
 - 其它进制转十进制：`0b111`, `0o111`, `0x111`
 - 十进制转其它进制：`bin(111)`, `oct(111)`, `hex(111)`
+
+### 备注
+这个插件灵感来源于：[itribs/rcalculator](https://github.com/itribs/rcalculator)
