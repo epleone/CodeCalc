@@ -185,12 +185,86 @@ calculate = function(expression) {
         return `(${piRatio}*PI)`;  // 直接使用 PI 而不是数值
     });
 
-    // 然后处理所有函数调用，从内到外
+    // 处理所有函数调用，从内到外
     let prevExpression;
     do {
         prevExpression = expression;
 
-        // 处理所有基本数学函数（包括三角函数、对数函数等）
+        // 处理 sqrt 函数
+        expression = expression.replace(/\b(?:sqrt|SQRT|Sqrt)\(((?:[^()]|\([^()]*\))*?)\)/g, (match, p1) => {
+            try {
+                // 计算参数值
+                const result = calculate(p1);
+                const value = typeof result === 'object' ? Number(result.value) : Number(result);
+                
+                if (isNaN(value)) {
+                    throw new Error('无效的参数');
+                }
+                
+                if (value < 0) {
+                    throw new Error('sqrt函数不支持负数');
+                }
+                
+                const sqrtResult = Math.sqrt(value);
+                
+                if (!Number.isFinite(sqrtResult)) {
+                    throw new Error('计算结果无效');
+                }
+                
+                const formattedResult = Number(sqrtResult.toFixed(6));
+                
+                if (Math.abs(formattedResult) < 1e-10) {
+                    return '0';
+                }
+                
+                return `(${formattedResult})`;
+                
+            } catch (error) {
+                throw new Error(error.message);
+            }
+        });
+
+        // 处理 pow 函数
+        expression = expression.replace(/\b(?:pow|POW|Pow)\(((?:[^(),]|\([^()]*\))*),((?:[^(),]|\([^()]*\))*)\)/g, (match, p1, p2) => {
+            try {
+                // 先计算两个参数
+                const base = calculate(p1);
+                const exponent = calculate(p2);
+                
+                // 转换为数值并计算
+                const baseValue = Number(base);
+                const exponentValue = Number(exponent);
+                
+                // 检查参数有效性
+                if (isNaN(baseValue) || isNaN(exponentValue)) {
+                    throw new Error('无效的参数');
+                }
+                
+                // 计算结果
+                const result = Math.pow(baseValue, exponentValue);
+                
+                // 检查结果有效性
+                if (!Number.isFinite(result)) {
+                    throw new Error('计算结果无效');
+                }
+                
+                // 格式化结果
+                const formattedResult = Number(result.toFixed(6));
+                
+                // 如果结果接近0，返回0
+                if (Math.abs(formattedResult) < 1e-10) {
+                    return '0';
+                }
+                
+                // 返回结果（带括号）
+                return `(${formattedResult})`;
+                
+            } catch (error) {
+                throw new Error(error.message);
+            }
+        });
+
+        // 处理基本数学函数
         const mathFunctions = [
             { name: 'sin', func: Math.sin },
             { name: 'cos', func: Math.cos },
@@ -200,9 +274,8 @@ calculate = function(expression) {
             { name: 'exp', func: Math.exp }
         ];
 
-        // 处理所有基本数学函数
         for (const { name, func } of mathFunctions) {
-            const pattern = `\\b${name}\\s*\\(((?:\\([^()]*\\)|[^()])*?)\\)`;
+            const pattern = `\\b${name}\\s*\\(((?:[^()]|\\([^()]*\\))*?)\\)`;
             const regex = new RegExp(pattern, 'gi');
             
             expression = expression.replace(regex, (match, args) => {
@@ -227,10 +300,10 @@ calculate = function(expression) {
                         throw new Error('计算结果无效');
                     }
                     
-                    // 格式化结果
+                    // 格式化结果，确保精度一致
                     const formattedResult = Number(funcResult.toFixed(6));
                     
-                    // 处理特殊情况
+                    // 如果结果接近0，返回0
                     if (Math.abs(formattedResult) < 1e-10) {
                         return '0';
                     }
@@ -244,61 +317,78 @@ calculate = function(expression) {
             });
         }
 
-        // 处理 max 和 min 函数
-        expression = expression.replace(/\b(max|min)\s*\(((?:[^(),]|\([^()]*\))*(?:\s*,\s*(?:[^(),]|\([^()]*\))*)*)\)/gi,
+        // 修改 max 和 min 函数的处理部分
+        expression = expression.replace(/\b(max|min)\b\s*\(((?:[^(),]|\([^()]*\))*(?:\s*,\s*(?:[^(),]|\([^()]*\))*)*)\)/gi,
             (match, func, args) => {
                 try {
-                    // 分割参数并计算每个值
-                    const values = args.split(',').map(arg => {
-                        const result = calculate(arg.trim());
-                        return typeof result === 'object' ? Number(result.value) : Number(result);
+                    // 分割参数，但要考虑到括号内的逗号
+                    const values = [];
+                    let currentArg = '';
+                    let bracketCount = 0;
+                    
+                    // 遍历参数字符串的每个字符
+                    for (let i = 0; i < args.length; i++) {
+                        const char = args[i];
+                        if (char === '(') {
+                            bracketCount++;
+                            currentArg += char;
+                        } else if (char === ')') {
+                            bracketCount--;
+                            currentArg += char;
+                        } else if (char === ',' && bracketCount === 0) {
+                            // 只有在不在括号内时才分割参数
+                            if (currentArg.trim()) {
+                                values.push(currentArg.trim());
+                            }
+                            currentArg = '';
+                        } else {
+                            currentArg += char;
+                        }
+                    }
+                    // 添加最后一个参数
+                    if (currentArg.trim()) {
+                        values.push(currentArg.trim());
+                    }
+
+                    // 计算每个参数的值
+                    const results = values.map(arg => {
+                        const result = calculate(arg);
+                        const value = typeof result === 'object' ? Number(result.value) : Number(result);
+                        
+                        if (!Number.isFinite(value)) {
+                            throw new Error('参数无效');
+                        }
+                        
+                        return value;
                     });
 
-                    if (values.length < 2) {
+                    // 检查参数数量
+                    if (results.length < 2) {
                         throw new Error(`${func}函数需要至少两个参数`);
                     }
 
-                    if (values.some(v => !Number.isFinite(v))) {
-                        throw new Error('参数无效');
+                    // 根据函数类型计算结果
+                    const result = func.toLowerCase() === 'max' ?
+                        Math.max(...results) : Math.min(...results);
+
+                    // 格式化结果
+                    const formattedResult = Number(result.toFixed(6));
+
+                    // 处理特殊情况
+                    if (Math.abs(formattedResult) < 1e-10) {
+                        return '0';
                     }
 
-                    const result = func.toLowerCase() === 'max' ?
-                        Math.max(...values) : Math.min(...values);
+                    // 返回结果（带括号）
+                    return `(${formattedResult})`;
 
-                    return `(${result})`;
                 } catch (error) {
-                    throw new Error(error.message);
+                    throw new Error(`${func}函数计算错误: ${error.message}`);
                 }
-            });
+            }
+        );
 
     } while (expression !== prevExpression);
-
-    // 然后处理其他数学函数
-    // sqrt 函数
-    expression = expression.replace(/\b(?:sqrt|SQRT|Sqrt)\((.*?)\)/g, (match, p1) => {
-        try {
-            const innerResult = calculate(p1);
-            const value = Number(innerResult);
-            if (isNaN(value)) return innerResult;
-            if (value < 0) throw new Error('sqrt函数不支持负数');
-            const result = Math.sqrt(value);
-            return `(${result})`;
-        } catch (error) {
-            throw new Error(error.message);
-        }
-    });
-
-    // pow 函数
-    expression = expression.replace(/\b(?:pow|POW|Pow)\((.*?),(.*?)\)/g, (match, p1, p2) => {
-        try {
-            const base = calculate(p1);
-            const exponent = calculate(p2);
-            const result = Math.pow(Number(base), Number(exponent));
-            return `(${result})`;
-        } catch (error) {
-            throw new Error(error.message);
-        }
-    });
 
     // 检查不合法的进制前缀
     const prefixRegex = /\b[0o][a-zA-Z][0-9a-fA-F]*\b|\b0[a-zA-Z][0-9a-fA-F]*\b/i;
@@ -469,21 +559,23 @@ calculate = function(expression) {
     // 处理乘法符号 'x'
     expression = expression.replace(/x/gi, '*');
 
-    // 处理 root 函数
-    expression = expression.replace(/\broot\s*\((.*?),(.*?)\)/g, (match, x, n) => {
+    // 修改 root 函数的处理部分
+    expression = expression.replace(/\broot\s*\(((?:[^(),]|\([^()]*\))*),((?:[^(),]|\([^()]*\))*)\)/g, (match, x, n) => {
         try {
             // 计算参数
             const base = calculate(x);  // 被开方数
             const power = calculate(n); // 次数
             
+            // 转换为数值
+            const baseValue = typeof base === 'object' ? Number(base.value) : Number(base);
+            const powerValue = typeof power === 'object' ? Number(power.value) : Number(power);
+            
             // 验证次数必须是正整数
-            const powerValue = Number(power);
             if (!Number.isInteger(powerValue) || powerValue <= 0) {
                 throw new Error('root函数的次数必须是正整数');
             }
 
             // 验证被开方数
-            const baseValue = Number(base);
             if (powerValue % 2 === 0 && baseValue < 0) {
                 throw new Error('偶次方根不支持负数');
             }
@@ -491,11 +583,22 @@ calculate = function(expression) {
             // 使用幂运算来计算 n 次方根：x^(1/n)
             const result = Math.pow(Math.abs(baseValue), 1/powerValue) * (baseValue < 0 ? -1 : 1);
             
+            // 检查结果有效性
+            if (!Number.isFinite(result)) {
+                throw new Error('计算结果无效');
+            }
+            
             // 格式化结果
             const formattedResult = Number(result.toFixed(6));
             
+            // 如果结果接近0，返回0
+            if (Math.abs(formattedResult) < 1e-10) {
+                return '0';
+            }
+            
             // 返回结果（带括号）
             return `(${formattedResult})`;
+            
         } catch (error) {
             throw new Error(error.message);
         }
