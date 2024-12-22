@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>样式测试页面</title>
+    <link rel="stylesheet" href="../src/styles.css">
+    <script src="../src/calculator.js"></script>
+    <script src="../src/ui.js"></script>
+    <style>
+        /* 测试页面特定样式 */
+        .test-section {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .test-description {
+            margin: 10px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-section">
+            <h2>基本输入行测试</h2>
+            <div class="test-description">测试表达式输入行的基本样式和布局</div>
+            <div class="expression-line">
+                <input type="text" class="input" value="1 + 2" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input has-value">
+                        <span class="result-value">3</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>消息图标测试</h2>
+            <div class="test-description">测试不同类型的消息图标和提示</div>
+            
+            <div class="expression-line">
+                <input type="text" class="input" value="sqrt(-1)" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input error">
+                        <span class="result-value">sqrt函数不支持负数</span>
+                    </div>
+                    <div class="message-icon error" style="display: inline;">
+                        <div class="message-text">sqrt函数不支持负数</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expression-line">
+                <input type="text" class="input" value="sin(45d)" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input has-value success">
+                        <span class="result-value">0.707107</span>
+                    </div>
+                    <div class="message-icon success" style="display: inline;">
+                        <div class="message-text">45.000000°</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expression-line">
+                <input type="text" class="input" value="ob101" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input has-value warning">
+                        <span class="result-value">5</span>
+                    </div>
+                    <div class="message-icon warning" style="display: inline;">
+                        <div class="message-text">已显示二进制0b</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>自动补全测试</h2>
+            <div class="test-description">测试输入提示和自动补全效果</div>
+            <div class="expression-line">
+                <input type="text" class="input" 
+                       placeholder="输入表达式，试试输入 'si' 然后按 Tab"
+                       oninput="handleInput(event)"
+                       onkeydown="handleKeyDown(event, this)">
+                <div class="result-container">
+                    <div class="result has-input">
+                        <span class="result-value"></span>
+                    </div>
+                    <div class="message-icon" style="display: none;">
+                        <div class="message-text"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="test-description" style="margin-top: 10px;">
+                提示：<br>
+                1. 输入 'si' 然后按 Tab 键，将自动补全为 'sin('<br>
+                2. 输入 'co' 然后按 Tab 键，将自动补全为 'cos('<br>
+                3. 输入 'sq' 然后按 Tab 键，将自动补全为 'sqrt('<br>
+                4. 更多补全：log(, ln(, exp(, pow(, max(, min( 等
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>复制提示测试</h2>
+            <div class="test-description">点击下面的结果可以复制到剪贴板</div>
+            <div class="expression-line">
+                <input type="text" class="input" value="PI" readonly>
+                <div class="result-container">
+                    <div class="result has-input has-value">
+                        <span class="result-value">3.141592653589793</span>
+                    </div>
+                </div>
+            </div>
+            <div class="expression-line">
+                <input type="text" class="input" value="sin(30d)" readonly>
+                <div class="result-container">
+                    <div class="result has-input has-value success">
+                        <span class="result-value">0.5</span>
+                    </div>
+                    <div class="message-icon success" style="display: inline;">
+                        <div class="message-text">30.000000°</div>
+                    </div>
+                </div>
+            </div>
+            <div class="test-description" style="margin-top: 10px;">
+                提示：点击任意结果值，将自动复制到剪贴板并显示提示
+            </div>
+        </div>
+        <div class="copy-notification">已复制到剪贴板</div>
+    </div>
+
+    <script>
+        // 为所有结果添加复制功能
+        document.querySelectorAll('.result').forEach(result => {
+            result.addEventListener('click', () => {
+                const resultValue = result.querySelector('.result-value').textContent;
+                if (resultValue.trim()) {
+                    // 创建临时文本区域
+                    const textarea = document.createElement('textarea');
+                    textarea.value = resultValue;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    
+                    try {
+                        document.execCommand('copy');
+                    } catch (err) {
+                        console.error('复制失败:', err);
+                    }
+                    
+                    document.body.removeChild(textarea);
+
+                    // 显示复制成功提示
+                    const notification = document.querySelector('.copy-notification');
+                    notification.classList.add('show');
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 1000);
+                }
+            });
+        });
+
+        // 切换消息提示的显示
+        document.querySelectorAll('.message-icon').forEach(icon => {
+            icon.addEventListener('mouseover', () => {
+                icon.querySelector('.message-text').style.visibility = 'visible';
+                icon.querySelector('.message-text').style.opacity = '1';
+            });
+            icon.addEventListener('mouseout', () => {
+                if (!icon.classList.contains('error')) {
+                    icon.querySelector('.message-text').style.visibility = 'hidden';
+                    icon.querySelector('.message-text').style.opacity = '0';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
