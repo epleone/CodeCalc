@@ -127,6 +127,9 @@ function processMathFunction(expression, funcName, mathFunc) {
 
 // 定义 calculate 函数
 calculate = function(expression) {
+    // 添加对角度符号的预处理
+    expression = expression.replace(/°/g, 'd');
+    
     // 定义数学常量
     const constants = MATH_CONSTANTS;
 

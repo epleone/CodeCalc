@@ -132,16 +132,16 @@
             { group: '常量', name: "自然对数底", input: "e", expected: "2.718281828459045" },
 
             // 角度转换测试
-            { group: '角度转换', name: "30度", input: "30d", expected: { value: "PI/6", success: "0.523599 弧度" } },
-            { group: '角度转换', name: "45度", input: "45d", expected: { value: "PI/4", success: "0.785398 弧度" } },
-            { group: '角度转换', name: "90度", input: "90d", expected: { value: "PI/2", success: "1.570796 弧度" } },
-            { group: '角度转换', name: "负角度", input: "-45d", expected: { value: "-PI/4", success: "-0.785398 弧度" } },
+            { group: '角度转换', name: "30度", input: "30°", expected: { value: "PI/6", success: "0.523599 弧度" } },
+            { group: '角度转换', name: "45度", input: "45°", expected: { value: "PI/4", success: "0.785398 弧度" } },
+            { group: '角度转换', name: "90度", input: "90°", expected: { value: "PI/2", success: "1.570796 弧度" } },
+            { group: '角度转换', name: "负角度", input: "-45°", expected: { value: "-PI/4", success: "-0.785398 弧度" } },
 
             // 三角函数测试
             { group: '三角函数', name: "正弦", input: "sin(PI/2)", expected: "1" },
             { group: '三角函数', name: "余弦", input: "cos(PI)", expected: "-1" },
             { group: '三角函数', name: "正切", input: "tan(PI/4)", expected: "1" },
-            { group: '三角函数', name: "角度正弦", input: "sin(45d)", expected: "0.707107" },
+            { group: '三角函数', name: "角度正弦", input: "sin(45°)", expected: "0.707107" },
 
             // 反三角函数测试
             { group: '反三角函数', name: "反正弦", input: "asin(0.5)", expected: { value: "0.523599", success: "30.000000°" } },

@@ -74,15 +74,15 @@
             { group: '混合函数复合', name: "复杂混合2", input: "log(pow(e,2))", expected: "0.868589" },
 
             // 角度值复合测试
-            { group: '角度复合', name: "角度正弦", input: "sin(45d)", expected: "0.707107" },
-            { group: '角度复合', name: "角度余弦", input: "cos(60d)", expected: "0.5" },
-            { group: '角度复合', name: "角度正切", input: "tan(30d)", expected: "0.577351" },
-            { group: '角度复合', name: "角度复合", input: "sin(cos(45d))", expected: "0.649637" },
+            { group: '角度复合', name: "角度正弦", input: "sin(45°)", expected: "0.707107" },
+            { group: '角度复合', name: "角度余弦", input: "cos(60°)", expected: "0.5" },
+            { group: '角度复合', name: "角度正切", input: "tan(30°)", expected: "0.577351" },
+            { group: '角度复合', name: "角度复合", input: "sin(cos(45°))", expected: "0.649637" },
 
             // 最值函数复合测试
             { group: '最值复合', name: "最大三角", input: "max(sin(PI/2),cos(0),tan(PI/4))", expected: "1" },
             { group: '最值复合', name: "最小对数", input: "min(log(100),ln(e*e),sqrt(4))", expected: "2" },
-            { group: '最值复合', name: "复杂最值", input: "max(sin(30d),cos(60d),tan(45d))", expected: "1" },
+            { group: '最值复合', name: "复杂最值", input: "max(sin(30°),cos(60°),tan(45°))", expected: "1" },
 
             // 添加更多最值函数测试用例
             { group: '最值复合', name: "嵌套最大值", input: "max(max(1,2),max(3,4),5)", expected: "5" },

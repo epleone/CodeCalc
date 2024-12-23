@@ -8,11 +8,20 @@
     <script src="../src/ui.js"></script>
     <style>
         /* 测试页面特定样式 */
+        body {
+            background-color: #fff;
+        }
+        
+        .container {
+            background-color: #fff;
+        }
+        
         .test-section {
             margin: 20px;
             padding: 20px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            background-color: #fff;
         }
         
         .test-section h2 {
@@ -23,6 +32,27 @@
         .test-description {
             margin: 10px 0;
             color: #666;
+        }
+        
+        .copy-tip {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            color: #666;
+            font-size: 14px;
+            border-radius: 0 4px 4px 0;
+            font-weight: bold;
+        }
+        
+        .copy-tip i {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: #6c757d;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 6px;
         }
     </style>
 </head>
@@ -38,6 +68,9 @@
                         <span class="result-value">3</span>
                     </div>
                 </div>
+            </div>
+            <div class="copy-tip">
+                <i></i>点击结果可以复制到剪贴板
             </div>
         </div>
 
@@ -58,13 +91,85 @@
             </div>
 
             <div class="expression-line">
-                <input type="text" class="input" value="sin(45d)" placeholder="输入表达式">
+                <input type="text" class="input" value="1/0" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input error">
+                        <span class="result-value">错误</span>
+                    </div>
+                    <div class="message-icon error" style="display: inline;">
+                        <div class="message-text">除数不能为零</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expression-line">
+                <input type="text" class="input" value="1 + +" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input error">
+                        <span class="result-value">错误</span>
+                    </div>
+                    <div class="message-icon error" style="display: inline;">
+                        <div class="message-text">表达式无效</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expression-line">
+                <input type="text" class="input" value="a + 1" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input error">
+                        <span class="result-value">错误</span>
+                    </div>
+                    <div class="message-icon error" style="display: inline;">
+                        <div class="message-text">未定义的变量 a</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expression-line">
+                <input type="text" class="input" value="asin(0.5)" placeholder="输入表达式">
                 <div class="result-container">
                     <div class="result has-input has-value success">
-                        <span class="result-value">0.707107</span>
+                        <span class="result-value">0.523599</span>
                     </div>
                     <div class="message-icon success" style="display: inline;">
-                        <div class="message-text">45.000000°</div>
+                        <div class="message-text">30.000000°</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expression-line">
+                <input type="text" class="input" value="150°" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input has-value success">
+                        <span class="result-value">2.617994</span>
+                    </div>
+                    <div class="message-icon success" style="display: inline;">
+                        <div class="message-text">2.617994 弧度</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expression-line">
+                <input type="text" class="input" value="a = 100" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input has-value success">
+                        <span class="result-value">100</span>
+                    </div>
+                    <div class="message-icon success" style="display: inline;">
+                        <div class="message-text">变量 a：100</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expression-line">
+                <input type="text" class="input" value="b += 50" placeholder="输入表达式">
+                <div class="result-container">
+                    <div class="result has-input error">
+                        <span class="result-value">错误</span>
+                    </div>
+                    <div class="message-icon error" style="display: inline;">
+                        <div class="message-text">赋值表达式计算错误: 未定义的变量 b</div>
                     </div>
                 </div>
             </div>
@@ -87,7 +192,7 @@
             <div class="test-description">测试输入提示和自动补全效果</div>
             <div class="expression-line">
                 <input type="text" class="input" 
-                       placeholder="输入表达式，试试输入 'si' 然后按 Tab"
+                       placeholder="输入表达式，试试输入 's' 然后按 Tab"
                        oninput="handleInput(event)"
                        onkeydown="handleKeyDown(event, this)">
                 <div class="result-container">
@@ -101,43 +206,49 @@
             </div>
             <div class="test-description" style="margin-top: 10px;">
                 提示：<br>
-                1. 输入 'si' 然后按 Tab 键，将自动补全为 'sin('<br>
+                1. 输入 's' 然后按 Tab 键，将自动补全为 'sin('<br>
                 2. 输入 'co' 然后按 Tab 键，将自动补全为 'cos('<br>
                 3. 输入 'sq' 然后按 Tab 键，将自动补全为 'sqrt('<br>
                 4. 更多补全：log(, ln(, exp(, pow(, max(, min( 等
-            </div>
-        </div>
-
-        <div class="test-section">
-            <h2>复制提示测试</h2>
-            <div class="test-description">点击下面的结果可以复制到剪贴板</div>
-            <div class="expression-line">
-                <input type="text" class="input" value="PI" readonly>
-                <div class="result-container">
-                    <div class="result has-input has-value">
-                        <span class="result-value">3.141592653589793</span>
-                    </div>
-                </div>
-            </div>
-            <div class="expression-line">
-                <input type="text" class="input" value="sin(30d)" readonly>
-                <div class="result-container">
-                    <div class="result has-input has-value success">
-                        <span class="result-value">0.5</span>
-                    </div>
-                    <div class="message-icon success" style="display: inline;">
-                        <div class="message-text">30.000000°</div>
-                    </div>
-                </div>
-            </div>
-            <div class="test-description" style="margin-top: 10px;">
-                提示：点击任意结果值，将自动复制到剪贴板并显示提示
             </div>
         </div>
         <div class="copy-notification">已复制到剪贴板</div>
     </div>
 
     <script>
+        // 初始化所有表达式的计算结果
+        document.querySelectorAll('.expression-line').forEach(line => {
+            const input = line.querySelector('.input');
+            const resultValue = line.querySelector('.result-value');
+            const messageText = line.querySelector('.message-text');
+            
+            if (input.value && !input.hasAttribute('oninput')) {  // 跳过自动补全测试的输入框
+                try {
+                    const result = calculate(input.value);
+                    
+                    if (typeof result === 'object') {
+                        // 处理带有特殊信息的结果
+                        if (result.error) {
+                            resultValue.textContent = '错误';
+                            messageText.textContent = result.error;
+                        } else if (result.success) {
+                            resultValue.textContent = result.value;
+                            messageText.textContent = result.success;
+                        } else if (result.warning) {
+                            resultValue.textContent = result.value;
+                            messageText.textContent = result.warning;
+                        }
+                    } else {
+                        // 普通数值结果
+                        resultValue.textContent = result;
+                    }
+                } catch (error) {
+                    resultValue.textContent = '错误';
+                    messageText.textContent = error.message;
+                }
+            }
+        });
+
         // 为所有结果添加复制功能
         document.querySelectorAll('.result').forEach(result => {
             result.addEventListener('click', () => {
