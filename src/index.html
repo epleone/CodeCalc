@@ -74,12 +74,20 @@
 
     <script>
 
-        // 监听 uTools 的 onPluginEnter 事件
+        // 进入插件的操作
         window.utools.onPluginEnter(({ code, type, payload }) => {
-            const inputElement = document.querySelector('.input');
-            inputElement.value = payload || "";
-            inputElement.dispatchEvent(new Event('input'));
+            if(type == "regex") {
+                const inputElement = document.querySelector('.input');
+                inputElement.value = payload || "";
+                inputElement.dispatchEvent(new Event('input'));
+            }
         });
+
+        // 退出插件的操作
+        utools.onPluginOut((processExited) => {
+            clearAll();
+        });
+
     </script>
 </body>
 </html> 
