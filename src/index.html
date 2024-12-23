@@ -71,5 +71,15 @@
 
     <script src="calculator.js"></script>
     <script src="ui.js"></script>
+
+    <script>
+
+        // 监听 uTools 的 onPluginEnter 事件
+        window.utools.onPluginEnter(({ code, type, payload }) => {
+            const inputElement = document.querySelector('.input');
+            inputElement.value = payload || "";
+            inputElement.dispatchEvent(new Event('input'));
+        });
+    </script>
 </body>
 </html> 

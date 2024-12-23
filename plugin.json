@@ -1,15 +1,26 @@
 {
-  "main": "index.html",
+  "name": "CodeCalc",
+  "pluginName": "Code Calculator",
+  "main": "src/index.html",
   "logo": "logo.png",
-  "platform": ["win32", "darwin", "linux"],
   "features": [
     {
       "code": "codecalc",
       "explain": "代码计算器",
       "cmds": ["Calculator", "CodeCalc", "Code计算器"]
+    },
+    {
+      "code": "calculator",
+      "explain": "计算算式",
+      "cmds": [
+        {
+          "type": "regex",
+          "label": "快速计算",
+          "match": "/^(?:\\(*-?\\d+(\\.\\d+)?\\)* ?[+\\-*/%^] ?)+\\(*-?\\d+(\\.\\d+)?\\)*$/"
+        }
+      ]
     }
   ],
-  "name": "Code Calculator",
   "version": "1.0.0",
   "description": "一个可以运行代码的计算器"
 } 
