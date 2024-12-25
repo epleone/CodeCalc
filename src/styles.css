@@ -66,6 +66,8 @@ body {
     white-space: nowrap;
     padding-right: 0.5rem;
     position: relative;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .result::before {
@@ -370,16 +372,34 @@ body {
     opacity: 1;
 }
 
-.result {
-    cursor: pointer;
+.result:hover {
+    font-weight: 500;
+    transform: scale(1.02);
 }
 
-.result:hover {
-    background-color: transparent;
+.result:hover::after {
+    content: "点击复制";
+    position: absolute;
+    left: 0.625rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0.9;
+    pointer-events: none;
+    z-index: 1000;
+    white-space: nowrap;
+}
+
+.result:hover::before {
+    opacity: 0 !important;
 }
 
 .result.has-value:hover {
-    background-color: rgba(40, 167, 69, 0.15);
+    background-color: transparent;
 }
 
 .left-section {
