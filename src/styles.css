@@ -281,30 +281,48 @@ body {
     align-items: center;
 }
 
-.message-icon::before {
-    content: "⚠";
-}
-
 .message-icon.error::before {
     content: "❌";
     font-size: 1rem;
 }
 
 .message-icon.warning::before {
-    content: "⚠";
+    content: "";
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f0ad4e'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
+    background-size: 1.2rem 1.2rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.message-icon.success {
+.message-icon.info {
     color: #28a745;
 }
 
-.message-icon.success::before {
-    content: "ⓘ";
-    font-family: Arial, sans-serif;
-    font-size: 1.2rem;
+.message-icon.info::before {
+    content: "";
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2328a745'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+    background-size: 1.2rem 1.2rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.message-icon.success .message-text {
+.message-icon.info .message-text {
     background-color: rgba(40, 167, 69, 0.9);
 }
 
@@ -318,7 +336,7 @@ body {
 }
 
 .message-icon.warning:hover .message-text,
-.message-icon.success:hover .message-text {
+.message-icon.info:hover .message-text {
     visibility: visible;
     opacity: 1;
 }
@@ -461,4 +479,30 @@ input:checked + .slider:before {
     .input, .result {
         font-size: 1rem;
     }
+}
+
+.tooltip-icon,
+.message-icon {
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+    transform-origin: center center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.message-icon {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    transform-origin: right center;
+}
+
+.message-icon:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+.tooltip-icon:hover {
+    transform: scale(1.1);
 } 

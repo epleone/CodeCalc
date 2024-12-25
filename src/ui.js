@@ -24,7 +24,7 @@ function calculateLine(input) {
     // 清除所有状态
     function clearState() {
         result.innerHTML = '<span class="result-value"></span>';
-        result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
+        result.classList.remove('has-input', 'has-value', 'warning', 'error', 'info');
         messageIcon.style.display = 'none';  // 确保隐藏消息图标
         messageIcon.className = 'message-icon';  // 重置消息图标的类
     }
@@ -32,7 +32,7 @@ function calculateLine(input) {
     // 设置状态
     function setState(value, type, message) {
         result.innerHTML = `<span class="result-value">${value}</span>`;
-        result.classList.remove('warning', 'error', 'success');  // 先移除所有状态
+        result.classList.remove('warning', 'error', 'info');  // 先移除所有状态
         result.classList.add('has-value', type);  // 再添加新状态
         messageIcon.className = `message-icon ${type}`;
         messageIcon.style.display = 'inline';
@@ -42,7 +42,7 @@ function calculateLine(input) {
     // 设置正常结果
     function setNormalState(value) {
         result.innerHTML = `<span class="result-value">${value}</span>`;
-        result.classList.remove('warning', 'error', 'success');  // 确保移除所有特殊状态
+        result.classList.remove('warning', 'error', 'info');  // 确保移除所有特殊状态
         result.classList.add('has-value');
         messageIcon.style.display = 'none';  // 确保隐藏消息图标
         messageIcon.className = 'message-icon';  // 重置消息图标的类
@@ -60,8 +60,8 @@ function calculateLine(input) {
         if (typeof value === 'object') {
             if (value.warning) {
                 setState(value.value, 'warning', value.warning);
-            } else if (value.success) {
-                setState(value.value, 'success', value.success);
+            } else if (value.info) {
+                setState(value.value, 'info', value.info);
             }
         } else {
             setNormalState(value);
@@ -344,3 +344,44 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('completionEnabled', isCompletionEnabled);
     });
 }); 
+
+// 在现有代码中添加事件处理函数
+function handleMessageIconClick(event) {
+    const messageIcon = event.target.closest('.message-icon');
+    if (!messageIcon || !messageIcon.classList.contains('error')) return;
+    
+    const expressionLine = messageIcon.closest('.expression-line');
+    if (!expressionLine) return;
+    
+    const container = document.getElementById('expression-container');
+    const lines = Array.from(container.querySelectorAll('.expression-line'));
+    const currentIndex = lines.indexOf(expressionLine);
+    
+    // 如果不是最后一行，将下面所有行的内容上移
+    if (currentIndex < lines.length - 1) {
+        for (let i = currentIndex; i < lines.length - 1; i++) {
+            const currentInput = lines[i].querySelector('.input');
+            const nextInput = lines[i + 1].querySelector('.input');
+            currentInput.value = nextInput.value;
+            currentInput.dispatchEvent(new Event('input'));
+        }
+        
+        // 如果不是唯一的一行，删除最后一行
+        if (lines.length > 1) {
+            lines[lines.length - 1].remove();
+        } else {
+            // 如果是唯一的一行，只清空内容
+            const lastInput = lines[lines.length - 1].querySelector('.input');
+            lastInput.value = '';
+            lastInput.dispatchEvent(new Event('input'));
+        }
+    } else {
+        // 如果是最后一行，直接清空
+        const input = expressionLine.querySelector('.input');
+        input.value = '';
+        input.dispatchEvent(new Event('input'));
+    }
+}
+
+// 添加事件监听器到表达式容器
+document.getElementById('expression-container').addEventListener('click', handleMessageIconClick); 

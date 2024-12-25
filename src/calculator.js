@@ -200,7 +200,7 @@ calculate = function(expression) {
 
             return {
                 value: value.toString(),
-                success: `变量 ${variableName}：${value}`
+                info: `变量 ${variableName}：${value}`
             };
         } catch (error) {
             throw new Error(`赋值表达式计算错误: ${error.message}`);
@@ -219,7 +219,7 @@ calculate = function(expression) {
         const piFormat = simplifyPiFraction(piRatio);
         return {
             value: piFormat,
-            success: `${radians.toFixed(6)} 弧度`
+            info: `${radians.toFixed(6)} 弧度`
         };
     }
 
@@ -565,7 +565,7 @@ calculate = function(expression) {
             const degrees = radians * 180 / Math.PI;
             return {
                 value: radians.toFixed(6),
-                success: `${degrees.toFixed(6)}°`
+                info: `${degrees.toFixed(6)}°`
             };
         }
     }
@@ -578,7 +578,7 @@ calculate = function(expression) {
             const degrees = radians * 180 / Math.PI;
             return {
                 value: radians.toFixed(6),
-                success: `${degrees.toFixed(6)}°`
+                info: `${degrees.toFixed(6)}°`
             };
         }
     }
@@ -591,7 +591,7 @@ calculate = function(expression) {
             const degrees = radians * 180 / Math.PI;
             return {
                 value: radians.toFixed(6),
-                success: `${degrees.toFixed(6)}°`
+                info: `${degrees.toFixed(6)}°`
             };
         }
     }
