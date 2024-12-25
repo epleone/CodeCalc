@@ -148,6 +148,7 @@ body {
 
 .tooltip-text {
     visibility: hidden;
+    opacity: 0;
     position: absolute;
     bottom: 2.8125rem;
     left: 0;
@@ -160,8 +161,7 @@ body {
     font-size: 0.875rem;
     white-space: nowrap;
     box-shadow: 0 0.125rem 0.3125rem rgba(0,0,0,0.2);
-    opacity: 0;
-    transition: opacity 0.3s;
+    transition: visibility 0.5s, opacity 0.5s;
     z-index: 101;
 }
 
@@ -179,6 +179,11 @@ body {
 .tooltip:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
+    transition-delay: 0s;
+}
+
+.tooltip:not(:hover) .tooltip-text {
+    transition-delay: 0.2s;
 }
 
 .clear-button {
@@ -253,7 +258,7 @@ body {
     white-space: nowrap;
     z-index: 1000;
     margin-right: 8px;
-    transition: visibility 0s, opacity 0.2s;
+    transition: visibility 0.2s, opacity 0.2s;
 }
 
 .message-icon.error .message-text {
@@ -332,23 +337,8 @@ body {
     color: #dc3545;
 }
 
-.expression-line:not(:focus-within) .message-icon.error .message-text {
-    visibility: visible;
-    opacity: 1;
-}
-
 .message-icon.warning:hover .message-text,
 .message-icon.info:hover .message-text {
-    visibility: visible;
-    opacity: 1;
-}
-
-.expression-line:focus-within .message-icon.error .message-text {
-    visibility: hidden;
-    opacity: 0;
-}
-
-.expression-line:focus-within .message-icon.error:hover .message-text {
     visibility: visible;
     opacity: 1;
 }
@@ -578,3 +568,32 @@ input:checked + .slider:before {
 }
 
 /* 删除历史开关的特殊样式，使用默认样式 */
+
+/* 修改消息提示的显示逻辑 */
+.message-icon .message-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 100%;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-right: 8px;
+    transition: visibility 0.2s, opacity 0.2s;
+}
+
+/* 添加持续显示的样式 */
+.message-icon:hover .message-text {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
+}
+
+.message-icon:not(:hover) .message-text {
+    transition-delay: 0.1s;
+}
