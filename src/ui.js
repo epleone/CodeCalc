@@ -314,6 +314,11 @@ function showCopyNotification() {
 // 为结果添加点击事件处理
 function addResultClickHandler(resultElement) {
     resultElement.addEventListener('click', function() {
+        // 检查是否有错误状态
+        if (this.classList.contains('error')) {
+            return; // 如果是错误状态，直接返回不执行复制
+        }
+        
         const resultValue = this.querySelector('.result-value').textContent;
         if (resultValue.trim()) {
             copyToClipboard(resultValue);

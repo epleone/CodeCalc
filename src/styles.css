@@ -372,12 +372,7 @@ body {
     opacity: 1;
 }
 
-.result:hover {
-    font-weight: 500;
-    transform: scale(1.02);
-}
-
-.result:hover::after {
+.result.has-value:not(.error):hover::after {
     content: "点击复制";
     position: absolute;
     left: 0.625rem;
@@ -394,12 +389,13 @@ body {
     white-space: nowrap;
 }
 
-.result:hover::before {
-    opacity: 0 !important;
+.result.has-value:not(.error):hover {
+    font-weight: 500;
+    transform: scale(1.02);
 }
 
-.result.has-value:hover {
-    background-color: transparent;
+.result.has-value:not(.error):hover::before {
+    opacity: 0 !important;
 }
 
 .left-section {
