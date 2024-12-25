@@ -66,7 +66,17 @@
                 <span class="toggle-label">函数补全</span>
             </div>
         </div>
-        <button class="clear-button" onclick="clearAll()">清空</button>
+        
+        <div class="right-section">
+            <div class="history-toggle">
+                <label class="switch">
+                    <input type="checkbox" id="historyToggle" checked>
+                    <span class="slider round"></span>
+                </label>
+                <span class="toggle-label">保留历史</span>
+            </div>
+            <button class="clear-button" onclick="clearAll()">清空</button>
+        </div>
     </div>
 
     <script src="calculator.js"></script>
@@ -85,7 +95,9 @@
 
         // 退出插件的操作
         utools.onPluginOut((processExited) => {
-            clearAll();
+            if (!document.getElementById('historyToggle').checked) {
+                clearAll();
+            }
         });
 
     </script>

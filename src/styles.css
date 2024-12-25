@@ -419,6 +419,7 @@ body {
     color: #6c757d;
 }
 
+/* 基础开关样式 */
 .switch {
     position: relative;
     display: inline-block;
@@ -432,6 +433,7 @@ body {
     height: 0;
 }
 
+/* 默认样式（用于函数补全开关） */
 .slider {
     position: absolute;
     cursor: pointer;
@@ -462,12 +464,47 @@ body {
     border-radius: 50%;
 }
 
+/* 默认选中状态（用于函数补全开关） */
 input:checked + .slider {
     background-color: #28a745;
 }
 
 input:checked + .slider:before {
     transform: translateX(1.25rem);
+}
+
+/* 历史开关的特殊样式 */
+.history-toggle .slider {
+    background-color: #ccc;
+}
+
+.history-toggle .slider:before {
+    left: auto;
+    right: 0.188rem;
+}
+
+.history-toggle input:checked + .slider {
+    background-color: #28a745;
+}
+
+.history-toggle input:checked + .slider:before {
+    transform: translateX(-1.25rem);
+}
+
+/* 开关容器样式 */
+.completion-toggle, .history-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.history-toggle {
+    flex-direction: row-reverse;
+}
+
+.toggle-label {
+    font-size: 0.875rem;
+    color: #6c757d;
 }
 
 @media screen and (max-width: 768px) {
@@ -525,4 +562,23 @@ input:checked + .slider:before {
 
 .tooltip-icon:hover {
     transform: scale(1.1);
-} 
+}
+
+.right-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.history-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-direction: row-reverse;
+}
+
+.history-toggle .toggle-label {
+    margin-right: 5px;
+}
+
+/* 删除历史开关的特殊样式，使用默认样式 */
