@@ -12,6 +12,7 @@
     {
       "code": "calculator",
       "explain": "计算算式",
+      "icon": "logo-run.png",
       "cmds": [
         {
           "type": "regex",
@@ -21,6 +22,6 @@
       ]
     }
   ],
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "一个可以运行代码的计算器"
 } 
