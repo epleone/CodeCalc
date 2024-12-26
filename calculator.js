@@ -81,7 +81,7 @@ const Calculator = (function() {
 
     function buildAst(tokens, operators, functions) {
         let current = 0;
-        const maxDepth = 1000;  // 添加最大递归深度限制
+        const maxDepth = 100;  // 最大递归深度
         
         // 创建节点的函数定义
         function createNode(value, args = []) {
@@ -91,7 +91,7 @@ const Calculator = (function() {
         // 添加递归深度跟踪
         function checkRecursionDepth(depth) {
             if (depth > maxDepth) {
-                throw new Error('表达式过于复杂：可能存在无限递归');
+                throw new Error('表达式过于复杂或可能存在无限递归');
             }
         }
 
