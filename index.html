@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数学表达式语法树可视化</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .input-panel {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .visualization-panel {
+            flex: 2;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .input-area {
+            margin-bottom: 20px;
+        }
+        .input-area input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        .examples {
+            margin-top: 20px;
+        }
+        .example-item {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+            margin-right: 10px;
+            display: block;
+            margin-bottom: 5px;
+        }
+        #ast-canvas {
+            border: 1px solid #eee;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>数学表达式语法树可视化</h1>
+    
+    <div class="container">
+        <div class="input-panel">
+            <div class="input-area">
+                <input type="text" id="expression" placeholder="输入数学表达式，如: 2 * (3 + 4)">
+                <button onclick="visualizeExpression()">可视化</button>
+            </div>
+            <div id="result" class="result"></div>
+            
+            <div class="examples">
+                <h3>示例表达式：</h3>
+                <span class="example-item" onclick="setExample('1 + 2')">1 + 2</span>
+                <span class="example-item" onclick="setExample('2 * (3 + 4)')">2 * (3 + 4)</span>
+                <span class="example-item" onclick="setExample('max(1, 2, 3)')">max(1, 2, 3)</span>
+                <span class="example-item" onclick="setExample('150°')">150°</span>
+                <span class="example-item" onclick="setExample('deg(150)')">deg(150)</span>
+                <span class="example-item" onclick="setExample('rad(PI/2)')">rad(PI/2)</span>
+                <span class="example-item" onclick="setExample('(1 + 2) * (3 + 4)')">（1 + 2）*（3 + 4）</span>
+            </div>
+        </div>
+        
+        <div class="visualization-panel">
+            <h2>语法树图示</h2>
+            <canvas id="ast-canvas" width="600" height="400"></canvas>
+        </div>
+    </div>
+
+    <script type="module">
+        import Calculator from './calculator.js';
+        import { drawAST } from './ast-visualizer.js';
+
+        window.visualizeExpression = function() {
+            const expr = document.getElementById('expression').value;
+            try {
+                // 计算结果
+                const result = Calculator.calculate(expr);
+                document.getElementById('result').textContent = `计算结果: ${result}`;
+
+                // 生成并显示语法树
+                const canvas = document.getElementById('ast-canvas');
+                const ast = Calculator.getASTNode(expr); // 新增方法，返回AST节点
+                drawAST(canvas, ast);
+            } catch (e) {
+                document.getElementById('result').textContent = `错误: ${e.message}`;
+                const canvas = document.getElementById('ast-canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        };
+
+        window.setExample = function(example) {
+            document.getElementById('expression').value = example;
+            visualizeExpression();
+        };
+
+        // 页面加载完成后显示示例
+        window.addEventListener('load', () => {
+            setExample('1 + 2');
+        });
+    </script>
+</body>
+</html> 

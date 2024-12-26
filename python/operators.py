@@ -1,4 +1,3 @@
-
 # 常数定义
 CONSTANTS = {
     'PI': 3.14159265359,
@@ -49,18 +48,22 @@ OPERATORS = {
 FUNCTIONS = {
     'max': {
         'func': max,
+        'args': -1,
         'description': '求最大值'
     },
     'min': {
         'func': min,
+        'args': -1,
         'description': '求最小值'
     },
     'deg': {
         'func': lambda x: x * CONSTANTS['PI'] / 180,
+        'args': 1,
         'description': '角度转弧度'
     },
     'rad': {
         'func': lambda x: x * 180 / CONSTANTS['PI'],
+        'args': 1,
         'description': '弧度转角度'
     }
 }

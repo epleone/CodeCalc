@@ -26,6 +26,20 @@ class Calculator:
         while i < len(expr):
             char = expr[i]
             
+            # 处理负号和减号
+            if char == '-':
+                # 在表达式开头或在左括号/逗号后，视为负号
+                if (not tokens) or (tokens[-1][0] in ['operator', 'separator'] and tokens[-1][1] in ['(', ',']):
+                    # 预读下一个字符，确认是数字
+                    if i + 1 < len(expr) and expr[i + 1].isdigit():
+                        i += 1
+                        num = '-'
+                        while i < len(expr) and (expr[i].isdigit() or expr[i] == '.'):
+                            num += expr[i]
+                            i += 1
+                        tokens.append(('number', float(num)))
+                        continue
+            
             # 处理数字
             if char.isdigit():
                 num = ''
@@ -43,8 +57,8 @@ class Calculator:
                     i += 1
                 if name in self.functions:
                     tokens.append(('function', name))
-                elif name in self.constants:  # 使用set检查
-                    tokens.append(('number', CONSTANTS[name]))  # 从CONSTANTS字典获取值
+                elif name in self.constants:
+                    tokens.append(('number', CONSTANTS[name]))
                 continue
                 
             # 处理运算符和括号
@@ -62,33 +76,51 @@ class Calculator:
         output = []  # 输出队列
         operators = []  # 运算符栈
         
-        for token_type, token in tokens:
+        i = 0
+        while i < len(tokens):
+            token_type, token = tokens[i]
+            
             if token_type == 'number':
                 output.append(Node(token))
             
             elif token_type == 'function':
+                # 直接将函数放入操作符栈
                 operators.append(token)
+            
+            elif token_type == 'separator':
+                # 处理分隔符前的所有操作符，直到遇到左括号
+                while operators and operators[-1] != '(':
+                    self._process_operator(operators, output)
+                output.append(Node(','))
             
             elif token_type == 'operator':
                 if token == '(':
                     operators.append(token)
                 elif token == ')':
+                    # 处理括号内的所有操作符
                     while operators and operators[-1] != '(':
                         self._process_operator(operators, output)
-                    if operators:  # 弹出左括号
-                        operators.pop()
-                        if operators and operators[-1] in self.functions:
-                            self._process_operator(operators, output)
-                else:  # 其他运算符
+                    if not operators:
+                        raise ValueError("括号不匹配")
+                    operators.pop()  # 弹出左括号
+                    # 如果左括号前是函数，立即处理该函数
+                    if operators and operators[-1] in self.functions:
+                        self._process_operator(operators, output)
+                else:
+                    # 处理普通运算符
                     while (operators and operators[-1] != '(' and
                            operators[-1] in self.operators and
                            OPERATORS[operators[-1]]['precedence'] >= 
                            OPERATORS[token]['precedence']):
                         self._process_operator(operators, output)
                     operators.append(token)
-        
+            
+            i += 1
+            
         # 处理剩余的运算符
         while operators:
+            if operators[-1] == '(':
+                raise ValueError("括号不匹配")
             self._process_operator(operators, output)
             
         return output[0] if output else None
@@ -103,12 +135,19 @@ class Calculator:
             node.args = [output.pop() for _ in range(args_count)]
             node.args.reverse()
         elif op in self.functions:
-            # 收集函数参数直到遇到分隔符
             args = []
-            while output and output[-1].value != ',':
+            # 收集参数直到处理完所有逗号分隔的参数
+            while output:
+                if output[-1].value == ',':
+                    output.pop()  # 移除分隔符
+                    continue
                 args.append(output.pop())
-            node.args = list(reversed(args))
+                # 如果下一个不是逗号，并且已经有参数了，说明参数收集完毕
+                if not output or (output[-1].value != ',' and args):
+                    break
             
+            node.args = list(reversed(args))
+        
         output.append(node)
 
     def evaluate(self, node):
@@ -128,7 +167,14 @@ class Calculator:
         
         # 处理函数
         if node.value in self.functions:
-            return FUNCTIONS[node.value]['func'](*args)
+            func = FUNCTIONS[node.value]['func']
+            # 特殊处理 max 和 min 函数
+            if node.value in ('max', 'min'):
+                if len(args) == 1:
+                    # 如果只有一个参数，确保它是可迭代的
+                    return func(args)
+                return func(*args)
+            return func(*args)
         
         raise ValueError(f"未知的操作符或函数: {node.value}")
 
@@ -186,9 +232,11 @@ def calculate(expr):
 # 测试代码
 if __name__ == "__main__":
     expressions = [
+        "max(-1,-1-1,1, min(10, -1-1, 2))",
+        "-1",
         "1 + 2",
         "2 * (3 + 4)",
-        "(1 + 2) * (3 + 4)",
+        "(1 + 2) * (-3 - 4)",
         "max(1, 2, 3)",
         "1# + 2",
         "1#",
@@ -205,13 +253,12 @@ if __name__ == "__main__":
             tree = calc.parse_expr(expr)
             result = calc.evaluate(tree)
             print(f"结果: {result}")
-            
-            # # 生成语法树可视化
-            # filename = f"ast_{i}"
-            # calc.visualize_ast(tree, filename)
-            # input("按任意键继续...")
-            #  # 查看完后删除
-            # os.remove(f"{filename}.png")
+            # 生成语法树可视化
+            filename = f"ast_{i}"
+            calc.visualize_ast(tree, filename)
+            input("按任意键继续...")
+             # 查看完后删除
+            os.remove(f"{filename}.png")
         except Exception as e:
             print(f"错误: {str(e)}") 
 
