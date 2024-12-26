@@ -1,6 +1,6 @@
 from graphviz import Digraph
 import os
-from operators import OPERATORS, FUNCTIONS
+from operators import OPERATORS, FUNCTIONS, CONSTANTS
 
 class Node:
     def __init__(self, value):
@@ -9,8 +9,9 @@ class Node:
 
 class Calculator:
     def __init__(self):
-        self.operators = OPERATORS
+        self.operators = set(OPERATORS.keys())
         self.functions = set(FUNCTIONS.keys())
+        self.constants = set(CONSTANTS.keys())  # 改为set
     
     def parse_expr(self, expr):
         tokens = self._tokenize(expr)
@@ -34,18 +35,20 @@ class Calculator:
                 tokens.append(('number', float(num)))
                 continue
                 
-            # 处理函数名和括号
+            # 处理函数名、常数和变量
             if char.isalpha():
-                func = ''
+                name = ''
                 while i < len(expr) and expr[i].isalpha():
-                    func += expr[i]
+                    name += expr[i]
                     i += 1
-                if func in self.functions:
-                    tokens.append(('function', func))
+                if name in self.functions:
+                    tokens.append(('function', name))
+                elif name in self.constants:  # 使用set检查
+                    tokens.append(('number', CONSTANTS[name]))  # 从CONSTANTS字典获取值
                 continue
                 
             # 处理运算符和括号
-            if char in '+-*/#()':
+            if char in self.operators or char in '()':
                 tokens.append(('operator', char))
             elif char == ',':
                 tokens.append(('separator', char))
@@ -79,8 +82,8 @@ class Calculator:
                 else:  # 其他运算符
                     while (operators and operators[-1] != '(' and
                            operators[-1] in self.operators and
-                           self.operators[operators[-1]]['precedence'] >= 
-                           self.operators[token]['precedence']):
+                           OPERATORS[operators[-1]]['precedence'] >= 
+                           OPERATORS[token]['precedence']):
                         self._process_operator(operators, output)
                     operators.append(token)
         
@@ -96,7 +99,7 @@ class Calculator:
         node = Node(op)
         
         if op in self.operators:
-            args_count = self.operators[op]['args']
+            args_count = OPERATORS[op]['args']
             node.args = [output.pop() for _ in range(args_count)]
             node.args.reverse()
         elif op in self.functions:
@@ -121,7 +124,7 @@ class Calculator:
         
         # 处理运算符
         if node.value in self.operators:
-            return self.operators[node.value]['func'](*args)
+            return OPERATORS[node.value]['func'](*args)
         
         # 处理函数
         if node.value in self.functions:
@@ -188,6 +191,11 @@ if __name__ == "__main__":
         "(1 + 2) * (3 + 4)",
         "max(1, 2, 3)",
         "1# + 2",
+        "1#",
+        "150°",
+        "deg(150)",
+        "rad(PI/2)",
+        "e#",
     ]
     
     calc = Calculator()
@@ -198,12 +206,17 @@ if __name__ == "__main__":
             result = calc.evaluate(tree)
             print(f"结果: {result}")
             
-            # 生成语法树可视化
-            filename = f"ast_{i}"
-            calc.visualize_ast(tree, filename)
-            input("按任意键继续...")
-             # 查看完后删除
-            os.remove(f"{filename}.png")
-            
+            # # 生成语法树可视化
+            # filename = f"ast_{i}"
+            # calc.visualize_ast(tree, filename)
+            # input("按任意键继续...")
+            #  # 查看完后删除
+            # os.remove(f"{filename}.png")
         except Exception as e:
             print(f"错误: {str(e)}") 
+
+"""
+#TODO
+1. 添加前缀操作符 `0b111`,  `0o567`, `0xfff`
+2. 添加函数
+"""
