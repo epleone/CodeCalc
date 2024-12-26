@@ -80,21 +80,30 @@ const Calculator = (function() {
     }
 
     function buildAst(tokens, operators, functions) {
-        let current = 0;  // 当前处理的token位置
-
-        // 创建节点
+        let current = 0;
+        const maxDepth = 1000;  // 添加最大递归深度限制
+        
+        // 创建节点的函数定义
         function createNode(value, args = []) {
             return { value, args };
         }
-
-        // 解析表达式
-        function parseExpression() {
-            return parseAdditive();
+        
+        // 添加递归深度跟踪
+        function checkRecursionDepth(depth) {
+            if (depth > maxDepth) {
+                throw new Error('表达式过于复杂：可能存在无限递归');
+            }
         }
 
-        // 解析加法和减法
-        function parseAdditive() {
-            let left = parseMultiplicative();
+        // 修改解析函数，添加深度参数
+        function parseExpression(depth = 0) {
+            checkRecursionDepth(depth);
+            return parseAdditive(depth + 1);
+        }
+
+        function parseAdditive(depth = 0) {
+            checkRecursionDepth(depth);
+            let left = parseMultiplicative(depth + 1);
 
             while (current < tokens.length) {
                 const [type, token] = tokens[current];
@@ -102,16 +111,16 @@ const Calculator = (function() {
                     break;
                 }
                 current++;
-                const right = parseMultiplicative();
+                const right = parseMultiplicative(depth + 1);
                 left = createNode(token, [left, right]);
             }
 
             return left;
         }
 
-        // 解析乘法和除法
-        function parseMultiplicative() {
-            let left = parseUnary();
+        function parseMultiplicative(depth = 0) {
+            checkRecursionDepth(depth);
+            let left = parseUnary(depth + 1);
 
             while (current < tokens.length) {
                 const [type, token] = tokens[current];
@@ -119,31 +128,30 @@ const Calculator = (function() {
                     break;
                 }
                 current++;
-                const right = parseUnary();
+                const right = parseUnary(depth + 1);
                 left = createNode(token, [left, right]);
             }
 
             return left;
         }
 
-        // 解析一元运算符
-        function parseUnary() {
+        function parseUnary(depth = 0) {
+            checkRecursionDepth(depth);
             const [type, token] = tokens[current];
             
-            // 处理所有前缀运算符（包括一元负号）
             if (type === 'operator' && OPERATORS[token] && 
                 OPERATORS[token].position === 'prefix') {
                 current++;
-                const operand = parseUnary();
+                const operand = parseUnary(depth + 1);
                 return createNode(token, [operand]);
             }
 
-            return parsePostfix();
+            return parsePostfix(depth + 1);
         }
 
-        // 解析后缀运算符
-        function parsePostfix() {
-            let left = parsePrimary();
+        function parsePostfix(depth = 0) {
+            checkRecursionDepth(depth);
+            let left = parsePrimary(depth + 1);
 
             while (current < tokens.length) {
                 const [type, token] = tokens[current];
@@ -158,8 +166,8 @@ const Calculator = (function() {
             return left;
         }
 
-        // 解析基本表达式（数字、函数调用、括号）
-        function parsePrimary() {
+        function parsePrimary(depth = 0) {
+            checkRecursionDepth(depth);
             const [type, token] = tokens[current];
             current++;
 
@@ -168,12 +176,12 @@ const Calculator = (function() {
             }
 
             if (type === 'function') {
-                const args = parseFunctionArgs();
+                const args = parseFunctionArgs(depth + 1);
                 return createNode(token, args);
             }
 
             if (type === 'operator' && token === '(') {
-                const expr = parseExpression();
+                const expr = parseExpression(depth + 1);
                 if (current >= tokens.length || 
                     tokens[current][0] !== 'operator' || 
                     tokens[current][1] !== ')') {
@@ -186,8 +194,8 @@ const Calculator = (function() {
             throw new Error(`意外的token: ${token}`);
         }
 
-        // 解析函数参数
-        function parseFunctionArgs() {
+        function parseFunctionArgs(depth = 0) {
+            checkRecursionDepth(depth);
             const args = [];
             
             // 检查左括号
@@ -204,7 +212,7 @@ const Calculator = (function() {
 
             // 解析参数列表
             while (true) {
-                args.push(parseExpression());
+                args.push(parseExpression(depth + 1));
 
                 if (tokens[current][0] === 'operator' && tokens[current][1] === ')') {
                     current++;
@@ -221,7 +229,7 @@ const Calculator = (function() {
         }
 
         // 开始解析
-        const ast = parseExpression();
+        const ast = parseExpression(0);
         if (current < tokens.length) {
             throw new Error('表达式解析未完成');
         }
@@ -305,6 +313,7 @@ const Calculator = (function() {
             return buildAst(tokens, operators, functions);
         },
 
+        // 配合 Mermaid.js 生成AST图
         generateAST(expr) {
             const operators = new Set(Object.keys(OPERATORS));
             const functions = new Set(Object.keys(FUNCTIONS));
