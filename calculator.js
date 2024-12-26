@@ -80,213 +80,152 @@ const Calculator = (function() {
     }
 
     function buildAst(tokens, operators, functions) {
-        const output = [];
-        const operatorStack = [];
+        let current = 0;  // 当前处理的token位置
 
-        // 处理运算符的核心函数
-        function processOperator(operatorStack, output) {
-            const op = operatorStack.pop();
-            const node = createNode(op);
-
-            if (operators.has(op)) {
-                // 处理普通运算符
-                const argsCount = OPERATORS[op].args;
-                node.args = Array(argsCount)
-                    .fill()
-                    .map(() => output.pop())
-                    .reverse();
-            } else if (functions.has(op)) {
-                // 处理函数调用
-                const args = [];
-                let currentArg = [];
-                
-                // 收集参数直到遇到左括号
-                while (output.length) {
-                    const current = output[output.length - 1];
-                    
-                    // 遇到左括号时结束
-                    if (current.value === '(') {
-                        output.pop();  // 移除左括号
-                        break;
-                    }
-                    
-                    // 弹出当前节点
-                    const param = output.pop();
-                    
-                    // 遇到逗号时，处理当前参数
-                    if (param.value === ',') {
-                        if (currentArg.length === 1) {
-                            args.unshift(currentArg[0]);
-                        } else if (currentArg.length > 1) {
-                            args.unshift(processExpression(currentArg));
-                        }
-                        currentArg = [];
-                    } else {
-                        // 收集当前参数
-                        currentArg.unshift(param);
-                    }
-                }
-                
-                // 处理最后一个参数
-                if (currentArg.length === 1) {
-                    args.unshift(currentArg[0]);
-                } else if (currentArg.length > 1) {
-                    args.unshift(processExpression(currentArg));
-                }
-                
-                node.args = args;
-            }
-
-            output.push(node);
+        // 创建节点
+        function createNode(value, args = []) {
+            return { value, args };
         }
 
-        // 辅助函数：处理复合表达式
-        function processExpression(nodes) {
-            if (nodes.length === 0) return null;
-            if (nodes.length === 1) return nodes[0];
-            
-            nodes = [...nodes];
-            
-            // 1. 从内到外处理所有函数调用
-            let i = 0;
-            while (i < nodes.length) {
-                const node = nodes[i];
-                if (node.value === ')') {
-                    let j = i;
-                    let depth = 1;
-                    while (j >= 0 && depth > 0) {
-                        j--;
-                        if (j >= 0) {
-                            if (nodes[j].value === ')') depth++;
-                            if (nodes[j].value === '(') depth--;
-                        }
-                    }
-                    
-                    // 如果找到了函数调用
-                    if (j > 0 && functions.has(nodes[j-1].value)) {
-                        const funcArgs = [];
-                        let start = j + 1;
-                        let currentDepth = 0;
-                        
-                        // 分割并处理每个参数，考虑嵌套的括号
-                        for (let k = j + 1; k < i; k++) {
-                            if (nodes[k].value === '(') currentDepth++;
-                            else if (nodes[k].value === ')') currentDepth--;
-                            
-                            // 只在当前深度为0时处理逗号
-                            if ((nodes[k].value === ',' && currentDepth === 0) || k === i - 1) {
-                                const end = k === i - 1 ? k + 1 : k;
-                                const argNodes = nodes.slice(start, end);
-                                if (argNodes.length > 0) {
-                                    // 递归处理每个参数
-                                    const processedArg = processExpression(argNodes);
-                                    if (processedArg) {
-                                        funcArgs.push(processedArg);
-                                    }
-                                }
-                                start = k + 1;
-                            }
-                        }
-                        
-                        // 创建函数节点
-                        const func = nodes[j-1];
-                        func.args = funcArgs;
-                        
-                        // 替换原始节点序列
-                        nodes.splice(j-1, i-j+2, func);
-                        i = j-1;
-                    }
+        // 解析表达式
+        function parseExpression() {
+            return parseAdditive();
+        }
+
+        // 解析加法和减法
+        function parseAdditive() {
+            let left = parseMultiplicative();
+
+            while (current < tokens.length) {
+                const [type, token] = tokens[current];
+                if (type !== 'operator' || (token !== '+' && token !== '-')) {
+                    break;
                 }
-                i++;
+                current++;
+                const right = parseMultiplicative();
+                left = createNode(token, [left, right]);
             }
-            
-            // 2. 处理运算符（按优先级）
-            const precedences = [3, 2, 1];  // 从高到低的优先级
-            for (const precedence of precedences) {
-                for (let i = nodes.length - 1; i >= 0; i--) {
-                    const node = nodes[i];
-                    if (typeof node.value === 'string' && 
-                        OPERATORS[node.value] && 
-                        OPERATORS[node.value].precedence === precedence) {
-                        const op = node;
-                        const argsCount = OPERATORS[op.value].args;
-                        
-                        if (argsCount === 1) {
-                            // 处理单目运算符
-                            op.args = [processExpression(nodes.slice(i + 1))];
-                            nodes.splice(i, nodes.length - i, op);
-                        } else {
-                            // 处理双目运算符
-                            op.args = [
-                                processExpression(nodes.slice(0, i)),
-                                processExpression(nodes.slice(i + 1))
-                            ].filter(Boolean);
-                            return op;
-                        }
-                    }
+
+            return left;
+        }
+
+        // 解析乘法和除法
+        function parseMultiplicative() {
+            let left = parseUnary();
+
+            while (current < tokens.length) {
+                const [type, token] = tokens[current];
+                if (type !== 'operator' || (token !== '*' && token !== '/')) {
+                    break;
                 }
+                current++;
+                const right = parseUnary();
+                left = createNode(token, [left, right]);
             }
+
+            return left;
+        }
+
+        // 解析一元运算符
+        function parseUnary() {
+            const [type, token] = tokens[current];
             
-            return nodes[0];
-        }
-
-        // 主处理逻辑
-        for (const [type, token] of tokens) {
-            switch (type) {
-                case 'number':
-                    output.push(createNode(token));
-                    break;
-                case 'function':
-                    operatorStack.push(token);
-                    break;
-                case 'separator':
-                    // 处理分隔符前的所有操作符
-                    while (operatorStack.length && operatorStack[operatorStack.length - 1] !== '(') {
-                        processOperator(operatorStack, output);
-                    }
-                    output.push(createNode(','));
-                    break;
-                case 'operator':
-                    if (token === '(') {
-                        operatorStack.push(token);
-                    }
-                    else if (token === ')') {
-                        // 处理括号内的所有操作符
-                        while (operatorStack.length && operatorStack[operatorStack.length - 1] !== '(') {
-                            processOperator(operatorStack, output);
-                        }
-                        if (!operatorStack.length) {
-                            throw new Error("括号不匹配");
-                        }
-                        operatorStack.pop();  // 弹出左括号
-                        // 如果左括号前是函数，立即处理该函数
-                        if (operatorStack.length && functions.has(operatorStack[operatorStack.length - 1])) {
-                            processOperator(operatorStack, output);
-                        }
-                    }
-                    else {
-                        while (operatorStack.length && 
-                               operatorStack[operatorStack.length - 1] !== '(' && 
-                               operators.has(operatorStack[operatorStack.length - 1]) &&
-                               OPERATORS[operatorStack[operatorStack.length - 1]].precedence >= 
-                               OPERATORS[token].precedence) {
-                            processOperator(operatorStack, output);
-                        }
-                        operatorStack.push(token);
-                    }
-                    break;
+            // 处理负号
+            if (type === 'operator' && token === '-') {
+                current++;
+                const operand = parseUnary();
+                return createNode('-', [operand]);
             }
+
+            return parsePostfix();
         }
 
-        // 处理剩余的运算符
-        while (operatorStack.length) {
-            if (operatorStack[operatorStack.length - 1] === '(') {
-                throw new Error("括号不匹配");
+        // 解析后缀运算符
+        function parsePostfix() {
+            let left = parsePrimary();
+
+            while (current < tokens.length) {
+                const [type, token] = tokens[current];
+                if (type !== 'operator' || !OPERATORS[token] || 
+                    OPERATORS[token].args !== 1 || 
+                    OPERATORS[token].precedence !== 3) {
+                    break;
+                }
+                current++;
+                left = createNode(token, [left]);
             }
-            processOperator(operatorStack, output);
+
+            return left;
         }
 
-        return output[0] || null;
+        // 解析基本表达式（数字、函数调用、括号）
+        function parsePrimary() {
+            const [type, token] = tokens[current];
+            current++;
+
+            if (type === 'number') {
+                return createNode(token);
+            }
+
+            if (type === 'function') {
+                const args = parseFunctionArgs();
+                return createNode(token, args);
+            }
+
+            if (type === 'operator' && token === '(') {
+                const expr = parseExpression();
+                if (current >= tokens.length || 
+                    tokens[current][0] !== 'operator' || 
+                    tokens[current][1] !== ')') {
+                    throw new Error('括号不匹配');
+                }
+                current++;  // 跳过右括号
+                return expr;
+            }
+
+            throw new Error(`意外的token: ${token}`);
+        }
+
+        // 解析函数参数
+        function parseFunctionArgs() {
+            const args = [];
+            
+            // 检查左括号
+            if (tokens[current][0] !== 'operator' || tokens[current][1] !== '(') {
+                throw new Error('函数调用缺少左括号');
+            }
+            current++;  // 跳过左括号
+
+            // 空参数列表
+            if (tokens[current][0] === 'operator' && tokens[current][1] === ')') {
+                current++;
+                return args;
+            }
+
+            // 解析参数列表
+            while (true) {
+                args.push(parseExpression());
+
+                if (tokens[current][0] === 'operator' && tokens[current][1] === ')') {
+                    current++;
+                    break;
+                }
+
+                if (tokens[current][0] !== 'separator' || tokens[current][1] !== ',') {
+                    throw new Error('函数参数格式错误');
+                }
+                current++;  // 跳过逗号
+            }
+
+            return args;
+        }
+
+        // 开始解析
+        const ast = parseExpression();
+        if (current < tokens.length) {
+            throw new Error('表达式解析未完成');
+        }
+        return ast;
     }
 
     function evaluate(node, operators, functions) {
