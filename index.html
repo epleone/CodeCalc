@@ -1,124 +1,111 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数学表达式语法树可视化</title>
+    <title>表达式计算器</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1000px;
+            margin: 20px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-        .input-panel {
-            flex: 1;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .visualization-panel {
-            flex: 2;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .input-area {
+        #calculator {
             margin-bottom: 20px;
         }
-        .input-area input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        .result {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #f0f0f0;
-        }
-        .examples {
-            margin-top: 20px;
-        }
-        .example-item {
-            cursor: pointer;
-            color: blue;
-            text-decoration: underline;
+        #expression {
+            width: 300px;
+            padding: 5px;
             margin-right: 10px;
-            display: block;
-            margin-bottom: 5px;
         }
-        #ast-canvas {
-            border: 1px solid #eee;
+        #result {
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        #ast {
             margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        #examples {
+            margin: 20px 0;
+        }
+        #examples button {
+            margin: 5px;
+            padding: 5px 10px;
         }
     </style>
 </head>
 <body>
-    <h1>数学表达式语法树可视化</h1>
-    
-    <div class="container">
-        <div class="input-panel">
-            <div class="input-area">
-                <input type="text" id="expression" placeholder="输入数学表达式，如: 2 * (3 + 4)">
-                <button onclick="visualizeExpression()">可视化</button>
-            </div>
-            <div id="result" class="result"></div>
-            
-            <div class="examples">
-                <h3>示例表达式：</h3>
-                <span class="example-item" onclick="setExample('1 + 2')">1 + 2</span>
-                <span class="example-item" onclick="setExample('2 * (3 + 4)')">2 * (3 + 4)</span>
-                <span class="example-item" onclick="setExample('max(1, 2, 3)')">max(1, 2, 3)</span>
-                <span class="example-item" onclick="setExample('150°')">150°</span>
-                <span class="example-item" onclick="setExample('deg(150)')">deg(150)</span>
-                <span class="example-item" onclick="setExample('rad(PI/2)')">rad(PI/2)</span>
-                <span class="example-item" onclick="setExample('(1 + 2) * (3 + 4)')">（1 + 2）*（3 + 4）</span>
-            </div>
-        </div>
-        
-        <div class="visualization-panel">
-            <h2>语法树图示</h2>
-            <canvas id="ast-canvas" width="600" height="400"></canvas>
-        </div>
+    <h1>表达式计算器</h1>
+    <div id="calculator">
+        <input type="text" id="expression" placeholder="输入表达式">
+        <button id="calculate">计算</button>
     </div>
+    <div id="examples">
+        <h3>示例表达式：</h3>
+    </div>
+    <div id="result"></div>
+    <div id="ast"></div>
 
     <script type="module">
         import Calculator from './calculator.js';
-        import { drawAST } from './ast-visualizer.js';
+        import ASTVisualizer from './ast-visualizer.js';
 
-        window.visualizeExpression = function() {
-            const expr = document.getElementById('expression').value;
-            try {
-                // 计算结果
-                const result = Calculator.calculate(expr);
-                document.getElementById('result').textContent = `计算结果: ${result}`;
+        window.onload = function() {
+            const input = document.getElementById('expression');
+            const resultDiv = document.getElementById('result');
+            const astDiv = document.getElementById('ast');
+            const calculateBtn = document.getElementById('calculate');
+            
+            // 创建可视化器实例
+            const visualizer = new ASTVisualizer(astDiv);
 
-                // 生成并显示语法树
-                const canvas = document.getElementById('ast-canvas');
-                const ast = Calculator.getASTNode(expr); // 新增方法，返回AST节点
-                drawAST(canvas, ast);
-            } catch (e) {
-                document.getElementById('result').textContent = `错误: ${e.message}`;
-                const canvas = document.getElementById('ast-canvas');
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
+            calculateBtn.onclick = function() {
+                const expr = input.value;
+                try {
+                    // 计算结果
+                    const result = Calculator.calculate(expr);
+                    resultDiv.textContent = `结果: ${result}`;
+
+                    // 获取AST并可视化
+                    const ast = Calculator.getASTNode(expr);
+                    visualizer.draw(ast);
+                } catch (e) {
+                    resultDiv.textContent = `错误: ${e.message}`;
+                    astDiv.innerHTML = '';
+                }
+            };
+
+            // 添加示例表达式
+            const examples = [
+                "max(-1,-1-1,1, min(10, -1-1, 2))",
+                "-1",
+                "1 + 2",
+                "2 * (3 + 4)",
+                "(1 + 2) * (-3 - 4)",
+                "max(1, 2, 3)",
+                "1# + 2",
+                "1#",
+                "150°",
+                "deg(150)",
+                "rad(PI/2)",
+                "e#"
+            ];
+
+            const examplesDiv = document.getElementById('examples');
+            examples.forEach(expr => {
+                const button = document.createElement('button');
+                button.textContent = expr;
+                button.onclick = function() {
+                    input.value = expr;
+                    calculateBtn.click();
+                };
+                examplesDiv.appendChild(button);
+                examplesDiv.appendChild(document.createTextNode(' '));
+            });
         };
-
-        window.setExample = function(example) {
-            document.getElementById('expression').value = example;
-            visualizeExpression();
-        };
-
-        // 页面加载完成后显示示例
-        window.addEventListener('load', () => {
-            setExample('1 + 2');
-        });
     </script>
 </body>
 </html> 

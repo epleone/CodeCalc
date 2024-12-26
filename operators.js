@@ -9,58 +9,52 @@ const OPERATORS = {
     '+': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x + y,
-        description: '加法'
+        func: (x, y) => x + y
     },
     '-': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x - y,
-        description: '减法'
+        func: (x, y) => x - y
     },
     '*': {
         precedence: 2,
         args: 2,
-        func: (x, y) => x * y,
-        description: '乘法'
+        func: (x, y) => x * y
     },
     '/': {
         precedence: 2,
         args: 2,
-        func: (x, y) => y !== 0 ? x / y : Infinity,
-        description: '除法'
+        func: (x, y) => y !== 0 ? x / y : Infinity
     },
     '#': {
         precedence: 3,
         args: 1,
-        func: x => x + 1,
-        description: '后缀自增'
+        func: x => x + 1
     },
     '°': {
         precedence: 3,
         args: 1,
-        func: x => x * CONSTANTS.PI / 180,
-        description: '角度转弧度'
+        func: x => x * CONSTANTS.PI / 180
     }
 };
 
 // 函数定义
 const FUNCTIONS = {
     'max': {
-        func: Math.max,
-        description: '求最大值'
+        args: -1,  // -1 表示可变参数
+        func: Math.max
     },
     'min': {
-        func: Math.min,
-        description: '求最小值'
+        args: -1,  // -1 表示可变参数
+        func: Math.min
     },
     'deg': {
-        func: x => x * CONSTANTS.PI / 180,
-        description: '角度转弧度'
+        args: 1,
+        func: x => x * CONSTANTS.PI / 180
     },
     'rad': {
-        func: x => x * 180 / CONSTANTS.PI,
-        description: '弧度转角度'
+        args: 1,
+        func: x => x * 180 / CONSTANTS.PI
     }
 };
 
