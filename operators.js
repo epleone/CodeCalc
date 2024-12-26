@@ -9,32 +9,44 @@ const OPERATORS = {
     '+': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x + y
+        func: (x, y) => x + y,
+        position: 'infix'  // 中缀运算符
     },
     '-': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x - y
+        func: (x, y) => x - y,
+        position: 'infix'  // 中缀运算符
     },
     '*': {
         precedence: 2,
         args: 2,
-        func: (x, y) => x * y
+        func: (x, y) => x * y,
+        position: 'infix'  // 中缀运算符
     },
     '/': {
         precedence: 2,
         args: 2,
-        func: (x, y) => y !== 0 ? x / y : Infinity
+        func: (x, y) => y !== 0 ? x / y : Infinity,
+        position: 'infix'  // 中缀运算符
     },
     '#': {
         precedence: 3,
         args: 1,
-        func: x => x + 1
+        func: x => x + 1,
+        position: 'prefix'  // 后缀运算符
     },
     '°': {
         precedence: 3,
         args: 1,
-        func: x => x * CONSTANTS.PI / 180
+        func: x => x * CONSTANTS.PI / 180,
+        position: 'postfix'  // 前缀运算符
+    },
+    'unary-': {  // 一元负号
+        precedence: 4,
+        args: 1,
+        func: x => -x,
+        position: 'prefix'  // 前缀运算符
     }
 };
 

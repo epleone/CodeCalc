@@ -130,11 +130,12 @@ const Calculator = (function() {
         function parseUnary() {
             const [type, token] = tokens[current];
             
-            // 处理负号
-            if (type === 'operator' && token === '-') {
+            // 处理所有前缀运算符（包括一元负号）
+            if (type === 'operator' && OPERATORS[token] && 
+                OPERATORS[token].position === 'prefix') {
                 current++;
                 const operand = parseUnary();
-                return createNode('-', [operand]);
+                return createNode(token, [operand]);
             }
 
             return parsePostfix();
@@ -147,8 +148,7 @@ const Calculator = (function() {
             while (current < tokens.length) {
                 const [type, token] = tokens[current];
                 if (type !== 'operator' || !OPERATORS[token] || 
-                    OPERATORS[token].args !== 1 || 
-                    OPERATORS[token].precedence !== 3) {
+                    OPERATORS[token].position !== 'postfix') {
                     break;
                 }
                 current++;
