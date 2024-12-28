@@ -1,12 +1,12 @@
 // 类型定义
-export const TYPE = {
+const TYPE = {
     NUMBER: 'number',
     STRING: 'string',
     ANY: 'any'
 };
 
 // 类型转换工具
-export const Types = {
+const Types = {
     // 类型检查
     isNumber(value) {
         return typeof value === 'number' && !isNaN(value);
@@ -116,3 +116,7 @@ if (typeof window === 'undefined') {
         console.log(e.message);                    // "空字符串无法转换为数字"
     }
 } 
+
+// 暴露到全局作用域
+window.TYPE = TYPE;
+window.Types = Types; 

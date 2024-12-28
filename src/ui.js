@@ -56,7 +56,7 @@ function calculateLine(input) {
     result.classList.add('has-input');
 
     try {
-        const value = calculate(expression);
+        const value = Calculator.calculate(expression);
         if (typeof value === 'object') {
             if (value.warning) {
                 setState(value.value, 'warning', value.warning);
@@ -251,6 +251,7 @@ function removeCompletionHint(input) {
     }
 }
 
+// 修改 clearAll 函数
 function clearAll() {
     const container = document.getElementById('expression-container');
     const firstLine = container.querySelector('.expression-line');
@@ -266,7 +267,8 @@ function clearAll() {
     result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
     messageIcon.style.display = 'none';
     
-    clearTempConstants();
+    // 直接使用全局的 Calculator 对象
+    Calculator.clearAllCache();
     
     input.focus();
 }

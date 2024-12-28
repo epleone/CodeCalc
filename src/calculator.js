@@ -1,7 +1,14 @@
-import { OPERATORS, FUNCTIONS, CONSTANTS, DELIMITERS, SEPARATORS } from './operators.js';
-import { TYPE, Types } from './types.js';
-
+// 使用 IIFE 创建模块作用域
 const Calculator = (function() {
+    // 定义常量和类型（原来是从 operators.js 和 types.js 导入的）
+    const OPERATORS = window.OPERATORS;
+    const FUNCTIONS = window.FUNCTIONS;
+    const CONSTANTS = window.CONSTANTS;
+    const DELIMITERS = window.DELIMITERS;
+    const SEPARATORS = window.SEPARATORS;
+    const TYPE = window.TYPE;
+    const Types = window.Types;
+
     // 添加变量字典
     const variables = new Map();
     // 添加字符串常量计数器
@@ -384,13 +391,18 @@ const Calculator = (function() {
                 // 处理中缀运算符
                 if (type !== 'operator' || 
                     !OPERATORS[value] || 
-                    OPERATORS[value].precedence <= precedence ||
+                    OPERATORS[value].precedence < precedence ||
                     OPERATORS[value].position !== 'infix') {
                     break;
                 }
 
                 current++;
-                const right = parseExpression(OPERATORS[value].precedence);
+                // 对于赋值运算符，使用右结合性
+                const nextPrecedence = OPERATORS[value].isCompoundAssignment || value === '=' ?
+                    OPERATORS[value].precedence :
+                    OPERATORS[value].precedence + 1;
+                    
+                const right = parseExpression(nextPrecedence);
                 left = createNode(value, [left, right], 'operator');
             }
 
@@ -413,7 +425,7 @@ const Calculator = (function() {
             if (variables.has(node.value)) {
                 return variables.get(node.value);
             }
-            return node.value;  // 否则保持字符串形式
+            return node.value;  // 否则保存字符串形式
         }
 
         // 处理常量
@@ -432,18 +444,35 @@ const Calculator = (function() {
             const op = OPERATORS[node.value];
             console.log('处理运算符:', node.value, '类型定义:', op.types);
             
-            // 特殊处理赋值运算符
-            if (node.value === '=') {
+            // 处理赋值运算符
+            if (node.value === '=' || op.isCompoundAssignment) {
                 const [left, right] = node.args;
                 if (left.type !== 'string') {
                     throw new Error('赋值运算符左侧必须是变量名');
                 }
-                const value = evaluate(right, operators, functions);
-                variables.set(left.value, value);
-                return value;
+                
+                // 计算右侧表达式
+                const rightValue = evaluate(right, operators, functions);
+                
+                if (op.isCompoundAssignment) {
+                    // 对于复合赋值，获取变量当前值（如果不存在则为0）
+                    const oldValue = variables.has(left.value) ? 
+                        variables.get(left.value) : 0;
+                    
+                    // 使用运算符的 func 完成运算
+                    const result = op.func(oldValue, rightValue);
+                    
+                    // 更新变量的值
+                    variables.set(left.value, result);
+                    return result;
+                } else {
+                    // 普通赋值
+                    variables.set(left.value, rightValue);
+                    return rightValue;
+                }
             }
 
-            // 根据运算符定义的类型要求转换参数
+            // 其他运算符的处理保持不变
             const convertedArgs = args.map((arg, index) => {
                 if (op.types && op.types[index] === TYPE.NUMBER) {
                     const converted = Types.toNumber(arg);
@@ -517,7 +546,7 @@ const Calculator = (function() {
         return { nodes, edges };
     }
 
-    // 6. 公共API
+    // 6. 返回公共API
     return {
         calculate(expr) {
             const operators = new Set(Object.keys(OPERATORS));
@@ -540,19 +569,6 @@ const Calculator = (function() {
             return buildAst(tokens, operators, functions);
         },
 
-        generateAST(expr) {
-            const operators = new Set(Object.keys(OPERATORS));
-            const functions = new Set(Object.keys(FUNCTIONS));
-            const constants = new Set(Object.keys(CONSTANTS));
-
-            const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions);
-            const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
-            const ast = buildAst(tokens, operators, functions);
-            
-            const { nodes, edges } = generateMermaidAST(ast);
-            return `graph TD;\n${nodes}${edges}`;
-        },
-
         tokenize(expr, operators, functions, constants) {
             return tokenize(expr, operators, functions, constants);
         },
@@ -561,66 +577,20 @@ const Calculator = (function() {
             return preprocess(expr, operators, functions);
         },
 
-        // 添加获取变量值的方法
-        getVariable(name) {
-            return variables.get(name);
-        },
-
-        // 添加设置变量值的方法
-        setVariable(name, value) {
-            variables.set(name, value);
-            return value;
-        },
-
-        // 添加清除所有变量的方法
-        clearVariables() {
-            // 只清除非字符串常量的变量
-            for (const [key] of variables) {
-                if (!key.startsWith('_cc__str_idx_')) {
-                    variables.delete(key);
-                }
-            }
-        },
-
         // 添加获取所有变量的方法
         getAllVariables() {
             return Object.fromEntries(variables);
         },
 
         // 添加清除所有内容（包括字符串常量）的方法
-        clearAll() {
+        clearAllCache() {
             variables.clear();
             stringConstantCounter = 0;
         }
     };
 })();
 
-export default Calculator;
-
-// 使用示例
-if (typeof window === 'undefined') {
-    const expressions = [
-        "max(-1,-1-1,1, min(10, -1-1, 2))",
-        "-1",
-        "1 + 2",
-        "2 * (3 + 4)",
-        "(1 + 2) * (-3 - 4)",
-        "max(1, 2, 3)",
-        "1# + 2",
-        "1#",
-        "150°",
-        "deg(150)",
-        "rad(PI/2)",
-        "e#"
-    ];
-
-    for (const expr of expressions) {
-        try {
-            console.log(`\n处理表达式: ${expr}`);
-            const result = Calculator.calculate(expr);
-            console.log(`结果: ${result}`);
-        } catch (e) {
-            console.log(`错误: ${e.message}`);
-        }
-    }
+// 如果在 Node.js 环境中，导出模块
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Calculator;
 } 

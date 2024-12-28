@@ -1,24 +1,36 @@
-import { TYPE } from './types.js';
-
 // 常数定义
-export const CONSTANTS = {
+const CONSTANTS = {
     'PI': Math.PI,
     'e': Math.E,
 };
 
 // 定界符定义
-export const DELIMITERS = {
+const DELIMITERS = {
     '(': { description: '左括号' },
     ')': { description: '右括号' }
 };
 
 // 分隔符定义
-export const SEPARATORS = {
+const SEPARATORS = {
     ',': { description: '参数分隔符' }
 };
 
+// 在 OPERATORS 定义之前添加辅助函数
+function createAssignmentOperator(baseOp) {
+    return {
+        precedence: 1,
+        args: 2,
+        func: (a, b) => b,  // 赋值运算符的基本行为
+        position: 'infix',
+        types: [TYPE.ANY, TYPE.NUMBER],
+        description: `${baseOp}赋值`,
+        isAssignment: true,
+        baseOp: baseOp
+    };
+}
+
 // 操作符定义
-export const OPERATORS = {
+const OPERATORS = {
     // 基本算术运算符
     '+': {
         precedence: 1,
@@ -199,17 +211,61 @@ export const OPERATORS = {
         description: '无符号右移'
     },
 
+    // 赋值运算符组
     '=': {
-        precedence: 1,
+        precedence: 0,
         args: 2,
         func: (a, b) => b,
         position: 'infix',
-        types: [TYPE.ANY, TYPE.ANY]
+        types: [TYPE.ANY, TYPE.ANY],
+        description: '赋值'
     },
+    '+=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => Types.toNumber(oldValue) + Types.toNumber(rightValue),
+        position: 'infix',
+        types: [TYPE.ANY, TYPE.NUMBER],
+        description: '加法赋值',
+        isCompoundAssignment: true
+    },
+    '-=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => Types.toNumber(oldValue) - Types.toNumber(rightValue),
+        position: 'infix',
+        types: [TYPE.ANY, TYPE.NUMBER],
+        description: '减法赋值',
+        isCompoundAssignment: true
+    },
+    '*=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => Types.toNumber(oldValue) * Types.toNumber(rightValue),
+        position: 'infix',
+        types: [TYPE.ANY, TYPE.NUMBER],
+        description: '乘法赋值',
+        isCompoundAssignment: true
+    },
+    '/=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => {
+            const divisor = Types.toNumber(rightValue);
+            if (divisor === 0) {
+                throw new Error('除数不能为零');
+            }
+            return Types.toNumber(oldValue) / divisor;
+        },
+        position: 'infix',
+        types: [TYPE.ANY, TYPE.NUMBER],
+        description: '除法赋值',
+        isCompoundAssignment: true
+    }
 };
 
 // 函数定义
-export const FUNCTIONS = {
+const FUNCTIONS = {
     // 类型转换函数
     'str': {
         func: x => x,
@@ -410,4 +466,11 @@ export const FUNCTIONS = {
         types: [TYPE.STRING],
         description: '十六进制转十进制'
     },
-}; 
+};
+
+// 暴露到全局作用域
+window.OPERATORS = OPERATORS;
+window.FUNCTIONS = FUNCTIONS;
+window.CONSTANTS = CONSTANTS;
+window.DELIMITERS = DELIMITERS;
+window.SEPARATORS = SEPARATORS; 

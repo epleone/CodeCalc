@@ -79,12 +79,13 @@
         </div>
     </div>
 
+    <script src="types.js"></script>
+    <script src="operators.js"></script>
     <script src="calculator.js"></script>
     <script src="ui.js"></script>
 
     <script>
-
-        // 进入插件的操作
+        // utools 相关代码保持不变
         window.utools.onPluginEnter(({ code, type, payload }) => {
             if(type == "regex") {
                 const inputElement = document.querySelector('.input');
@@ -93,13 +94,11 @@
             }
         });
 
-        // 退出插件的操作
         utools.onPluginOut((processExited) => {
             if (!document.getElementById('historyToggle').checked) {
                 clearAll();
             }
         });
-
     </script>
 </body>
 </html> 

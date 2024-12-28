@@ -42,8 +42,12 @@
     </div>
     <div id="results"></div>
 
-    <script type="module">
-        import Calculator from '../src/calculator.js';
+    <!-- 先加载依赖 -->
+    <script src="../src/types.js"></script>
+    <script src="../src/operators.js"></script>
+    <script src="../src/calculator.js"></script>
+
+    <script>
         const calculate = Calculator.calculate;
 
         const tests = [
@@ -63,9 +67,9 @@
             // 幂函数和根式复合测试
             { group: '幂根复合', name: "幂函数嵌套", input: "pow(pow(2,2),2)", expected: "16" },
             { group: '幂根复合', name: "根式嵌套", input: "sqrt(sqrt(16))", expected: "2" },
-            { group: '幂根复合', name: "root嵌套", input: "root(root(27,3),3)", expected: "1.44225" },
+            { group: '幂根复合', name: "root嵌套", input: "pow(pow(27,1/3),1/3)", expected: "1.44225" },
             { group: '幂根复合', name: "混合幂根", input: "sqrt(pow(2,4))", expected: "4" },
-            { group: '幂根复合', name: "root幂混合", input: "root(pow(8,2),3)", expected: "4" },
+            { group: '幂根复合', name: "root幂混合", input: "pow(pow(8,2),1/3)", expected: "4" },
 
             // 混合函数复合测试
             { group: '混合函数复合', name: "三角对数", input: "sin(ln(e))", expected: "0.841471" },

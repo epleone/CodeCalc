@@ -210,11 +210,14 @@
         </div>
     </div>
 
-    <script type="module">
-        import Calculator from '../src/calculator.js';
-        import ASTVisualizer from '../src/ast-visualizer.js';
-        import { OPERATORS, FUNCTIONS, CONSTANTS } from '../src/operators.js';
+    <!-- 先加载基础依赖 -->
+    <script src="../src/types.js"></script>
+    <script src="../src/operators.js"></script>
+    <script src="../src/calculator.js"></script>
+    <script src="../src/ast-visualizer.js"></script>
 
+    <!-- 主要逻辑 -->
+    <script>
         window.onload = function() {
             const input = document.getElementById('expression');
             const resultDiv = document.getElementById('result');
@@ -276,7 +279,7 @@
                 }
             };
 
-            // 修改示例部分
+            // 示例部分保持不变
             const exampleGroups = {
                 '基础运算': [
                     "1 + 2",
@@ -286,6 +289,17 @@
                     "-1-1",
                     "(-1-1)",
                     "(-1-1).abs"
+                ],
+                '赋值运算': [
+                    "a = 1",
+                    "a = 1 + 2",
+                    "a = 1 + 2 * 3",
+                    "a = 1 + 2 * 3 / 4",
+                    "a = 1 + 2 * 3 / 4 + 5",
+                    "a += 1",
+                    "a -= 1",
+                    "a *= 2",
+                    "a /= 2",
                 ],
                 '异常测试': [
                     "1 ++ 2",
@@ -405,7 +419,7 @@
                 ]
             };
 
-            // 修改示例渲染部分
+            // 示例渲染部分保持不变
             const examplesDiv = document.getElementById('examples');
 
             for (const [groupName, examples] of Object.entries(exampleGroups)) {

@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <title>样式测试页面</title>
     <link rel="stylesheet" href="../src/styles.css">
-    <script type="module">
-        import Calculator from '../src/calculator.js';
-        import * as UI from '../src/ui.js';
-        const calculate = Calculator.calculate;
-    </script>
     <style>
         /* 测试页面特定样式 */
         body {
@@ -196,8 +191,8 @@
             <div class="expression-line">
                 <input type="text" class="input" 
                        placeholder="输入表达式，试试输入 's' 然后按 Tab"
-                       oninput="handleInput(event)"
-                       onkeydown="handleKeyDown(event, this)">
+                       oninput="window.handleInput(event)"
+                       onkeydown="window.handleKeyDown(event, this)">
                 <div class="result-container">
                     <div class="result has-input">
                         <span class="result-value"></span>
@@ -218,37 +213,22 @@
         <div class="copy-notification">已复制到剪贴板</div>
     </div>
 
+    <!-- 先加载依赖 -->
+    <script src="../src/types.js"></script>
+    <script src="../src/operators.js"></script>
+    <script src="../src/calculator.js"></script>
+    <script src="../src/ui.js"></script>
+
     <script>
+        // 初始化计算器
+        const calculate = Calculator.calculate;
+
         // 初始化所有表达式的计算结果
         document.querySelectorAll('.expression-line').forEach(line => {
             const input = line.querySelector('.input');
-            const resultValue = line.querySelector('.result-value');
-            const messageText = line.querySelector('.message-text');
-            
-            if (input.value && !input.hasAttribute('oninput')) {  // 跳过自动补全测试的输入框
-                try {
-                    const result = calculate(input.value);
-                    
-                    if (typeof result === 'object') {
-                        // 处理带有特殊信息的结果
-                        if (result.error) {
-                            resultValue.textContent = '错误';
-                            messageText.textContent = result.error;
-                        } else if (result.success) {
-                            resultValue.textContent = result.value;
-                            messageText.textContent = result.success;
-                        } else if (result.warning) {
-                            resultValue.textContent = result.value;
-                            messageText.textContent = result.warning;
-                        }
-                    } else {
-                        // 普通数值结果
-                        resultValue.textContent = result;
-                    }
-                } catch (error) {
-                    resultValue.textContent = '错误';
-                    messageText.textContent = error.message;
-                }
+            if (input.value && !input.hasAttribute('oninput')) {
+                // 直接使用 ui.js 中的函数
+                window.calculateLine(input);
             }
         });
 
@@ -257,40 +237,13 @@
             result.addEventListener('click', () => {
                 const resultValue = result.querySelector('.result-value').textContent;
                 if (resultValue.trim()) {
-                    // 创建临时文本区域
-                    const textarea = document.createElement('textarea');
-                    textarea.value = resultValue;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    
-                    try {
-                        document.execCommand('copy');
-                    } catch (err) {
-                        console.error('复制失败:', err);
-                    }
-                    
-                    document.body.removeChild(textarea);
-
-                    // 显示复制成功提示
-                    const notification = document.querySelector('.copy-notification');
-                    notification.classList.add('show');
-                    setTimeout(() => {
-                        notification.classList.remove('show');
-                    }, 1000);
-                }
-            });
-        });
-
-        // 切换消息提示的显示
-        document.querySelectorAll('.message-icon').forEach(icon => {
-            icon.addEventListener('mouseover', () => {
-                icon.querySelector('.message-text').style.visibility = 'visible';
-                icon.querySelector('.message-text').style.opacity = '1';
-            });
-            icon.addEventListener('mouseout', () => {
-                if (!icon.classList.contains('error')) {
-                    icon.querySelector('.message-text').style.visibility = 'hidden';
-                    icon.querySelector('.message-text').style.opacity = '0';
+                    navigator.clipboard.writeText(resultValue).then(() => {
+                        const notification = document.querySelector('.copy-notification');
+                        notification.classList.add('show');
+                        setTimeout(() => {
+                            notification.classList.remove('show');
+                        }, 1000);
+                    });
                 }
             });
         });

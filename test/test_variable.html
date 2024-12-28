@@ -41,9 +41,18 @@
     </div>
     <div id="results"></div>
 
-    <script type="module">
-        import Calculator from '../src/calculator.js';
+    <!-- 先加载依赖 -->
+    <script src="../src/types.js"></script>
+    <script src="../src/operators.js"></script>
+    <script src="../src/calculator.js"></script>
+
+    <script>
         const calculate = Calculator.calculate;
+
+        // 添加清除变量的函数
+        function clearTempConstants() {
+            Calculator.clearAllCache();
+        }
 
         const tests = [
             {
