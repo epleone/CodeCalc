@@ -78,6 +78,21 @@ const FUNCTIONS = {
         args: -1,
         func: Math.min
     },
+    'log': {
+        args: 1,
+        func: x => Math.log10(x),
+        description: '以10为底的对数'
+    },
+    'ln': {
+        args: 1,
+        func: x => Math.log(x),
+        description: '自然对数(以e为底)'
+    },
+    'exp': {
+        args: 1,
+        func: x => Math.exp(x),
+        description: 'e的指数'
+    },
     'deg': {
         args: 1,
         func: x => x * CONSTANTS.PI / 180,
