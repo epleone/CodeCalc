@@ -93,6 +93,12 @@ const FUNCTIONS = {
         func: x => Math.exp(x),
         description: 'e的指数'
     },
+    'abs': {
+        args: 1,
+        func: x => Math.abs(x),
+        asProperty: true,  // 标记可以作为属性调用
+        description: '绝对值'
+    },
     'deg': {
         args: 1,
         func: x => x * CONSTANTS.PI / 180,
@@ -149,6 +155,16 @@ const FUNCTIONS = {
         args: 1,
         func: x => Math.tanh(x),
         description: '双曲正切'
+    },
+    'sqrt': {
+        args: 1,
+        func: x => Math.sqrt(x),
+        description: '平方根'
+    },
+    'pow': {
+        args: 2,
+        func: (x, y) => Math.pow(x, y),
+        description: '幂函数'
     }
 };
 
