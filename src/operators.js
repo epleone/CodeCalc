@@ -197,7 +197,15 @@ export const OPERATORS = {
         position: 'infix',
         types: [TYPE.NUMBER, TYPE.NUMBER],
         description: '无符号右移'
-    }
+    },
+
+    '=': {
+        precedence: 1,
+        args: 2,
+        func: (a, b) => b,
+        position: 'infix',
+        types: [TYPE.ANY, TYPE.ANY]
+    },
 };
 
 // 函数定义

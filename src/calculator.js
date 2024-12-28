@@ -2,19 +2,71 @@ import { OPERATORS, FUNCTIONS, CONSTANTS, DELIMITERS, SEPARATORS } from './opera
 import { TYPE, Types } from './types.js';
 
 const Calculator = (function() {
+    // 添加变量字典
+    const variables = new Map();
+    // 添加字符串常量计数器
+    let stringConstantCounter = 0;
+
     // 1. 预处理模块 - 处理属性调用和运算符生成
     function preprocess(expr, operators, functions) {
+        // 检查变量名是否合法
+        function checkVariableName(expr) {
+            // 匹配可能的赋值表达式
+            const assignmentRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*=/g;
+            let match;
+            
+            while ((match = assignmentRegex.exec(expr)) !== null) {
+                const varName = match[1];
+                
+                // 检查是否以保留的字符串常量前缀开头
+                if (varName.startsWith('_cc__str_idx_')) {
+                    throw new Error(`变量名不能以 "_cc__str_idx_" 开头，这是系统保留的前缀`);
+                }
+                
+                // 检查是否与运算符冲突
+                if (OPERATORS.hasOwnProperty(varName)) {
+                    throw new Error(`变量名 "${varName}" 与运算符冲突`);
+                }
+                
+                // 检查是否与函数名冲突
+                if (FUNCTIONS.hasOwnProperty(varName)) {
+                    throw new Error(`变量名 "${varName}" 与函数名冲突`);
+                }
+                
+                // 检查是否与常量冲突
+                if (CONSTANTS.hasOwnProperty(varName)) {
+                    throw new Error(`变量名 "${varName}" 与常量冲突`);
+                }
+                
+                // 检查是否是保留字
+                const reservedWords = ['if', 'else', 'true', 'false', 'null', 'undefined'];
+                if (reservedWords.includes(varName)) {
+                    throw new Error(`变量名 "${varName}" 是保留字`);
+                }
+            }
+            
+            return expr;
+        }
+
         // 处理字符串字面量
         function processStringLiterals(expr) {
+            // 重置字符串常量计数器
+            stringConstantCounter = 0;
+            
             // 匹配字符串字面量的正则表达式
-            // (['"]): 捕获引号类型
-            // (?:\\.|[^\\])*?: 非贪婪匹配字符串内容，包括转义字符
-            // \1: 匹配相同的引号结束
             const stringLiteralRegex = /(['"])((?:\\.|[^\\])*?)\1/g;
             
-            // 替换所有字符串字面量为 str() 函数调用
-            const processed = expr.replace(stringLiteralRegex, (_, quote, content) => {
-                return `str(${content})`;
+            // 替换所有字符串字面量为字符串常量标识符
+            const processed = expr.replace(stringLiteralRegex, (match, quote, content) => {
+                // 生成唯一的字符串常量标识符
+                const constName = `_cc__str_idx_${stringConstantCounter++}`;
+                
+                // 将字符串内容保存到变量字典中
+                // 处理转义字符
+                const processedContent = content.replace(/\\(['"\\])/g, '$1');
+                variables.set(constName, processedContent);
+                
+                return constName;
             });
 
             // 检查是否有未闭合的字符串
@@ -26,6 +78,9 @@ const Calculator = (function() {
             return processed;
         }
 
+        // 检查变量名
+        expr = checkVariableName(expr);
+        
         // 处理字符串字面量
         expr = processStringLiterals(expr);
 
@@ -351,10 +406,14 @@ const Calculator = (function() {
 
         if (!node) return 0;
 
-        // 处理字符串节点
+        // 处理字符串节点 - 可能是变量名
         if (node.type === 'string') {
             console.log('处理字符串节点:', node.value);
-            return node.value;  // 保持字符串形式
+            // 如果是变量名，返回变量值
+            if (variables.has(node.value)) {
+                return variables.get(node.value);
+            }
+            return node.value;  // 否则保持字符串形式
         }
 
         // 处理常量
@@ -373,6 +432,17 @@ const Calculator = (function() {
             const op = OPERATORS[node.value];
             console.log('处理运算符:', node.value, '类型定义:', op.types);
             
+            // 特殊处理赋值运算符
+            if (node.value === '=') {
+                const [left, right] = node.args;
+                if (left.type !== 'string') {
+                    throw new Error('赋值运算符左侧必须是变量名');
+                }
+                const value = evaluate(right, operators, functions);
+                variables.set(left.value, value);
+                return value;
+            }
+
             // 根据运算符定义的类型要求转换参数
             const convertedArgs = args.map((arg, index) => {
                 if (op.types && op.types[index] === TYPE.NUMBER) {
@@ -454,7 +524,6 @@ const Calculator = (function() {
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));
 
-            // 预处理时动态添加运算符
             const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions);
             const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
@@ -490,6 +559,38 @@ const Calculator = (function() {
 
         preprocess(expr, operators, functions) {
             return preprocess(expr, operators, functions);
+        },
+
+        // 添加获取变量值的方法
+        getVariable(name) {
+            return variables.get(name);
+        },
+
+        // 添加设置变量值的方法
+        setVariable(name, value) {
+            variables.set(name, value);
+            return value;
+        },
+
+        // 添加清除所有变量的方法
+        clearVariables() {
+            // 只清除非字符串常量的变量
+            for (const [key] of variables) {
+                if (!key.startsWith('_cc__str_idx_')) {
+                    variables.delete(key);
+                }
+            }
+        },
+
+        // 添加获取所有变量的方法
+        getAllVariables() {
+            return Object.fromEntries(variables);
+        },
+
+        // 添加清除所有内容（包括字符串常量）的方法
+        clearAll() {
+            variables.clear();
+            stringConstantCounter = 0;
         }
     };
 })();
