@@ -16,6 +16,66 @@ const Calculator = (function() {
 
     // 1. 预处理模块 - 处理属性调用和运算符生成
     function preprocess(expr, operators, functions) {
+        // 检查括号匹配
+        function checkParentheses(expr) {
+            // 移除字符串字面量，避免干扰括号匹配检查
+            const noStrings = expr.replace(/'[^']*'|"[^"]*"/g, '');
+            
+            // 检查括号是否匹配
+            const stack = [];
+            let maxDepth = 0;  // 记录最大嵌套深度
+            
+            for (let i = 0; i < noStrings.length; i++) {
+                if (noStrings[i] === '(') {
+                    stack.push(i);
+                    maxDepth = Math.max(maxDepth, stack.length);
+                    
+                    // 检查嵌套深度是否过大
+                    if (maxDepth > 100) {
+                        throw new Error('括号嵌套深度过大');
+                    }
+                    
+                    // 检查左括号后是否直接跟右括号
+                    if (noStrings[i + 1] === ')') {
+                        throw new Error(`空括号对，位置: ${i}`);
+                    }
+                } else if (noStrings[i] === ')') {
+                    if (stack.length === 0) {
+                        throw new Error(`多余的右括号，位置: ${i}`);
+                    }
+                    
+                    // 获取对应的左括号位置
+                    const openPos = stack.pop();
+                    // 检查括号内的内容长度
+                    if (i - openPos > 1000) {
+                        throw new Error(`括号内容过长，开始位置: ${openPos}`);
+                    }
+                }
+            }
+            
+            if (stack.length > 0) {
+                const positions = stack.join(', ');
+                throw new Error(`缺少右括号，对应左括号位置: ${positions}`);
+            }
+            
+            // 检查括号前后的非法组合，修改规则以允许函数调用
+            const invalidPatterns = [
+                // 允许标识符后跟左括号（函数调用）
+                { pattern: /\)[\w\d]/, message: '右括号后直接跟标识符' },
+                { pattern: /\)\(/, message: '右括号后直接跟左括号' },
+                { pattern: /,\s*\)/, message: '逗号后直接跟右括号' },
+                { pattern: /\(\s*,/, message: '左括号后直接跟逗号' },
+                // 检查连续的括号对（允许函数调用）
+                { pattern: /\(\s*\)(?!\s*[.,)\]}])/, message: '独立的空括号对' }
+            ];
+            
+            for (const {pattern, message} of invalidPatterns) {
+                if (pattern.test(noStrings)) {
+                    throw new Error(`括号使用错误: ${message}`);
+                }
+            }
+        }
+
         // 检查变量名是否合法
         function checkVariableName(expr) {
             // 匹配可能的赋值表达式
@@ -84,6 +144,9 @@ const Calculator = (function() {
 
             return processed;
         }
+
+        // 先检查括号匹配
+        checkParentheses(expr);
 
         // 检查变量名
         expr = checkVariableName(expr);
@@ -162,6 +225,7 @@ const Calculator = (function() {
         const separators = new Set(Object.keys(SEPARATORS));
 
         const sortedOperators = [...operators].sort((a, b) => b.length - a.length);
+        let lastTokenType = null;  // 添加上一个 token 的类型记录
 
         function shouldBeUnaryMinus() {
             if (tokens.length === 0) return true;
@@ -233,6 +297,7 @@ const Calculator = (function() {
             let foundOperator = false;
             for (const op of sortedOperators) {
                 if (remainingExpr.startsWith(op)) {
+                    // 移除连续运算符的检查
                     if (op === '-') {
                         // 特殊处理减号
                         if (shouldBeUnaryMinus()) {
@@ -250,6 +315,7 @@ const Calculator = (function() {
                             tokens.push(['operator', op]);
                         }
                     }
+                    lastTokenType = 'operator';
                     i += op.length;
                     foundOperator = true;
                     break;
@@ -260,9 +326,11 @@ const Calculator = (function() {
             // 检查分隔符和定界符
             if (separators.has(char)) {
                 tokens.push(['separator', char]);
+                lastTokenType = 'separator';
                 i++;
             } else if (delimiters.has(char)) {
                 tokens.push(['delimiter', char]);
+                lastTokenType = 'delimiter';
                 i++;
             } else {
                 // 其他所有情况都作为字符串处理
@@ -270,10 +338,13 @@ const Calculator = (function() {
                 if (str) {
                     if (functions.has(str)) {
                         tokens.push(['function', str]);
+                        lastTokenType = 'function';
                     } else if (constants.has(str)) {
                         tokens.push(['constant', str]);
+                        lastTokenType = 'constant';
                     } else {
                         tokens.push(['string', str]);
+                        lastTokenType = 'string';
                     }
                 }
             }
@@ -286,22 +357,8 @@ const Calculator = (function() {
     function buildAst(tokens, operators, functions) {
         let current = 0;
 
-        function createNode(value, args = [], type = null) {
-            // 如果指定了类型，直接使用
-            if (type) {
-                return { type, value, args };
-            }
-            
-            // 根据 token 类型创建节点
-            if (operators.has(value)) {
-                return { type: 'operator', value, args };
-            } else if (functions.has(value)) {
-                return { type: 'function', value, args };
-            } else if (CONSTANTS.hasOwnProperty(value)) {
-                return { type: 'constant', value, args };
-            } else {
-                return { type: 'string', value, args };
-            }
+        function createNode(value, args, type) {
+            return { value, args, type };
         }
 
         function parsePrimary() {
@@ -314,30 +371,29 @@ const Calculator = (function() {
 
             // 处理函数调用
             if (type === 'function') {
-                // 检查是否有左括号
-                if (current < tokens.length && 
-                    tokens[current][0] === 'delimiter' && 
-                    tokens[current][1] === '(') {
-                    current++; // 跳过左括号
-                    const args = [];
-                    
-                    // 收集函数参数
-                    while (current < tokens.length && 
-                           !(tokens[current][0] === 'delimiter' && 
-                             tokens[current][1] === ')')) {
-                        args.push(parseExpression(0));
-                        if (tokens[current][0] === 'separator') {
-                            current++; // 跳过逗号
-                        }
-                    }
-                    
-                    if (current >= tokens.length) {
-                        throw new Error('缺少右括号');
-                    }
-                    current++; // 跳过右括号
-                    
-                    return createNode(value, args, 'function');
+                if (current >= tokens.length || 
+                    tokens[current][0] !== 'delimiter' || 
+                    tokens[current][1] !== '(') {
+                    throw new Error('函数调用缺少左括号');
                 }
+                current++; // 跳过左括号
+
+                const args = [];
+                while (current < tokens.length && 
+                       (tokens[current][0] !== 'delimiter' || 
+                        tokens[current][1] !== ')')) {
+                    args.push(parseExpression(0));
+                    if (tokens[current][0] === 'separator') {
+                        current++; // 跳过逗号
+                    }
+                }
+                
+                if (current >= tokens.length) {
+                    throw new Error('缺少右括号');
+                }
+                current++; // 跳过右括号
+
+                return createNode(value, args, 'function');
             }
 
             // 处理括号表达式
@@ -421,11 +477,10 @@ const Calculator = (function() {
         // 处理字符串节点 - 可能是变量名
         if (node.type === 'string') {
             console.log('处理字符串节点:', node.value);
-            // 如果是变量名，返回变量值
             if (variables.has(node.value)) {
                 return variables.get(node.value);
             }
-            return node.value;  // 否则保存字符串形式
+            return node.value;
         }
 
         // 处理常量
@@ -443,11 +498,17 @@ const Calculator = (function() {
         if (node.type === 'operator') {
             const op = OPERATORS[node.value];
             console.log('处理运算符:', node.value, '类型定义:', op.types);
+
+            // 检查参数数量
+            if (op.args !== undefined && args.length !== op.args) {
+                throw new Error(`运算符 "${node.value}" 需要 ${op.args} 个参数，但得到了 ${args.length} 个`);
+            }
             
             // 处理赋值运算符
             if (node.value === '=' || op.isCompoundAssignment) {
                 const [left, right] = node.args;
-                if (left.type !== 'string') {
+                // 检查左侧是否为有效的变量名
+                if (left.type !== 'string' || !isValidVariableName(left.value)) {
                     throw new Error('赋值运算符左侧必须是变量名');
                 }
                 
@@ -455,11 +516,12 @@ const Calculator = (function() {
                 const rightValue = evaluate(right, operators, functions);
                 
                 if (op.isCompoundAssignment) {
-                    // 对于复合赋值，获取变量当前值（如果不存在则为0）
-                    const oldValue = variables.has(left.value) ? 
-                        variables.get(left.value) : 0;
+                    // 对于复合赋值，检查变量是否已定义
+                    if (!variables.has(left.value)) {
+                        throw new Error(`变量 "${left.value}" 未定义`);
+                    }
                     
-                    // 使用运算符的 func 完成运算
+                    const oldValue = variables.get(left.value);
                     const result = op.func(oldValue, rightValue);
                     
                     // 更新变量的值
@@ -472,7 +534,7 @@ const Calculator = (function() {
                 }
             }
 
-            // 其他运算符的处理保持不变
+            // 其他运算符的处理
             const convertedArgs = args.map((arg, index) => {
                 if (op.types && op.types[index] === TYPE.NUMBER) {
                     const converted = Types.toNumber(arg);
@@ -491,6 +553,22 @@ const Calculator = (function() {
         if (node.type === 'function') {
             const func = FUNCTIONS[node.value];
             console.log('处理函数:', node.value, '类型定义:', func.types);
+
+            // 检查参数数量
+            if (func.args !== undefined) {
+                if (Array.isArray(func.args)) {
+                    // 如果 args 是数组，表示可接受的参数数量范围
+                    const [min, max] = func.args;
+                    if (args.length < min || args.length > max) {
+                        throw new Error(`函数 "${node.value}" 需要 ${min} 到 ${max} 个参数，但得到了 ${args.length} 个`);
+                    }
+                } else {
+                    // 如果 args 是数字，表示固定的参数数量
+                    if (args.length !== func.args) {
+                        throw new Error(`函数 "${node.value}" 需要 ${func.args} 个参数，但得到了 ${args.length} 个`);
+                    }
+                }
+            }
             
             // 根据函数定义的类型要求转换参数
             const convertedArgs = args.map((arg, index) => {
@@ -544,6 +622,16 @@ const Calculator = (function() {
         }
 
         return { nodes, edges };
+    }
+
+    // 添加到辅助函数部分
+    function isValidVariableName(name) {
+        // 检查是否是合法的变量名（字母或下划线开头，后面可以是字母、数字或下划线）
+        return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name) && 
+               !OPERATORS.hasOwnProperty(name) &&
+               !FUNCTIONS.hasOwnProperty(name) &&
+               !CONSTANTS.hasOwnProperty(name) &&
+               !/^_cc__str_idx_/.test(name);  // 不能是内部字符串常量名
     }
 
     // 6. 返回公共API

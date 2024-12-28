@@ -35,7 +35,12 @@ const OPERATORS = {
     '+': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x + y,
+        func: (x, y) => {
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                return BigInt(x) + BigInt(y);
+            }
+            return x + y;
+        },
         position: 'infix',
         types: [TYPE.NUMBER, TYPE.NUMBER],
         description: '加法'
@@ -43,7 +48,12 @@ const OPERATORS = {
     '-': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x - y,
+        func: (x, y) => {
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                return BigInt(x) - BigInt(y);
+            }
+            return x - y;
+        },
         position: 'infix',
         types: [TYPE.NUMBER, TYPE.NUMBER],
         description: '减法'
@@ -51,7 +61,12 @@ const OPERATORS = {
     '*': {
         precedence: 2,
         args: 2,
-        func: (x, y) => x * y,
+        func: (x, y) => {
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                return BigInt(x) * BigInt(y);
+            }
+            return x * y;
+        },
         position: 'infix',
         types: [TYPE.NUMBER, TYPE.NUMBER],
         description: '乘法'
@@ -59,7 +74,7 @@ const OPERATORS = {
     '/': {
         precedence: 2,
         args: 2,
-        func: (x, y) => y !== 0 ? x / y : Infinity,
+        func: (x, y) => y !== 0 ? x / y : (() => { throw new Error('除数不能为零'); })(),
         position: 'infix',
         types: [TYPE.NUMBER, TYPE.NUMBER],
         description: '除法'
@@ -121,7 +136,7 @@ const OPERATORS = {
     '0b': {
         precedence: 4,
         args: 1,
-        func: x => parseInt(x, 2),
+        func: x => BigInt(`0b${x}`),
         position: 'prefix',
         types: [TYPE.STRING],
         description: '二进制转十进制'
@@ -129,7 +144,7 @@ const OPERATORS = {
     '0o': {
         precedence: 4,
         args: 1,
-        func: x => parseInt(x, 8),
+        func: x => BigInt(`0o${x}`),
         position: 'prefix',
         types: [TYPE.STRING],
         description: '八进制转十进制'
@@ -137,7 +152,7 @@ const OPERATORS = {
     '0x': {
         precedence: 4,
         args: 1,
-        func: x => parseInt(x, 16),
+        func: x => BigInt(`0x${x}`), // 使用 BigInt 直接转换 16 进制，可以避免溢出
         position: 'prefix',
         types: [TYPE.STRING],
         description: '十六进制转十进制'
@@ -428,21 +443,21 @@ const FUNCTIONS = {
     // 进制转换函数
     'bin': {
         args: 1,
-        func: x => "0b" + x.toString(2),
+        func: x => "0b" + BigInt(x).toString(2),
         types: [TYPE.NUMBER],
         asProperty: true,
         description: '十进制转二进制'
     },
     'oct': {
         args: 1,
-        func: x => "0o" + x.toString(8),
+        func: x => "0o" + BigInt(x).toString(8),
         types: [TYPE.NUMBER],
         asProperty: true,
         description: '十进制转八进制'
     },
     'hex': {
         args: 1,
-        func: x => "0x" + x.toString(16),
+        func: x => "0x" + BigInt(x).toString(16),
         types: [TYPE.NUMBER],
         asProperty: true,
         description: '十进制转十六进制'
@@ -450,19 +465,19 @@ const FUNCTIONS = {
     // 进制转换函数，可能冲突，支持变量
     '0b': {
         args: 1,
-        func: x => parseInt(x, 2),
+        func: x => BigInt(`0b${x}`),
         types: [TYPE.STRING],
         description: '二进制转十进制'
     },
     '0o': {
         args: 1,
-        func: x => parseInt(x, 8),
+        func: x => BigInt(`0o${x}`),
         types: [TYPE.STRING],
         description: '八进制转十进制'
     },
     '0x': {
         args: 1,
-        func: x => parseInt(x, 16),
+        func: x => BigInt(`0x${x}`), // 避免溢出
         types: [TYPE.STRING],
         description: '十六进制转十进制'
     },

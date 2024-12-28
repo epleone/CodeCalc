@@ -9,7 +9,7 @@ const TYPE = {
 const Types = {
     // 类型检查
     isNumber(value) {
-        return typeof value === 'number' && !isNaN(value);
+        return (typeof value === 'number' && !isNaN(value)) || typeof value === 'bigint';
     },
 
     isString(value) {
@@ -19,6 +19,16 @@ const Types = {
     // 类型转换
     toNumber(value) {
         if (typeof value === 'number') return value;
+        if (typeof value === 'bigint') {
+
+            // 检查是否超出安全整数范围
+            if (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER) {
+                // throw new Error(`BigInt 值 ${value} 超出安全整数范围`);
+                // 对于 BigInt，直接返回原值
+                return value;
+            }
+            return Number(value);
+        }
         if (typeof value === 'string') {
             // 处理空字符串
             if (!value.trim()) {
@@ -45,6 +55,15 @@ const Types = {
     },
 
     toString(value, precision = 6) {
+        // 处理 BigInt 类型
+        if (typeof value === 'bigint') {
+            // 如果是安全整数范围内，转换为 number
+            if (value <= Number.MAX_SAFE_INTEGER && value >= Number.MIN_SAFE_INTEGER) {
+                return Number(value).toString();
+            }
+            return value.toString();
+        }
+
         if (typeof value === 'number') {
             // 处理特殊数字
             if (!Number.isFinite(value)) {

@@ -71,8 +71,12 @@
     </div>
     <div id="results"></div>
 
-    <script type="module">
-        import Calculator from '../src/calculator.js';
+    <!-- 先加载依赖 -->
+    <script src="../src/types.js"></script>
+    <script src="../src/operators.js"></script>
+    <script src="../src/calculator.js"></script>
+
+    <script>
         const calculate = Calculator.calculate;
 
         const tests = [
@@ -132,8 +136,8 @@
                     { name: "五层sqrt嵌套", input: "sqrt(sqrt(sqrt(sqrt(sqrt(32)))))", expected: "1.149966" },
                     { name: "复杂幂根嵌套1", input: "sqrt(pow(sqrt(pow(2,4)),2))", expected: "4" },
                     { name: "复杂幂根嵌套2", input: "pow(sqrt(pow(sqrt(16),2)),2)", expected: "16" },
-                    { name: "root嵌套", input: "root(root(root(27,3),3),3)", expected: "1.384617" },
-                    { name: "root-pow嵌套", input: "root(pow(root(pow(8,2),3),2),4)", expected: "2" }
+                    { name: "root嵌套", input: "pow(pow(pow(27,1/3),1/3),1/3)", expected: "1.384617" },
+                    { name: "root-pow嵌套", input: "pow(pow(pow(pow(8,2),1/3),2),1/4)", expected: "2" }
                 ]
             },
 
@@ -194,8 +198,8 @@
                 tests: [
                     { name: "多重对数嵌套1", input: "log(1 + ln(1 + log(ln(log(1000)))))", expected: "-0.977800" },
                     { name: "多重对数嵌套2", input: "ln(log(ln(pow(e,log(100)))))", expected: "-1.660631" },
-                    { name: "幂函数链式1", input: "pow(2,3)*sqrt(16)*root(27,3)", expected: "24" },
-                    { name: "幂函数链式2", input: "pow(sqrt(16),log(100))*root(pow(2,6),2)", expected: "16" },
+                    { name: "幂函数链式1", input: "pow(2,3)*sqrt(16)*pow(27,1/3)", expected: "24" },
+                    { name: "幂函数链式2", input: "pow(sqrt(16),log(100))*pow(pow(2,6),1/2)", expected: "16" },
                     { name: "对数幂复合1", input: "log(pow(e,ln(sqrt(pow(2,4)))))", expected: "1" },
                     { name: "对数幂复合2", input: "ln(sqrt(pow(e,log(pow(10,2)))))", expected: "2.302585" }
                 ]

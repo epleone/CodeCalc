@@ -171,9 +171,11 @@
             { group: '进制转换', name: "二进制转十进制", input: "0b111", expected: "7" },
             { group: '进制转换', name: "八进制转十进制", input: "0o111", expected: "73" },
             { group: '进制转换', name: "十六进制转十进制", input: "0x111", expected: "273" },
+            { group: '进制转换', name: "大数转换", input: "0x13e48326954132e2", expected: "1433414783146734306" },
             { group: '进制转换', name: "十进制转二进制", input: "bin(111)", expected: "0b1101111" },
             { group: '进制转换', name: "十进制转八进制", input: "oct(111)", expected: "0o157" },
             { group: '进制转换', name: "十进制转十六进制", input: "hex(111)", expected: "0x6F" },
+            
 
             // 错误处理测试
             { group: '错误处理', name: "除零错误", input: "1/0", expected: "除数不能为零" },
