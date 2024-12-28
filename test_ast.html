@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>表达式计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .right-panel {
+            position: sticky;
+            top: 20px;
+            align-self: flex-start;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #calculator {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #expression {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #calculate {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #calculate:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            margin-left: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #ast {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        #examples {
+            margin: 0;
+        }
+        #examples button {
+            margin: 5px;
+            padding: 5px 10px;
+        }
+        .example-group {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-left: 3px solid #4CAF50;
+            background-color: #f9f9f9;
+        }
+
+        h3 {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        h4 {
+            margin: 10px 0 5px 0;
+            color: #333;
+            font-size: 1em;
+        }
+
+        .example-group button {
+            margin: 2px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .example-group button:hover {
+            background-color: #e9e9e9;
+        }
+
+        #result-panel, #ast-panel {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        #result-panel {
+            min-height: 50px;
+        }
+
+        .panel-title {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        #tokens-panel {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .token {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 2px;
+            border-radius: 3px;
+            font-family: monospace;
+            cursor: help;
+            position: relative;
+            border: 1px solid transparent;
+        }
+
+        .token::after {
+            content: attr(data-type);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 2px 6px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s;
+            pointer-events: none;
+        }
+
+        .token:hover {
+            border-color: rgba(0,0,0,0.1);
+        }
+
+        .token:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .token-operator { background-color: #ffebee; }
+        .token-function { background-color: #e3f2fd; }
+        .token-constant { background-color: #e8f5e9; }
+        .token-string { background-color: #fff3e0; }
+        .token-delimiter { background-color: #f3e5f5; }
+        .token-separator { background-color: #ede7f6; }
+    </style>
+</head>
+<body>
+    <h1>表达式计算器</h1>
+    <div class="container">
+        <div class="left-panel">
+            <div id="calculator">
+                <input type="text" id="expression" placeholder="输入表达式">
+                <button id="calculate">计算</button>
+            </div>
+            <div id="examples">
+                <h3>示例表达式：</h3>
+                <!-- 示例组会在这里渲染 -->
+            </div>
+        </div>
+        <div class="right-panel">
+            <div id="result-panel">
+                <h3 class="panel-title">计算结果：</h3>
+                <div id="result"></div>
+            </div>
+            <div id="tokens-panel">
+                <h3 class="panel-title">词法分析结果：</h3>
+                <div id="tokens"></div>
+            </div>
+            <div id="ast-panel">
+                <h3 class="panel-title">语法树可视化：</h3>
+                <div id="ast"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import Calculator from './calculator.js';
+        import ASTVisualizer from './ast-visualizer.js';
+        import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
+
+        window.onload = function() {
+            const input = document.getElementById('expression');
+            const resultDiv = document.getElementById('result');
+            const tokensDiv = document.getElementById('tokens');
+            const astDiv = document.getElementById('ast');
+            const calculateBtn = document.getElementById('calculate');
+            
+            // 创建可视化器实例
+            let visualizer = new ASTVisualizer(astDiv);
+
+            calculateBtn.onclick = function() {
+                const expr = input.value;
+                let ast = null;
+                let tokens = null;
+                
+                // 清空之前的结果
+                resultDiv.textContent = '';
+                tokensDiv.innerHTML = '';
+                astDiv.innerHTML = '';
+                visualizer = new ASTVisualizer(astDiv);
+
+                // 获取词法分析结果
+                try {
+                    const operators = new Set(Object.keys(OPERATORS));
+                    const functions = new Set(Object.keys(FUNCTIONS));
+                    const constants = new Set(Object.keys(CONSTANTS));
+                    const { expr: processedExpr, operators: sortedOperators } = 
+                        Calculator.preprocess(expr, operators, functions);
+                    tokens = Calculator.tokenize(processedExpr, sortedOperators, functions, constants);
+                    
+                    // 显示tokens
+                    tokens.forEach(([type, value]) => {
+                        const span = document.createElement('span');
+                        span.className = `token token-${type}`;
+                        span.textContent = value;
+                        span.setAttribute('data-type', `类型: ${type}`);
+                        tokensDiv.appendChild(span);
+                    });
+                } catch (e) {
+                    resultDiv.textContent = `词法分析错误: ${e.message}`;
+                    return;
+                }
+
+                // 尝试生成 AST
+                try {
+                    ast = Calculator.getASTNode(expr);
+                    visualizer.draw(ast);
+                } catch (e) {
+                    resultDiv.textContent = `语法错误: ${e.message}`;
+                    return;
+                }
+
+                // 尝试计算结果
+                try {
+                    const result = Calculator.calculate(expr);
+                    resultDiv.textContent = `结果: ${result}`;
+                } catch (e) {
+                    resultDiv.textContent = `计算错误: ${e.message}`;
+                }
+            };
+
+            // 修改示例部分
+            const exampleGroups = {
+                '基础运算': [
+                    "1 + 2",
+                    "2 * (3 + 4)",
+                    "(1 + 2) * (-3 - 4)",
+                    "-1",
+                    "-1-1",
+                    "(-1-1)",
+                    "(-1-1).abs"
+                ],
+                '函数调用': [
+                    "max(-1,-1-1,1, min(10, -1-1, 2))",
+                    "max(1, 2, 3)",
+                    "min(1, 2, 3)"
+                ],
+                '后缀运算符': [
+                    "#1",
+                    "#(1+2)",
+                    "#1 + 2",
+                    "#e",
+                    "150°"
+                ],
+                '角度转换': [
+                    "deg(150)",
+                    "150.deg",
+                    "rad(1.5)",
+                    "1.5.rad",
+                    "rad(1.5).deg",
+                    "1.5.rad.deg",
+                    "(1+2).deg"
+                ],
+                '高级运算': [
+                    "7 // 2",        // 整除
+                    "7 % 3",         // 取余
+                    "2 ** 3",        // 幂运算
+                    "2 ** 3 ** 2",   // 幂运算右结合
+                    "10 // 3 * 2"    // 混合运算
+                ],
+                '三角函数': [
+                    "sin(PI/2)",
+                    "cos(PI)",
+                    "tan(PI/4)",
+                    "sin(30°)",
+                    "cos(45.deg)"
+                ],
+                '反三角函数': [
+                    "asin(1)",
+                    "acos(0)",
+                    "atan(1)"
+                ],
+                '双曲函数': [
+                    "sinh(1)",
+                    "cosh(0)",
+                    "tanh(0)"
+                ],
+                '复杂表达式': [
+                    "sin(cos(PI/2))",
+                    "2 * sin(30°) * cos(60°)",
+                    "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))"
+                ],
+                '对数和指数': [
+                    "log(100)",        // 以10为底的对数
+                    "log(1000)",       // log(1000) = 3
+                    "ln(e)",          // 自然对数，结果为1
+                    "ln(1)",          // 自然对数，结果为0
+                    "exp(1)",         // e的1次方，结果为e
+                    "exp(2)",         // e的平方
+                    "exp(ln(2))",     // 先求ln再求exp，结果为2
+                    "log(10**3)"      // 结果为3
+                ],
+                '基本函数': [
+                    "sqrt(2)",        // 根号2
+                    "sqrt(4)",        // 2
+                    "sqrt(9)",        // 3
+                    "pow(2,3)",      // 2的3次方 = 8
+                    "pow(3,2)",      // 3的平方 = 9
+                    "abs(-1)",       // 绝对值 = 1
+                    "abs(1-2)",      // |1-2| = 1
+                    "sqrt(pow(3,2) + pow(4,2))",  // 勾股定理
+                    "pow(2, 1/2)",   // 另一种求平方根的方式
+                    "abs(sin(PI))"   // 复合函数
+                ],
+                '进制转换': [
+                    "0b111",         // 二进制 111 = 7
+                    "0b1010",        // 二进制 1010 = 10
+                    "0o111",         // 八进制 111 = 73
+                    "0o777",         // 八进制 777 = 511
+                    "0x111",         // 十六进制 111 = 273
+                    "0xFF",          // 十六进制 FF = 255
+                    "0xAB + 0b11",   // 混合运算
+                    "0xFF.abs"       // 与属性调用组合
+                ],
+                '位运算': [
+                    // 基本位运算
+                    "5 & 3",           // 101 & 011 = 001 = 1
+                    "5 | 3",           // 101 | 011 = 111 = 7
+                    "5 ^ 3",           // 101 ^ 011 = 110 = 6
+                    "~5",              // ~00000101 = 11111010 = -6
+                    
+                    // 移位运算
+                    "1 << 2",          // 1 左移 2 位 = 4
+                    "8 >> 2",          // 8 右移 2 位 = 2
+                    "-8 >>> 2",        // -8 无符号右移 2 位
+                    
+                    // 组合运算
+                    "(5 & 3) | 4",     // (1) | 4 = 5
+                    "~(5 & 3)",        // ~1 = -2
+                    
+                    // 与进制转换结合
+                    "(5 & 3).bin",     // 结果的二进制表示
+                    "(5 | 3).bin",     // 结果的二进制表示
+                    "(1 << 4).bin",    // 16的二进制表示
+                    
+                    // 复杂组合
+                    "1010.bin & 0o1100.bin",  // 二进制数的位运算
+                    "0xFF.hex & 0o10.hex",      // 十六进制数的位运算
+                    "(0xFF & 0xF).hex"                    // 结果转十六进制
+                ]
+            };
+
+            // 修改示例渲染部分
+            const examplesDiv = document.getElementById('examples');
+
+            for (const [groupName, examples] of Object.entries(exampleGroups)) {
+                // 创建分组标题
+                const groupTitle = document.createElement('h4');
+                groupTitle.textContent = groupName;
+                examplesDiv.appendChild(groupTitle);
+
+                // 创建分组容器
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'example-group';
+                
+                // 添加示例按钮
+                examples.forEach(expr => {
+                    const button = document.createElement('button');
+                    button.textContent = expr;
+                    button.onclick = function() {
+                        input.value = expr;
+                        calculateBtn.click();
+                    };
+                    groupDiv.appendChild(button);
+                    groupDiv.appendChild(document.createTextNode(' '));
+                });
+
+                examplesDiv.appendChild(groupDiv);
+            }
+        };
+    </script>
+</body>
+</html> 
