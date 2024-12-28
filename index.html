@@ -168,23 +168,31 @@
 
             calculateBtn.onclick = function() {
                 const expr = input.value;
-                try {
-                    // 计算结果
-                    const result = Calculator.calculate(expr);
-                    resultDiv.textContent = `结果: ${result}`;
+                let ast = null;
+                
+                // 清空之前的结果
+                resultDiv.textContent = '';
+                astDiv.innerHTML = '';
+                visualizer = new ASTVisualizer(astDiv);
 
-                    // 获取AST并可视化
-                    const ast = Calculator.getASTNode(expr);
-                    
-                    // 清空之前的内容并重新创建可视化器
-                    astDiv.innerHTML = '';
-                    visualizer = new ASTVisualizer(astDiv);
+                // 第一步：尝试生成 AST
+                try {
+                    ast = Calculator.getASTNode(expr);
+                    // AST 生成成功，显示语法树
                     visualizer.draw(ast);
                 } catch (e) {
-                    resultDiv.textContent = `错误: ${e.message}`;
-                    // 清空并重置可视化器
-                    astDiv.innerHTML = '';
-                    visualizer = new ASTVisualizer(astDiv);
+                    // AST 生成失败，显示错误
+                    resultDiv.textContent = `语法错误: ${e.message}`;
+                    return;  // 语法错误时直接返回
+                }
+
+                // 第二步：尝试计算结果（只在 AST 生成成功时执行）
+                try {
+                    const result = Calculator.calculate(expr);
+                    resultDiv.textContent = `结果: ${result}`;
+                } catch (e) {
+                    // 计算错误但保留语法树显示
+                    resultDiv.textContent = `计算错误: ${e.message}`;
                 }
             };
 
@@ -268,6 +276,16 @@
                     "sqrt(pow(3,2) + pow(4,2))",  // 勾股定理
                     "pow(2, 1/2)",   // 另一种求平方根的方式
                     "abs(sin(PI))"   // 复合函数
+                ],
+                '进制转换': [
+                    "0b111",         // 二进制 111 = 7
+                    "0b1010",        // 二进制 1010 = 10
+                    "0o111",         // 八进制 111 = 73
+                    "0o777",         // 八进制 777 = 511
+                    "0x111",         // 十六进制 111 = 273
+                    "0xFF",          // 十六进制 FF = 255
+                    "0xAB + 0b11",   // 混合运算
+                    "0xFF.abs"       // 与属性调用组合
                 ]
             };
 

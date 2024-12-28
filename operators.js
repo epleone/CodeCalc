@@ -10,61 +10,107 @@ const OPERATORS = {
         precedence: 1,
         args: 2,
         func: (x, y) => x + y,
-        position: 'infix'  // 中缀运算符
+        position: 'infix',
+        type: 'operator'
     },
     '-': {
         precedence: 1,
         args: 2,
         func: (x, y) => x - y,
-        position: 'infix'  // 中缀运算符
+        position: 'infix',
+        type: 'operator'
     },
     '*': {
         precedence: 2,
         args: 2,
         func: (x, y) => x * y,
-        position: 'infix'  // 中缀运算符
+        position: 'infix',
+        type: 'operator'
     },
     '//': {
         precedence: 2,  // 与乘除法同级
         args: 2,
         func: (x, y) => Math.floor(x / y),
-        position: 'infix'
+        position: 'infix',
+        type: 'operator'
     },
     '%': {
         precedence: 2,  // 与乘除法同级
         args: 2,
         func: (x, y) => x % y,
-        position: 'infix'
+        position: 'infix',
+        type: 'operator'
     },
     '**': {
         precedence: 3,  // 比乘除法高一级
         args: 2,
         func: (x, y) => Math.pow(x, y),
-        position: 'infix'
+        position: 'infix',
+        type: 'operator'
     },
     '/': {
         precedence: 2,
         args: 2,
         func: (x, y) => y !== 0 ? x / y : Infinity,
-        position: 'infix'  // 中缀运算符
+        position: 'infix',
+        type: 'operator'
     },
     '#': {
         precedence: 3,
         args: 1,
         func: x => x + 1,
-        position: 'prefix'  // 后缀运算符
+        position: 'prefix',
+        type: 'operator'
     },
     '°': {
         precedence: 3,
         args: 1,
         func: x => x * CONSTANTS.PI / 180,
-        position: 'postfix'  // 后缀运算符
+        position: 'postfix',
+        type: 'operator'
     },
     'unary-': {  // 一元负号
         precedence: 4,
         args: 1,
         func: x => -x,
-        position: 'prefix'  // 前缀运算符
+        position: 'prefix',
+        type: 'operator'
+    },
+    '0b': {
+        precedence: 4,
+        args: 1,
+        func: x => parseInt(x, 2),  // 二进制转十进制
+        position: 'prefix',
+        description: '二进制转十进制',
+        type: 'operator'
+    },
+    '0o': {
+        precedence: 4,
+        args: 1,
+        func: x => parseInt(x, 8),  // 八进制转十进制
+        position: 'prefix',
+        description: '八进制转十进制',
+        type: 'operator'
+    },
+    '0x': {
+        precedence: 4,
+        args: 1,
+        func: x => parseInt(x, 16),  // 十六进制转十进制
+        position: 'prefix',
+        description: '十六进制转十进制',
+        type: 'operator'
+    },
+    '(': {
+        precedence: 0,
+        type: 'delimiter'
+    },
+    ')': {
+        precedence: 0,
+        type: 'delimiter'
+    },
+    ',': {
+        precedence: 0,
+        type: 'separator'
     }
 };
 

@@ -6,10 +6,9 @@ const Calculator = (function() {
         // 动态添加属性调用运算符
         for (const [name, func] of Object.entries(FUNCTIONS)) {
             if (func.asProperty) {
-                // 添加对应的后缀运算符
                 operators.add('.' + name);
                 OPERATORS['.' + name] = {
-                    precedence: 3,  // 与其他后缀运算符同级
+                    precedence: 3,
                     args: 1,
                     func: func.func,
                     position: 'postfix'
@@ -17,7 +16,10 @@ const Calculator = (function() {
             }
         }
 
-        return expr;  // 不需要修改表达式，直接返回
+        // 按长度降序排列运算符，确保先匹配较长的运算符
+        const sortedOperators = new Set([...operators].sort((a, b) => b.length - a.length));
+
+        return { expr, operators: sortedOperators };
     }
 
     // 预处理辅助函数
@@ -66,41 +68,61 @@ const Calculator = (function() {
         let i = 0;
         expr = expr.replace(/\s/g, '');
 
-        function collectNumber() {
-            let num = '';
-            let hasDecimal = false;
+        // 从 OPERATORS 中获取所有分隔符
+        const delimiters = new Set(
+            Object.entries(OPERATORS)
+                .filter(([_, op]) => op.type === 'delimiter')
+                .map(([key]) => key)
+        );
+
+        // 从 OPERATORS 中获取所有分隔符
+        const separators = new Set(
+            Object.entries(OPERATORS)
+                .filter(([_, op]) => op.type === 'separator')
+                .map(([key]) => key)
+        );
+
+        function isUnaryMinus() {
+            // 负号的条件：
+            // 1. 是表达式开始
+            // 2. 前一个token是左括号
+            // 3. 前一个token是运算符
+            // 4. 前一个token是分隔符(逗号)
+            return tokens.length === 0 || 
+                   (tokens[tokens.length-1][0] === 'operator' && tokens[tokens.length-1][1] === '(') ||
+                   (tokens[tokens.length-1][0] === 'operator' && tokens[tokens.length-1][1] !== ')') ||
+                   tokens[tokens.length-1][0] === 'separator';
+        }
+
+        function collectString() {
+            let str = '';
             
             while (i < expr.length) {
-                // 处理小数点
-                if (expr[i] === '.') {
-                    // 如果后面跟着字母，说明是属性调用
-                    if (i + 1 < expr.length && /[a-zA-Z]/.test(expr[i + 1])) {
-                        break;
-                    }
-                    // 如果已经有小数点了，就停止
-                    if (hasDecimal) {
-                        break;
-                    }
-                    hasDecimal = true;
-                    num += expr[i];
-                    i++;
-                    continue;
-                }
+                const char = expr[i];
+                const remainingExpr = expr.slice(i);
                 
-                // 处理数字
-                if (/\d/.test(expr[i])) {
-                    num += expr[i];
-                    i++;
-                } else {
-                    break;
+                // 检查是否是运算符
+                let isOperator = false;
+                for (const op of operators) {
+                    if (remainingExpr.startsWith(op)) {
+                        isOperator = true;
+                        break;
+                    }
                 }
+                if (isOperator) break;
+
+                // 检查是否是分隔符或定界符
+                if (delimiters.has(char) || separators.has(char)) break;
+
+                str += char;
+                i++;
             }
-            return num;
+            return str;
         }
 
         function collectIdentifier() {
             let name = '';
-            while (i < expr.length && /[a-zA-Z]/.test(expr[i])) {
+            while (i < expr.length && /[a-zA-Z0-9_]/.test(expr[i])) {
                 name += expr[i];
                 i++;
             }
@@ -110,58 +132,51 @@ const Calculator = (function() {
         while (i < expr.length) {
             const char = expr[i];
 
-            // 处理双字符运算符
-            if (i + 1 < expr.length) {
-                const twoChars = char + expr[i + 1];
-                if (operators.has(twoChars)) {
-                    tokens.push(['operator', twoChars]);
-                    i += 2;
-                    continue;
+            // 检查运算符
+            let foundOperator = false;
+            for (const op of operators) {
+                if (expr.startsWith(op, i)) {
+                    // 特殊处理减号，区分一元负号和二元减号
+                    if (op === '-') {
+                        if (isUnaryMinus()) {
+                            tokens.push(['operator', 'unary-']);  // 使用一元负号
+                        } else {
+                            tokens.push(['operator', '-']);       // 使用二元减号
+                        }
+                    } else {
+                        tokens.push(['operator', op]);
+                    }
+                    i += op.length;
+                    foundOperator = true;
+                    break;
                 }
             }
+            if (foundOperator) continue;
 
-            // 处理属性调用
-            if (char === '.') {
-                let j = i + 1;
-                let funcName = '';
-                while (j < expr.length && /[a-zA-Z]/.test(expr[j])) {
-                    funcName += expr[j];
-                    j++;
-                }
-                if (operators.has('.' + funcName)) {
-                    tokens.push(['operator', '.' + funcName]);
-                    i = j;
-                    continue;
-                }
-            }
-
-            if (char === '-' && isStartOfNumber(tokens)) {
-                i++;
-                tokens.push(['number', parseFloat('-' + collectNumber())]);
-                continue;
-            }
-
-            if (/\d/.test(char)) {
-                tokens.push(['number', parseFloat(collectNumber())]);
-                continue;
-            }
-
+            // 检查函数名
             if (/[a-zA-Z]/.test(char)) {
                 const name = collectIdentifier();
                 if (functions.has(name)) {
                     tokens.push(['function', name]);
                 } else if (constants.has(name)) {
-                    tokens.push(['number', CONSTANTS[name]]);
+                    tokens.push(['constant', name]);
+                } else {
+                    // 不是函数或常量，作为普通字符串处理
+                    tokens.push(['string', name]);
                 }
                 continue;
             }
 
-            if (operators.has(char)) {
-                tokens.push(['operator', char]);
-            } else if ('()'.includes(char)) {
-                tokens.push(['operator', char]);
-            } else if (char === ',') {
+            // 处理分隔符和定界符
+            if (separators.has(char)) {
                 tokens.push(['separator', char]);
+            } else if (delimiters.has(char)) {
+                tokens.push(['delimiter', char]);
+            } else {
+                // 其他所有情况都作为字符串处理
+                const str = collectString();
+                if (str) tokens.push(['string', str]);
+                continue;
             }
 
             i++;
@@ -265,7 +280,13 @@ const Calculator = (function() {
             const [type, token] = tokens[current];
             current++;
 
-            if (type === 'number') {
+            // 处理字符串（包括数字）
+            if (type === 'string') {
+                return createNode(token);
+            }
+
+            // 处理常量
+            if (type === 'constant') {
                 return createNode(token);
             }
 
@@ -333,7 +354,28 @@ const Calculator = (function() {
     // 4. 求值模块
     function evaluate(node, operators, functions) {
         if (!node) return 0;
-        if (typeof node.value === 'number') return node.value;
+
+        // 处理字符串节点，尝试转换为数值
+        if (node.type === 'string') {
+            const str = node.value;
+            
+            // 处理大数
+            if (str.includes('e') || str.includes('E')) {
+                return parseFloat(str);
+            }
+
+            // 尝试转换为数值
+            const num = parseFloat(str);
+            if (!isNaN(num)) return num;
+
+            // 如果无法转换为数值，保持字符串
+            return str;
+        }
+
+        // 处理常量
+        if (node.type === 'constant') {
+            return CONSTANTS[node.value];
+        }
 
         const args = node.args.map(arg => evaluate(arg, operators, functions));
 
@@ -387,8 +429,8 @@ const Calculator = (function() {
             const constants = new Set(Object.keys(CONSTANTS));
 
             // 预处理时动态添加运算符
-            expr = preprocess(expr, operators, functions);
-            const tokens = tokenize(expr, operators, functions, constants);
+            const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions);
+            const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
             return evaluate(ast, operators, functions);
         },
@@ -398,8 +440,8 @@ const Calculator = (function() {
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));
 
-            expr = preprocess(expr, operators, functions);
-            const tokens = tokenize(expr, operators, functions, constants);
+            const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions);
+            const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             return buildAst(tokens, operators, functions);
         },
 
@@ -408,8 +450,8 @@ const Calculator = (function() {
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));
 
-            expr = preprocess(expr, operators, functions);
-            const tokens = tokenize(expr, operators, functions, constants);
+            const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions);
+            const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
             
             const { nodes, edges } = generateMermaidAST(ast);
