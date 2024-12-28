@@ -2,8 +2,8 @@ import { TYPE } from './types.js';
 
 // 常数定义
 export const CONSTANTS = {
-    'PI': 3.14159265359,
-    'e': 2.71828182846
+    'PI': Math.PI,
+    'e': Math.E,
 };
 
 // 定界符定义
@@ -105,7 +105,7 @@ export const OPERATORS = {
         description: '一元负号'
     },
 
-    // 进制转换运算符
+    // 进制转换运算符，前缀运算符，不支持变量
     '0b': {
         precedence: 4,
         args: 1,
@@ -314,5 +314,46 @@ export const FUNCTIONS = {
         types: [TYPE.STRING],
         asProperty: true,
         description: '字符串长度'
-    }
+    },
+    // 进制转换函数
+    'bin': {
+        args: 1,
+        func: x => x.toString(2),
+        types: [TYPE.NUMBER],
+        asProperty: true,
+        description: '十进制转二进制'
+    },
+    'oct': {
+        args: 1,
+        func: x => x.toString(8),
+        types: [TYPE.NUMBER],
+        asProperty: true,
+        description: '十进制转八进制'
+    },
+    'hex': {
+        args: 1,
+        func: x => x.toString(16),
+        types: [TYPE.NUMBER],
+        asProperty: true,
+        description: '十进制转十六进制'
+    },
+    // 进制转换函数，可能冲突，支持变量
+    '0b': {
+        args: 1,
+        func: x => parseInt(x, 2),
+        types: [TYPE.STRING],
+        description: '二进制转十进制'
+    },
+    '0o': {
+        args: 1,
+        func: x => parseInt(x, 8),
+        types: [TYPE.STRING],
+        description: '八进制转十进制'
+    },
+    '0x': {
+        args: 1,
+        func: x => parseInt(x, 16),
+        types: [TYPE.STRING],
+        description: '十六进制转十进制'
+    },
 }; 
