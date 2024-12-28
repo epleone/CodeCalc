@@ -1,4 +1,5 @@
-import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
+import { OPERATORS, FUNCTIONS, CONSTANTS, DELIMITERS, SEPARATORS } from './operators.js';
+import { TYPE, Types } from './types.js';
 
 const Calculator = (function() {
     // 1. 预处理模块 - 处理属性调用和运算符生成
@@ -11,7 +12,8 @@ const Calculator = (function() {
                     precedence: 3,
                     args: 1,
                     func: func.func,
-                    position: 'postfix'
+                    position: 'postfix',
+                    types: func.types  // 从函数定义中继承类型信息
                 };
             }
         }
@@ -68,51 +70,67 @@ const Calculator = (function() {
         let i = 0;
         expr = expr.replace(/\s/g, '');
 
-        // 从 OPERATORS 中获取所有分隔符
-        const delimiters = new Set(
-            Object.entries(OPERATORS)
-                .filter(([_, op]) => op.type === 'delimiter')
-                .map(([key]) => key)
-        );
+        // 使用新的 DELIMITERS 和 SEPARATORS
+        const delimiters = new Set(Object.keys(DELIMITERS));
+        const separators = new Set(Object.keys(SEPARATORS));
 
-        // 从 OPERATORS 中获取所有分隔符
-        const separators = new Set(
-            Object.entries(OPERATORS)
-                .filter(([_, op]) => op.type === 'separator')
-                .map(([key]) => key)
-        );
+        const sortedOperators = [...operators].sort((a, b) => b.length - a.length);
 
-        function isUnaryMinus() {
-            // 负号的条件：
-            // 1. 是表达式开始
-            // 2. 前一个token是左括号
-            // 3. 前一个token是运算符（除了右括号）
-            // 4. 前一个token是分隔符(逗号)
-            return tokens.length === 0 || 
-                   (tokens[tokens.length-1][0] === 'delimiter' && tokens[tokens.length-1][1] === '(') ||
-                   (tokens[tokens.length-1][0] === 'operator' && tokens[tokens.length-1][1] !== ')') ||
-                   tokens[tokens.length-1][0] === 'separator';
+        function shouldBeUnaryMinus() {
+            if (tokens.length === 0) return true;
+            
+            const lastToken = tokens[tokens.length - 1];
+            const [type, value] = lastToken;
+            
+            // 如果前一个 token 是数字、常量或右括号，那就是减号
+            if (type === 'string' || 
+                type === 'constant' || 
+                (type === 'delimiter' && value === ')')) {
+                return false;
+            }
+            
+            // 如果前一个 token 是左括号、分隔符，那就是负号
+            if ((type === 'delimiter' && value === '(') ||
+                type === 'separator') {
+                return true;
+            }
+
+            // 如果前一个 token 是运算符，那就是负号
+            if (type === 'operator') {
+                return true;
+            }
+
+            return false; // 其他情况默认为减号
         }
 
         function collectString() {
             let str = '';
-            
             while (i < expr.length) {
                 const char = expr[i];
                 const remainingExpr = expr.slice(i);
-                
-                // 检查是否是运算符
-                let isOperator = false;
-                for (const op of operators) {
+
+                // 检查是否是操作符、函数名或常量
+                let shouldBreak = false;
+
+                // 检查是否是操作符
+                for (const op of sortedOperators) {
                     if (remainingExpr.startsWith(op)) {
-                        isOperator = true;
+                        shouldBreak = true;
                         break;
                     }
                 }
-                if (isOperator) break;
 
                 // 检查是否是分隔符或定界符
-                if (delimiters.has(char) || separators.has(char)) break;
+                if (delimiters.has(char) || separators.has(char)) {
+                    shouldBreak = true;
+                }
+
+                // 如果当前积累的字符串是一个函数名或常量，并且遇到了左括号，就应该停止
+                if (str && (functions.has(str) || constants.has(str)) && char === '(') {
+                    shouldBreak = true;
+                }
+
+                if (shouldBreak) break;
 
                 str += char;
                 i++;
@@ -120,38 +138,30 @@ const Calculator = (function() {
             return str;
         }
 
-        function collectIdentifier() {
-            let name = '';
-            while (i < expr.length && /[a-zA-Z0-9_]/.test(expr[i])) {
-                name += expr[i];
-                i++;
-            }
-            return name;
-        }
-
         while (i < expr.length) {
             const char = expr[i];
+            const remainingExpr = expr.slice(i);
 
-            // 检查运算符
+            // 检查操作符
             let foundOperator = false;
-            for (const op of operators) {
-                if (expr.startsWith(op, i)) {
-                    // 特殊处理减号，区分一元负号和二元减号
+            for (const op of sortedOperators) {
+                if (remainingExpr.startsWith(op)) {
                     if (op === '-') {
-                        if (isUnaryMinus()) {
+                        // 特殊处理减号
+                        if (shouldBeUnaryMinus()) {
                             tokens.push(['operator', 'unary-']);
                         } else {
                             tokens.push(['operator', '-']);
                         }
-                    } else if (separators.has(op)) {
-                        // 如果是分隔符，使用 separator 类型
-                        tokens.push(['separator', op]);
-                    } else if (delimiters.has(op)) {
-                        // 如果是定界符，使用 delimiter 类型
-                        tokens.push(['delimiter', op]);
                     } else {
-                        // 其他运算符
-                        tokens.push(['operator', op]);
+                        // 其他操作符的处理
+                        if (separators.has(op)) {
+                            tokens.push(['separator', op]);
+                        } else if (delimiters.has(op)) {
+                            tokens.push(['delimiter', op]);
+                        } else {
+                            tokens.push(['operator', op]);
+                        }
                     }
                     i += op.length;
                     foundOperator = true;
@@ -160,33 +170,26 @@ const Calculator = (function() {
             }
             if (foundOperator) continue;
 
-            // 检查函数名
-            if (/[a-zA-Z]/.test(char)) {
-                const name = collectIdentifier();
-                if (functions.has(name)) {
-                    tokens.push(['function', name]);
-                } else if (constants.has(name)) {
-                    tokens.push(['constant', name]);
-                } else {
-                    // 不是函数或常量，作为普通字符串处理
-                    tokens.push(['string', name]);
-                }
-                continue;
-            }
-
-            // 处理分隔符和定界符
+            // 检查分隔符和定界符
             if (separators.has(char)) {
                 tokens.push(['separator', char]);
+                i++;
             } else if (delimiters.has(char)) {
                 tokens.push(['delimiter', char]);
+                i++;
             } else {
                 // 其他所有情况都作为字符串处理
                 const str = collectString();
-                if (str) tokens.push(['string', str]);
-                continue;
+                if (str) {
+                    if (functions.has(str)) {
+                        tokens.push(['function', str]);
+                    } else if (constants.has(str)) {
+                        tokens.push(['constant', str]);
+                    } else {
+                        tokens.push(['string', str]);
+                    }
+                }
             }
-
-            i++;
         }
 
         return tokens;
@@ -195,250 +198,200 @@ const Calculator = (function() {
     // 3. 语法分析模块
     function buildAst(tokens, operators, functions) {
         let current = 0;
-        const maxDepth = 100;
 
-        function createNode(value, args = []) {
-            return { value, args };
-        }
-
-        function checkRecursionDepth(depth) {
-            if (depth > maxDepth) {
-                throw new Error('表达式过于复杂或可能存在无限递归');
+        function createNode(value, args = [], type = null) {
+            // 如果指定了类型，直接使用
+            if (type) {
+                return { type, value, args };
             }
-        }
-
-        function parseExpression(depth = 0) {
-            checkRecursionDepth(depth);
-            return parseByPrecedence(1, depth + 1);  // 从最低优先级开始
-        }
-
-        // 按优先级解析
-        function parseByPrecedence(precedence, depth = 0) {
-            checkRecursionDepth(depth);
             
-            // 如果是最高优先级，解析一元运算符
-            if (precedence === 4) {
-                return parseUnary(depth + 1);
+            // 根据 token 类型创建节点
+            if (operators.has(value)) {
+                return { type: 'operator', value, args };
+            } else if (functions.has(value)) {
+                return { type: 'function', value, args };
+            } else if (CONSTANTS.hasOwnProperty(value)) {
+                return { type: 'constant', value, args };
+            } else {
+                return { type: 'string', value, args };
             }
-
-            let left = parseByPrecedence(precedence + 1, depth + 1);
-
-            while (current < tokens.length) {
-                const [type, token] = tokens[current];
-                
-                // 检查是否是当前优先级的中缀运算符
-                if (type !== 'operator' || 
-                    !OPERATORS[token] || 
-                    OPERATORS[token].position !== 'infix' ||
-                    OPERATORS[token].precedence !== precedence) {
-                    break;
-                }
-
-                current++;
-                const right = parseByPrecedence(
-                    // 对于右结合运算符（如 **），使用同级递归
-                    token === '**' ? precedence : precedence + 1, 
-                    depth + 1
-                );
-                left = createNode(token, [left, right]);
-            }
-
-            return left;
         }
 
-        function parseUnary(depth = 0) {
-            checkRecursionDepth(depth);
-            const [type, token] = tokens[current];
-            
-            // 处理前缀运算符
-            if (type === 'operator' && 
-                OPERATORS[token]?.position === 'prefix') {
-                current++;
-                const operand = parseUnary(depth + 1);
-                return createNode(token, [operand]);
+        function parsePrimary() {
+            if (current >= tokens.length) {
+                throw new Error('意外的表达式结束');
             }
 
-            return parsePostfix(depth + 1);
-        }
-
-        function parsePostfix(depth = 0) {
-            checkRecursionDepth(depth);
-            let left = parsePrimary(depth + 1);
-
-            while (current < tokens.length) {
-                const [type, token] = tokens[current];
-                
-                // 处理后缀运算符
-                if (type !== 'operator' || 
-                    !OPERATORS[token] || 
-                    OPERATORS[token].position !== 'postfix') {
-                    break;
-                }
-                
-                current++;
-                left = createNode(token, [left]);
-            }
-
-            return left;
-        }
-
-        function parsePrimary(depth = 0) {
-            checkRecursionDepth(depth);
-            const [type, token] = tokens[current];
+            const [type, value] = tokens[current];
             current++;
 
-            // 处理字符串（包括数字）
-            if (type === 'string') {
-                return createNode(token);
-            }
-
-            // 处理常量
-            if (type === 'constant') {
-                return createNode(token);
-            }
-
+            // 处理函数调用
             if (type === 'function') {
-                const args = parseFunctionArgs(depth + 1);
-                return createNode(token, args);
+                // 检查是否有左括号
+                if (current < tokens.length && 
+                    tokens[current][0] === 'delimiter' && 
+                    tokens[current][1] === '(') {
+                    current++; // 跳过左括号
+                    const args = [];
+                    
+                    // 收集函数参数
+                    while (current < tokens.length && 
+                           !(tokens[current][0] === 'delimiter' && 
+                             tokens[current][1] === ')')) {
+                        args.push(parseExpression(0));
+                        if (tokens[current][0] === 'separator') {
+                            current++; // 跳过逗号
+                        }
+                    }
+                    
+                    if (current >= tokens.length) {
+                        throw new Error('缺少右括号');
+                    }
+                    current++; // 跳过右括号
+                    
+                    return createNode(value, args, 'function');
+                }
             }
 
-            if (type === 'delimiter' && token === '(') {
-                const expr = parseExpression(depth + 1);
+            // 处理括号表达式
+            if (type === 'delimiter' && value === '(') {
+                const expr = parseExpression(0);
                 if (current >= tokens.length || 
                     tokens[current][0] !== 'delimiter' || 
                     tokens[current][1] !== ')') {
-                    throw new Error('括号不匹配');
+                    throw new Error('缺少右括号');
                 }
-                current++;  // 跳过右括号
+                current++; // 跳过右括号
                 return expr;
             }
 
-            throw new Error(`意外的token: ${token}`);
+            // 处理其他基本类型
+            return createNode(value, [], type);
         }
 
-        function parseFunctionArgs(depth = 0) {
-            checkRecursionDepth(depth);
-            const args = [];
-            const functionName = tokens[current - 1][1];
-            const funcInfo = FUNCTIONS[functionName];
-            
-            console.log('开始解析函数参数:', functionName);
-            console.log('当前tokens:', tokens.slice(current));
-
-            // 修改这里：使用 delimiter 类型
-            if (current >= tokens.length || tokens[current][0] !== 'delimiter' || tokens[current][1] !== '(') {
-                throw new Error('函数调用缺少左括号');
+        function parseUnary() {
+            if (current >= tokens.length) {
+                throw new Error('意外的表达式结束');
             }
-            current++;  // 跳过左括号
-            console.log('跳过左括号后的tokens:', tokens.slice(current));
 
-            // 修改这里：使用 delimiter 类型
-            if (current < tokens.length && tokens[current][0] === 'delimiter' && tokens[current][1] === ')') {
-                if (funcInfo.args !== 0) {
-                    throw new Error(
-                        funcInfo.args === -1 ?
-                        `函数 ${functionName} 至少需要 1 个参数` :
-                        `函数 ${functionName} 需要 ${funcInfo.args} 个参数，但提供了 0 个`
-                    );
-                }
+            const [type, value] = tokens[current];
+            // 处理所有前缀运算符
+            if (type === 'operator' && 
+                OPERATORS[value] && 
+                OPERATORS[value].position === 'prefix') {
                 current++;
-                return args;
+                const operand = parseUnary();  // 递归处理后续前缀运算符
+                return createNode(value, [operand], 'operator');
             }
+            return parsePrimary();
+        }
 
-            // 解析参数列表
+        function parseExpression(precedence = 0) {
+            let left = parseUnary();
+
             while (current < tokens.length) {
-                console.log('开始解析参数，当前tokens:', tokens.slice(current));
+                const [type, value] = tokens[current];
                 
-                // 解析一个参数
-                args.push(parseExpression(depth + 1));
-                console.log('解析完一个参数，当前tokens:', tokens.slice(current));
-
-                // 检查是否到达参数列表末尾
-                if (current >= tokens.length) {
-                    throw new Error(`函数 ${functionName} 的参数列表未闭合`);
+                // 处理后缀运算符
+                if (type === 'operator' && 
+                    OPERATORS[value] && 
+                    OPERATORS[value].position === 'postfix') {
+                    current++;
+                    left = createNode(value, [left], 'operator');
+                    continue;
+                }
+                
+                // 处理中缀运算符
+                if (type !== 'operator' || 
+                    !OPERATORS[value] || 
+                    OPERATORS[value].precedence <= precedence ||
+                    OPERATORS[value].position !== 'infix') {
+                    break;
                 }
 
-                // 获取当前 token
-                const [type, token] = tokens[current];
-                console.log('当前token:', type, token);
-
-                // 如果是右括号，检查参数数量并返回
-                if (type === 'delimiter' && token === ')') {
-                    if (funcInfo.args >= 0 && args.length !== funcInfo.args) {
-                        throw new Error(
-                            `函数 ${functionName} 需要 ${funcInfo.args} 个参数，` +
-                            `但提供了 ${args.length} 个`
-                        );
-                    }
-                    current++;  // 跳过右括号
-                    console.log('函数参数解析完成，参数列表:', args);
-                    return args;
-                }
-
-                // 必须是逗号
-                if (type !== 'separator' || token !== ',') {
-                    console.log('错误：期望逗号或右括号，但得到:', type, token);
-                    throw new Error(`函数 ${functionName} 的参数列表格式错误：缺少逗号或右括号`);
-                }
-                current++;  // 跳过逗号
-
-                // 检查是否还有更多参数
-                if (current >= tokens.length) {
-                    throw new Error(`函数 ${functionName} 的参数列表未闭合`);
-                }
+                current++;
+                const right = parseExpression(OPERATORS[value].precedence);
+                left = createNode(value, [left, right], 'operator');
             }
 
-            throw new Error(`函数 ${functionName} 的参数列表未闭合`);
+            return left;
         }
 
-        // 开始解析
-        const ast = parseExpression(0);
-        if (current < tokens.length) {
-            throw new Error('表达式解析未完成');
-        }
-        return ast;
+        return parseExpression();
     }
 
     // 4. 求值模块
     function evaluate(node, operators, functions) {
+        console.log('开始计算节点:', node);
+
         if (!node) return 0;
 
-        // 处理字符串节点，尝试转换为数值
+        // 处理字符串节点
         if (node.type === 'string') {
-            const str = node.value;
-            
-            // 处理大数
-            if (str.includes('e') || str.includes('E')) {
-                return parseFloat(str);
-            }
-
-            // 尝试转换为数值
-            const num = parseFloat(str);
-            if (!isNaN(num)) return num;
-
-            // 如果无法转换为数值，保持字符串
-            return str;
+            console.log('处理字符串节点:', node.value);
+            return node.value;  // 保持字符串形式
         }
 
         // 处理常量
         if (node.type === 'constant') {
+            console.log('处理常量节点:', node.value, '=', CONSTANTS[node.value]);
             return CONSTANTS[node.value];
         }
 
+        // 递归计算参数
+        console.log('计算参数:', node.args);
         const args = node.args.map(arg => evaluate(arg, operators, functions));
+        console.log('参数计算结果:', args);
 
-        if (operators.has(node.value)) {
-            return OPERATORS[node.value].func(...args);
+        // 处理运算符
+        if (node.type === 'operator') {
+            const op = OPERATORS[node.value];
+            console.log('处理运算符:', node.value, '类型定义:', op.types);
+            
+            // 根据运算符定义的类型要求转换参数
+            const convertedArgs = args.map((arg, index) => {
+                if (op.types && op.types[index] === TYPE.NUMBER) {
+                    const converted = Types.toNumber(arg);
+                    console.log(`参数 ${index} 转换:`, arg, '->', converted);
+                    return converted;
+                }
+                return arg;
+            });
+            
+            const result = op.func(...convertedArgs);
+            console.log('运算结果:', result);
+            return result;
         }
 
-        if (functions.has(node.value)) {
-            const func = FUNCTIONS[node.value].func;
-            return node.value === 'max' || node.value === 'min' ?
-                args.length === 1 ? func(args) : func(...args) :
-                func(...args);
+        // 处理函数
+        if (node.type === 'function') {
+            const func = FUNCTIONS[node.value];
+            console.log('处理函数:', node.value, '类型定义:', func.types);
+            
+            // 根据函数定义的类型要求转换参数
+            const convertedArgs = args.map((arg, index) => {
+                if (func.types && func.types[index] === TYPE.NUMBER) {
+                    const converted = Types.toNumber(arg);
+                    console.log(`参数 ${index} 转换:`, arg, '->', converted);
+                    return converted;
+                }
+                return arg;
+            });
+            
+            // 特殊处理 max 和 min 函数
+            let result;
+            if (node.value === 'max' || node.value === 'min') {
+                result = args.length === 1 ? func.func(convertedArgs) : func.func(...convertedArgs);
+            } else {
+                result = func.func(...convertedArgs);
+            }
+            
+            console.log('函数计算结果:', result);
+            return result;
         }
 
-        throw new Error(`未知的操作符或函数: ${node.value}`);
+        console.error('未知节点类型:', node);
+        throw new Error(`未知的节点类型: ${node.type}`);
     }
 
     // 5. 辅助函数

@@ -6,6 +6,17 @@ export const CONSTANTS = {
     'e': 2.71828182846
 };
 
+// 定界符定义
+export const DELIMITERS = {
+    '(': { description: '左括号' },
+    ')': { description: '右括号' }
+};
+
+// 分隔符定义
+export const SEPARATORS = {
+    ',': { description: '参数分隔符' }
+};
+
 // 操作符定义
 export const OPERATORS = {
     // 基本算术运算符
@@ -257,7 +268,28 @@ export const FUNCTIONS = {
     'pow': {
         func: (x, y) => Math.pow(x, y),
         args: 2,
-        types: [TYPE.NUMBER],
+        types: [TYPE.NUMBER, TYPE.NUMBER],
         description: '幂函数'
-    }
+    },
+    'abs': {
+        args: 1,
+        func: x => Math.abs(x),
+        types: [TYPE.NUMBER],
+        asProperty: true,  // 标记可以作为属性调用
+        description: '绝对值'
+    },
+    'deg': {
+        args: 1,
+        func: x => x * CONSTANTS.PI / 180,
+        types: [TYPE.NUMBER],
+        asProperty: true,  // 标记可以作为属性调用
+        description: '度数转换为弧度'
+    },
+    'rad': {
+        args: 1,
+        func: x => x * 180 / CONSTANTS.PI,
+        types: [TYPE.NUMBER],
+        asProperty: true,
+        description: '弧度转换为度数'
+    },
 }; 
