@@ -24,6 +24,24 @@ const OPERATORS = {
         func: (x, y) => x * y,
         position: 'infix'  // 中缀运算符
     },
+    '//': {
+        precedence: 2,  // 与乘除法同级
+        args: 2,
+        func: (x, y) => Math.floor(x / y),
+        position: 'infix'
+    },
+    '%': {
+        precedence: 2,  // 与乘除法同级
+        args: 2,
+        func: (x, y) => x % y,
+        position: 'infix'
+    },
+    '**': {
+        precedence: 3,  // 比乘除法高一级
+        args: 2,
+        func: (x, y) => Math.pow(x, y),
+        position: 'infix'
+    },
     '/': {
         precedence: 2,
         args: 2,

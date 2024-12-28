@@ -110,6 +110,16 @@ const Calculator = (function() {
         while (i < expr.length) {
             const char = expr[i];
 
+            // 处理双字符运算符
+            if (i + 1 < expr.length) {
+                const twoChars = char + expr[i + 1];
+                if (operators.has(twoChars)) {
+                    tokens.push(['operator', twoChars]);
+                    i += 2;
+                    continue;
+                }
+            }
+
             // 处理属性调用
             if (char === '.') {
                 let j = i + 1;
@@ -177,37 +187,37 @@ const Calculator = (function() {
 
         function parseExpression(depth = 0) {
             checkRecursionDepth(depth);
-            return parseAdditive(depth + 1);
+            return parseByPrecedence(1, depth + 1);  // 从最低优先级开始
         }
 
-        function parseAdditive(depth = 0) {
+        // 按优先级解析
+        function parseByPrecedence(precedence, depth = 0) {
             checkRecursionDepth(depth);
-            let left = parseMultiplicative(depth + 1);
-
-            while (current < tokens.length) {
-                const [type, token] = tokens[current];
-                if (type !== 'operator' || (token !== '+' && token !== '-')) {
-                    break;
-                }
-                current++;
-                const right = parseMultiplicative(depth + 1);
-                left = createNode(token, [left, right]);
+            
+            // 如果是最高优先级，解析一元运算符
+            if (precedence === 4) {
+                return parseUnary(depth + 1);
             }
 
-            return left;
-        }
-
-        function parseMultiplicative(depth = 0) {
-            checkRecursionDepth(depth);
-            let left = parseUnary(depth + 1);
+            let left = parseByPrecedence(precedence + 1, depth + 1);
 
             while (current < tokens.length) {
                 const [type, token] = tokens[current];
-                if (type !== 'operator' || (token !== '*' && token !== '/')) {
+                
+                // 检查是否是当前优先级的中缀运算符
+                if (type !== 'operator' || 
+                    !OPERATORS[token] || 
+                    OPERATORS[token].position !== 'infix' ||
+                    OPERATORS[token].precedence !== precedence) {
                     break;
                 }
+
                 current++;
-                const right = parseUnary(depth + 1);
+                const right = parseByPrecedence(
+                    // 对于右结合运算符（如 **），使用同级递归
+                    token === '**' ? precedence : precedence + 1, 
+                    depth + 1
+                );
                 left = createNode(token, [left, right]);
             }
 
@@ -218,8 +228,9 @@ const Calculator = (function() {
             checkRecursionDepth(depth);
             const [type, token] = tokens[current];
             
-            if (type === 'operator' && OPERATORS[token] && 
-                OPERATORS[token].position === 'prefix') {
+            // 处理前缀运算符
+            if (type === 'operator' && 
+                OPERATORS[token]?.position === 'prefix') {
                 current++;
                 const operand = parseUnary(depth + 1);
                 return createNode(token, [operand]);
@@ -234,10 +245,14 @@ const Calculator = (function() {
 
             while (current < tokens.length) {
                 const [type, token] = tokens[current];
-                if (type !== 'operator' || !OPERATORS[token] || 
+                
+                // 处理后缀运算符
+                if (type !== 'operator' || 
+                    !OPERATORS[token] || 
                     OPERATORS[token].position !== 'postfix') {
                     break;
                 }
+                
                 current++;
                 left = createNode(token, [left]);
             }
