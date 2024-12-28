@@ -7,47 +7,151 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
+
+        .container {
+            display: flex;
+            gap: 30px;
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .right-panel {
+            position: sticky;
+            top: 20px;
+            align-self: flex-start;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
         #calculator {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
         #expression {
-            width: 300px;
-            padding: 5px;
-            margin-right: 10px;
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
+
+        #calculate {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #calculate:hover {
+            background-color: #45a049;
+        }
+
         #result {
-            margin: 10px 0;
+            margin-left: 10px;
             font-weight: bold;
+            color: #333;
         }
+
         #ast {
-            margin-top: 20px;
             border: 1px solid #ccc;
-            padding: 10px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #fff;
         }
+
         #examples {
-            margin: 20px 0;
+            margin: 0;
         }
         #examples button {
             margin: 5px;
             padding: 5px 10px;
         }
+        .example-group {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-left: 3px solid #4CAF50;
+            background-color: #f9f9f9;
+        }
+
+        h3 {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        h4 {
+            margin: 10px 0 5px 0;
+            color: #333;
+            font-size: 1em;
+        }
+
+        .example-group button {
+            margin: 2px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .example-group button:hover {
+            background-color: #e9e9e9;
+        }
+
+        #result-panel, #ast-panel {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        #result-panel {
+            min-height: 50px;
+        }
+
+        .panel-title {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.1em;
+        }
     </style>
 </head>
 <body>
     <h1>表达式计算器</h1>
-    <div id="calculator">
-        <input type="text" id="expression" placeholder="输入表达式">
-        <button id="calculate">计算</button>
+    <div class="container">
+        <div class="left-panel">
+            <div id="calculator">
+                <input type="text" id="expression" placeholder="输入表达式">
+                <button id="calculate">计算</button>
+            </div>
+            <div id="examples">
+                <h3>示例表达式：</h3>
+                <!-- 示例组会在这里渲染 -->
+            </div>
+        </div>
+        <div class="right-panel">
+            <div id="result-panel">
+                <h3 class="panel-title">计算结果：</h3>
+                <div id="result"></div>
+            </div>
+            <div id="ast-panel">
+                <h3 class="panel-title">语法树可视化：</h3>
+                <div id="ast"></div>
+            </div>
+        </div>
     </div>
-    <div id="examples">
-        <h3>示例表达式：</h3>
-    </div>
-    <div id="result"></div>
-    <div id="ast"></div>
 
     <script type="module">
         import Calculator from './calculator.js';
@@ -84,51 +188,94 @@
                 }
             };
 
-            // 添加示例表达式
-            const examples = [
-                "max(-1,-1-1,1, min(10, -1-1, 2))",
-                "-1",
-                "1 + 2",
-                "2 * (3 + 4)",
-                "(1 + 2) * (-3 - 4)",
-                "max(1, 2, 3)",
-                "#1 + 2",
-                "#(1+2)",
-                "#1",
-                "#e",
-                "150°",
-                "deg(150)",
-                "150.deg",
-                "rad(1.5)",
-                "1.5.rad",
-                "rad(1.5).deg",
-                "1.5.rad.deg",
-                "rad(PI/2)",
-                "90.rad",
-                "(1+2).deg",
-                "max(1,2).deg",
-                "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))",
-                "150.max",
-                "7 // 2",        // 整除
-                "7 % 3",         // 取余
-                "2 ** 3",        // 幂运算
-                "2 ** 3 ** 2",   // 幂运算右结合
-                "10 // 3 * 2",   // 混合运算
-                "2 ** 3 * 4",    // 混合运算
-                "(2 + 3) ** 2",  // 带括号的幂运算
-            ];
+            // 修改示例部分
+            const exampleGroups = {
+                '基础运算': [
+                    "1 + 2",
+                    "2 * (3 + 4)",
+                    "(1 + 2) * (-3 - 4)",
+                    "-1",
+                    "-1-1"
+                ],
+                '函数调用': [
+                    "max(-1,-1-1,1, min(10, -1-1, 2))",
+                    "max(1, 2, 3)",
+                    "min(1, 2, 3)"
+                ],
+                '后缀运算符': [
+                    "#1",
+                    "#(1+2)",
+                    "#1 + 2",
+                    "#e",
+                    "150°"
+                ],
+                '角度转换': [
+                    "deg(150)",
+                    "150.deg",
+                    "rad(1.5)",
+                    "1.5.rad",
+                    "rad(1.5).deg",
+                    "1.5.rad.deg",
+                    "(1+2).deg"
+                ],
+                '高级运算': [
+                    "7 // 2",        // 整除
+                    "7 % 3",         // 取余
+                    "2 ** 3",        // 幂运算
+                    "2 ** 3 ** 2",   // 幂运算右结合
+                    "10 // 3 * 2"    // 混合运算
+                ],
+                '三角函数': [
+                    "sin(PI/2)",
+                    "cos(PI)",
+                    "tan(PI/4)",
+                    "sin(30°)",
+                    "cos(45.deg)"
+                ],
+                '反三角函数': [
+                    "asin(1)",
+                    "acos(0)",
+                    "atan(1)"
+                ],
+                '双曲函数': [
+                    "sinh(1)",
+                    "cosh(0)",
+                    "tanh(0)"
+                ],
+                '复杂表达式': [
+                    "sin(cos(PI/2))",
+                    "2 * sin(30°) * cos(60°)",
+                    "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))"
+                ]
+            };
 
+            // 修改示例渲染部分
             const examplesDiv = document.getElementById('examples');
-            examples.forEach(expr => {
-                const button = document.createElement('button');
-                button.textContent = expr;
-                button.onclick = function() {
-                    input.value = expr;
-                    calculateBtn.click();
-                };
-                examplesDiv.appendChild(button);
-                examplesDiv.appendChild(document.createTextNode(' '));
-            });
+
+            for (const [groupName, examples] of Object.entries(exampleGroups)) {
+                // 创建分组标题
+                const groupTitle = document.createElement('h4');
+                groupTitle.textContent = groupName;
+                examplesDiv.appendChild(groupTitle);
+
+                // 创建分组容器
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'example-group';
+                
+                // 添加示例按钮
+                examples.forEach(expr => {
+                    const button = document.createElement('button');
+                    button.textContent = expr;
+                    button.onclick = function() {
+                        input.value = expr;
+                        calculateBtn.click();
+                    };
+                    groupDiv.appendChild(button);
+                    groupDiv.appendChild(document.createTextNode(' '));
+                });
+
+                examplesDiv.appendChild(groupDiv);
+            }
         };
     </script>
 </body>

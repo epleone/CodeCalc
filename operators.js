@@ -81,12 +81,59 @@ const FUNCTIONS = {
     'deg': {
         args: 1,
         func: x => x * CONSTANTS.PI / 180,
-        asProperty: true  // 标记可以作为属性调用
+        asProperty: true,  // 标记可以作为属性调用
+        description: '度数转换为弧度'
     },
     'rad': {
         args: 1,
         func: x => x * 180 / CONSTANTS.PI,
-        asProperty: true
+        asProperty: true,
+        description: '弧度转换为度数'
+    },
+    'sin': {
+        args: 1,
+        func: x => Math.sin(x),
+        description: '正弦函数'
+    },
+    'cos': {
+        args: 1,
+        func: x => Math.cos(x),
+        description: '余弦函数'
+    },
+    'tan': {
+        args: 1,
+        func: x => Math.tan(x),
+        description: '正切函数'
+    },
+    'asin': {
+        args: 1,
+        func: x => Math.asin(x),
+        description: '反正弦函数'
+    },
+    'acos': {
+        args: 1,
+        func: x => Math.acos(x),
+        description: '反余弦函数'
+    },
+    'atan': {
+        args: 1,
+        func: x => Math.atan(x),
+        description: '反正切函数'
+    },
+    'sinh': {
+        args: 1,
+        func: x => Math.sinh(x),
+        description: '双曲正弦'
+    },
+    'cosh': {
+        args: 1,
+        func: x => Math.cosh(x),
+        description: '双曲余弦'
+    },
+    'tanh': {
+        args: 1,
+        func: x => Math.tanh(x),
+        description: '双曲正切'
     }
 };
 
