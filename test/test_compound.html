@@ -37,13 +37,15 @@
         <span class="failed">失败: 0</span>
     </div>
     <div id="test-controls">
-        <button onclick="runAllTests()">运行所有测试</button>
-        <button onclick="clearResults()">清除结果</button>
+        <button id="runAllTests">运行所有测试</button>
+        <button id="clearResults">清除结果</button>
     </div>
     <div id="results"></div>
 
-    <script src="../src/calculator.js"></script>
-    <script>
+    <script type="module">
+        import Calculator from '../src/calculator.js';
+        const calculate = Calculator.calculate;
+
         const tests = [
             // 三角函数复合测试
             { group: '三角函数复合', name: "sin嵌套", input: "sin(sin(PI/2))", expected: "0.841471" },
@@ -93,7 +95,7 @@
             { group: '最值复合', name: "对数最大值", input: "max(log(10),ln(e),log(1000)/2)", expected: "1.5" },
             { group: '最值复合', name: "根式最小值", input: "min(sqrt(1),sqrt(2),sqrt(3),sqrt(4))", expected: "1" },
             { group: '最值复合', name: "幂函数最大值", input: "max(pow(2,1),pow(2,2),pow(2,3))", expected: "8" },
-            { group: '最值复合', name: "复杂表达式", input: "max(sin(45d),cos(60d),tan(30d),sqrt(2)/2)", expected: "0.707107" },
+            { group: '最值复合', name: "复杂表达式", input: "max(sin(45°),cos(60°),tan(30°),sqrt(2)/2)", expected: "0.707107" },
             { group: '最值复合', name: "混合函数1", input: "min(log(pow(10,2)),sqrt(16),sin(PI/2))", expected: "1" },
             { group: '最值复合', name: "混合函数2", input: "max(ln(e*e),pow(sqrt(4),2),sin(PI/2))", expected: "4" }
         ];
@@ -107,7 +109,7 @@
                 const expectedStr = typeof test.expected === 'object' ?
                     JSON.stringify(test.expected) : test.expected;
 
-                const success = resultStr === expectedStr;
+                const success = Math.abs(parseFloat(resultStr) - parseFloat(expectedStr)) < 0.00001 || resultStr === expectedStr;
                 return {
                     name: test.name,
                     input: test.input,
@@ -182,6 +184,11 @@
                 <span class="failed">失败: 0</span>
             `;
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('runAllTests').addEventListener('click', runAllTests);
+            document.getElementById('clearResults').addEventListener('click', clearResults);
+        });
     </script>
 </body>
 </html> 

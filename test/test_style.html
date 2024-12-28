@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <title>样式测试页面</title>
     <link rel="stylesheet" href="../src/styles.css">
-    <script src="../src/calculator.js"></script>
-    <script src="../src/ui.js"></script>
+    <script type="module">
+        import Calculator from '../src/calculator.js';
+        import * as UI from '../src/ui.js';
+        const calculate = Calculator.calculate;
+    </script>
     <style>
         /* 测试页面特定样式 */
         body {

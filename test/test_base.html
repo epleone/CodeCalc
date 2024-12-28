@@ -89,15 +89,16 @@
     </div>
 
     <div id="test-controls">
-        <button onclick="runAllTests()">运行所有测试</button>
-        <button onclick="clearResults()">清除结果</button>
+        <button id="runAllTests">运行所有测试</button>
+        <button id="clearResults">清除结果</button>
     </div>
 
     <div id="results"></div>
 
-    <script src="../src/calculator.js"></script>
-    <script>
-        // 修改测试用例，只包含基本功能测试
+    <script type="module">
+        import Calculator from '../src/calculator.js';
+        const calculate = Calculator.calculate;
+
         const tests = [
             // 基本运算测试
             { group: '基本运算', name: "加法", input: "1 + 2", expected: "3" },
@@ -290,6 +291,19 @@
             `;
             container.appendChild(div);
         }
+
+        function clearTempConstants() {
+            // 清除临时变量和常量的函数
+            // if (typeof Calculator !== 'undefined') {
+            //     Calculator.clearVariables();
+            // }
+        }
+
+        // 添加事件监听器
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('runAllTests').addEventListener('click', runAllTests);
+            document.getElementById('clearResults').addEventListener('click', clearResults);
+        });
     </script>
 </body>
 

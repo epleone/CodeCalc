@@ -66,13 +66,15 @@
         <span class="failed">失败: 0</span>
     </div>
     <div class="test-controls">
-        <button onclick="runAllTests()">运行所有测试</button>
-        <button onclick="clearResults()">清除结果</button>
+        <button id="runAllTests">运行所有测试</button>
+        <button id="clearResults">清除结果</button>
     </div>
     <div id="results"></div>
 
-    <script src="../src/calculator.js"></script>
-    <script>
+    <script type="module">
+        import Calculator from '../src/calculator.js';
+        const calculate = Calculator.calculate;
+
         const tests = [
             // 最值函数嵌套测试
             { 
@@ -303,6 +305,11 @@
                 <span class="failed">失败: 0</span>
             `;
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('runAllTests').addEventListener('click', runAllTests);
+            document.getElementById('clearResults').addEventListener('click', clearResults);
+        });
     </script>
 </body>
 </html> 

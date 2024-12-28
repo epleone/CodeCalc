@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>字符串功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-case {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-stats {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>字符串功能测试</h1>
+    <div id="test-stats" class="test-stats">
+        <span class="total">总测试数: 0</span>
+        <span class="passed">通过: 0</span>
+        <span class="failed">失败: 0</span>
+    </div>
+    <div id="test-controls">
+        <button id="runAllTests">运行所有测试</button>
+        <button id="clearResults">清除结果</button>
+    </div>
+    <div id="results"></div>
+
+    <script type="module">
+        import Calculator from '../src/calculator.js';
+        const calculate = Calculator.calculate;
+
+        const tests = [
+            // 基本字符串字面量测试
+            { 
+                group: '基本字符串',
+                tests: [
+                    { name: "双引号字符串", input: 'num("123")', expected: "123" },
+                    { name: "单引号字符串", input: "num('456')", expected: "456" },
+                    { name: "空字符串", input: 'num("")', expected: "错误: 空字符串无法转换为数字" },
+                    { name: "空格字符串", input: 'num("   ")', expected: "错误: 空字符串无法转换为数字" }
+                ]
+            },
+            
+            // 转义字符测试
+            {
+                group: '转义字符',
+                tests: [
+                    { name: "转义双引号", input: 'str("\"")', expected: '"' },
+                    { name: "转义单引号", input: "str('\'')", expected: "'" },
+                    { name: "转义反斜杠", input: 'str("\\\\")', expected: "\\" },
+                    { name: "未转义字符", input: 'str("\\n")', expected: "\\n" }
+                ]
+            },
+
+            // 字符串操作测试
+            {
+                group: '字符串操作',
+                tests: [
+                    { name: "字符串连接", input: '"Hello" +str " World"', expected: "Hello World" },
+                    { name: "转大写", input: '"hello".upper', expected: "HELLO" },
+                    { name: "转小写", input: '"WORLD".lower', expected: "world" },
+                    { name: "字符串长度", input: '"Hello World".length', expected: "11" }
+                ]
+            },
+
+            // 错误处理测试
+            {
+                group: '错误处理',
+                tests: [
+                    { name: "未闭合双引号", input: 'str("abc)', expected: "错误: 未闭合的字符串字面量" },
+                    { name: "未闭合单引号", input: "str('abc)", expected: "错误: 未闭合的字符串字面量" },
+                    { name: "混合引号", input: 'str("abc\')', expected: "错误: 未闭合的字符串字面量" }
+                ]
+            }
+        ];
+
+        function runTest(test) {
+            try {
+                const result = calculate(test.input);
+                const resultStr = result.toString();
+                const success = resultStr === test.expected;
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: test.expected,
+                    actual: resultStr,
+                    success: success
+                };
+            } catch (error) {
+                const errorResult = "错误: " + error.message;
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: test.expected,
+                    actual: errorResult,
+                    success: errorResult === test.expected
+                };
+            }
+        }
+
+        function runAllTests() {
+            const results = document.getElementById('results');
+            const statsDiv = document.getElementById('test-stats');
+            results.innerHTML = '';
+            let successCount = 0;
+            let totalTests = 0;
+
+            tests.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.innerHTML = `<h3>${group.group}</h3>`;
+                results.appendChild(groupDiv);
+
+                group.tests.forEach(test => {
+                    totalTests++;
+                    const result = runTest(test);
+                    appendTestResult(groupDiv, result);
+                    if (result.success) successCount++;
+                });
+            });
+
+            statsDiv.innerHTML = `
+                <span class="total">总测试数: ${totalTests}</span>
+                <span class="passed">通过: ${successCount}</span>
+                <span class="failed">失败: ${totalTests - successCount}</span>
+            `;
+        }
+
+        function appendTestResult(container, result) {
+            const div = document.createElement('div');
+            div.className = 'test-case';
+            div.innerHTML = `
+                <div class="test-input">
+                    <strong>${result.name}</strong> (${result.input})
+                </div>
+                <div class="test-result ${result.success ? 'success' : 'error'}">
+                    ${result.success ? '✓ 通过' : '✗ 失败'}<br>
+                    期望值: ${result.expected}<br>
+                    实际值: ${result.actual}
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('test-stats').innerHTML = `
+                <span class="total">总测试数: 0</span>
+                <span class="passed">通过: 0</span>
+                <span class="failed">失败: 0</span>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('runAllTests').addEventListener('click', runAllTests);
+            document.getElementById('clearResults').addEventListener('click', clearResults);
+        });
+    </script>
+</body>
+</html> 

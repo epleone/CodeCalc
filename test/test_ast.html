@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>表达式计算器</title>
+    <title>表达式分析器</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -182,7 +182,7 @@
     </style>
 </head>
 <body>
-    <h1>表达式计算器</h1>
+    <h1>语法树分析器</h1>
     <div class="container">
         <div class="left-panel">
             <div id="calculator">
@@ -211,9 +211,9 @@
     </div>
 
     <script type="module">
-        import Calculator from './calculator.js';
-        import ASTVisualizer from './ast-visualizer.js';
-        import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
+        import Calculator from '../src/calculator.js';
+        import ASTVisualizer from '../src/ast-visualizer.js';
+        import { OPERATORS, FUNCTIONS, CONSTANTS } from '../src/operators.js';
 
         window.onload = function() {
             const input = document.getElementById('expression');
@@ -286,6 +286,14 @@
                     "-1-1",
                     "(-1-1)",
                     "(-1-1).abs"
+                ],
+                '异常测试': [
+                    "1 ++ 2",
+                    "2 +* (3 + 4)",
+                    "(1 + 2)) * (-3 - 4)",
+                    "+-1",
+                    "-1+",
+                    "abs(-1 -1",
                 ],
                 '函数调用': [
                     "max(-1,-1-1,1, min(10, -1-1, 2))",

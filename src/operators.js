@@ -247,18 +247,6 @@ export const FUNCTIONS = {
         types: [TYPE.NUMBER],
         description: 'e的指数'
     },
-    'sqrt': {
-        func: Math.sqrt,
-        args: 1,
-        types: [TYPE.NUMBER],
-        description: '平方根'
-    },
-    'pow': {
-        func: Math.pow,
-        args: 2,
-        types: [TYPE.NUMBER, TYPE.NUMBER],
-        description: '幂函数'
-    },
 
     // 三角函数
     'sin': {
