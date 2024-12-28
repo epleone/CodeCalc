@@ -4,6 +4,31 @@ import { TYPE, Types } from './types.js';
 const Calculator = (function() {
     // 1. 预处理模块 - 处理属性调用和运算符生成
     function preprocess(expr, operators, functions) {
+        // 处理字符串字面量
+        function processStringLiterals(expr) {
+            // 匹配字符串字面量的正则表达式
+            // (['"]): 捕获引号类型
+            // (?:\\.|[^\\])*?: 非贪婪匹配字符串内容，包括转义字符
+            // \1: 匹配相同的引号结束
+            const stringLiteralRegex = /(['"])((?:\\.|[^\\])*?)\1/g;
+            
+            // 替换所有字符串字面量为 str() 函数调用
+            const processed = expr.replace(stringLiteralRegex, (_, quote, content) => {
+                return `str(${content})`;
+            });
+
+            // 检查是否有未闭合的字符串
+            const unclosedQuoteRegex = /(['"])[^'"]*$/;
+            if (unclosedQuoteRegex.test(processed)) {
+                throw new Error('未闭合的字符串字面量');
+            }
+
+            return processed;
+        }
+
+        // 处理字符串字面量
+        expr = processStringLiterals(expr);
+
         // 动态添加属性调用运算符
         for (const [name, func] of Object.entries(FUNCTIONS)) {
             if (func.asProperty) {
@@ -13,7 +38,7 @@ const Calculator = (function() {
                     args: 1,
                     func: func.func,
                     position: 'postfix',
-                    types: func.types  // 从函数定义中继承类型信息
+                    types: func.types
                 };
             }
         }

@@ -207,13 +207,13 @@ export const FUNCTIONS = {
         func: x => x,
         args: 1,
         types: [TYPE.STRING],
-        description: '转换为字符串'
+        description: '计算阶段会转换为字符串'
     },
     'num': {
         func: x => x,
         args: 1,
         types: [TYPE.NUMBER],
-        description: '转换为数字'
+        description: '计算阶段会转换为数字'
     },
 
     // 数学函数
