@@ -117,11 +117,11 @@ const OPERATORS = {
 // 函数定义
 const FUNCTIONS = {
     'max': {
-        args: -1,
+        args: -1,         // -1 表示可变参数，同时表示最少需要1个参数
         func: Math.max
     },
     'min': {
-        args: -1,
+        args: -1,         // -1 表示可变参数
         func: Math.min
     },
     'log': {
@@ -158,8 +158,8 @@ const FUNCTIONS = {
         description: '弧度转换为度数'
     },
     'sin': {
-        args: 1,
-        func: x => Math.sin(x),
+        args: 1,          // 固定参数数量
+        func: Math.sin,
         description: '正弦函数'
     },
     'cos': {

@@ -86,10 +86,10 @@ const Calculator = (function() {
             // 负号的条件：
             // 1. 是表达式开始
             // 2. 前一个token是左括号
-            // 3. 前一个token是运算符
+            // 3. 前一个token是运算符（除了右括号）
             // 4. 前一个token是分隔符(逗号)
             return tokens.length === 0 || 
-                   (tokens[tokens.length-1][0] === 'operator' && tokens[tokens.length-1][1] === '(') ||
+                   (tokens[tokens.length-1][0] === 'delimiter' && tokens[tokens.length-1][1] === '(') ||
                    (tokens[tokens.length-1][0] === 'operator' && tokens[tokens.length-1][1] !== ')') ||
                    tokens[tokens.length-1][0] === 'separator';
         }
@@ -139,11 +139,18 @@ const Calculator = (function() {
                     // 特殊处理减号，区分一元负号和二元减号
                     if (op === '-') {
                         if (isUnaryMinus()) {
-                            tokens.push(['operator', 'unary-']);  // 使用一元负号
+                            tokens.push(['operator', 'unary-']);
                         } else {
-                            tokens.push(['operator', '-']);       // 使用二元减号
+                            tokens.push(['operator', '-']);
                         }
+                    } else if (separators.has(op)) {
+                        // 如果是分隔符，使用 separator 类型
+                        tokens.push(['separator', op]);
+                    } else if (delimiters.has(op)) {
+                        // 如果是定界符，使用 delimiter 类型
+                        tokens.push(['delimiter', op]);
                     } else {
+                        // 其他运算符
                         tokens.push(['operator', op]);
                     }
                     i += op.length;
@@ -295,10 +302,10 @@ const Calculator = (function() {
                 return createNode(token, args);
             }
 
-            if (type === 'operator' && token === '(') {
+            if (type === 'delimiter' && token === '(') {
                 const expr = parseExpression(depth + 1);
                 if (current >= tokens.length || 
-                    tokens[current][0] !== 'operator' || 
+                    tokens[current][0] !== 'delimiter' || 
                     tokens[current][1] !== ')') {
                     throw new Error('括号不匹配');
                 }
@@ -312,35 +319,76 @@ const Calculator = (function() {
         function parseFunctionArgs(depth = 0) {
             checkRecursionDepth(depth);
             const args = [];
+            const functionName = tokens[current - 1][1];
+            const funcInfo = FUNCTIONS[functionName];
             
-            // 检查左括号
-            if (tokens[current][0] !== 'operator' || tokens[current][1] !== '(') {
+            console.log('开始解析函数参数:', functionName);
+            console.log('当前tokens:', tokens.slice(current));
+
+            // 修改这里：使用 delimiter 类型
+            if (current >= tokens.length || tokens[current][0] !== 'delimiter' || tokens[current][1] !== '(') {
                 throw new Error('函数调用缺少左括号');
             }
             current++;  // 跳过左括号
+            console.log('跳过左括号后的tokens:', tokens.slice(current));
 
-            // 空参数列表
-            if (tokens[current][0] === 'operator' && tokens[current][1] === ')') {
+            // 修改这里：使用 delimiter 类型
+            if (current < tokens.length && tokens[current][0] === 'delimiter' && tokens[current][1] === ')') {
+                if (funcInfo.args !== 0) {
+                    throw new Error(
+                        funcInfo.args === -1 ?
+                        `函数 ${functionName} 至少需要 1 个参数` :
+                        `函数 ${functionName} 需要 ${funcInfo.args} 个参数，但提供了 0 个`
+                    );
+                }
                 current++;
                 return args;
             }
 
             // 解析参数列表
-            while (true) {
+            while (current < tokens.length) {
+                console.log('开始解析参数，当前tokens:', tokens.slice(current));
+                
+                // 解析一个参数
                 args.push(parseExpression(depth + 1));
+                console.log('解析完一个参数，当前tokens:', tokens.slice(current));
 
-                if (tokens[current][0] === 'operator' && tokens[current][1] === ')') {
-                    current++;
-                    break;
+                // 检查是否到达参数列表末尾
+                if (current >= tokens.length) {
+                    throw new Error(`函数 ${functionName} 的参数列表未闭合`);
                 }
 
-                if (tokens[current][0] !== 'separator' || tokens[current][1] !== ',') {
-                    throw new Error('函数参数格式错误');
+                // 获取当前 token
+                const [type, token] = tokens[current];
+                console.log('当前token:', type, token);
+
+                // 如果是右括号，检查参数数量并返回
+                if (type === 'delimiter' && token === ')') {
+                    if (funcInfo.args >= 0 && args.length !== funcInfo.args) {
+                        throw new Error(
+                            `函数 ${functionName} 需要 ${funcInfo.args} 个参数，` +
+                            `但提供了 ${args.length} 个`
+                        );
+                    }
+                    current++;  // 跳过右括号
+                    console.log('函数参数解析完成，参数列表:', args);
+                    return args;
+                }
+
+                // 必须是逗号
+                if (type !== 'separator' || token !== ',') {
+                    console.log('错误：期望逗号或右括号，但得到:', type, token);
+                    throw new Error(`函数 ${functionName} 的参数列表格式错误：缺少逗号或右括号`);
                 }
                 current++;  // 跳过逗号
+
+                // 检查是否还有更多参数
+                if (current >= tokens.length) {
+                    throw new Error(`函数 ${functionName} 的参数列表未闭合`);
+                }
             }
 
-            return args;
+            throw new Error(`函数 ${functionName} 的参数列表未闭合`);
         }
 
         // 开始解析
@@ -456,6 +504,14 @@ const Calculator = (function() {
             
             const { nodes, edges } = generateMermaidAST(ast);
             return `graph TD;\n${nodes}${edges}`;
+        },
+
+        tokenize(expr, operators, functions, constants) {
+            return tokenize(expr, operators, functions, constants);
+        },
+
+        preprocess(expr, operators, functions) {
+            return preprocess(expr, operators, functions);
         }
     };
 })();
