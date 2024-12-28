@@ -1,15 +1,41 @@
-// 添加可补全的函数和操作列表
-const completions = [
-    'sin(', 'cos(', 'tan(',
-    'asin(', 'acos(', 'atan(',
-    'log(', 'ln(', 'exp(',
-    'sqrt(', 'root(', 'pow(',
-    'max(', 'min(',
-    'bin(', 'oct(', 'hex(',
-    'PI',
-    '0b', '0o', '0x',
-    '**('
-];
+// 从 OPERATORS 和 FUNCTIONS 中生成补全列表
+function generateCompletions() {
+    const completions = [];
+    
+    // 添加函数名（带括号）
+    for (const funcName of Object.keys(FUNCTIONS)) {
+        const func = FUNCTIONS[funcName];
+        // 排除以数字开头的函数名（如 0b, 0o, 0x）
+        if (!/^\d/.test(funcName)) {
+            // 如果是属性函数，添加 .funcName 形式
+            if (func.asProperty) {
+                completions.push(`.${funcName}`);
+            } else {
+                completions.push(`${funcName}(`);
+            }
+        }
+    }
+    
+    // 添加常量
+    for (const constName of Object.keys(CONSTANTS)) {
+        completions.push(constName);
+    }
+    
+    // 添加特殊运算符
+    const specialOperators = ['**'];
+    for (const op of specialOperators) {
+        completions.push(`${op}(`);
+    }
+    
+    // 添加进制前缀
+    const prefixes = ['0b', '0o', '0x'];
+    completions.push(...prefixes);
+    
+    return completions;
+}
+
+// 生成补全列表
+const completions = generateCompletions();
 
 // 添加全局变量
 let isCompletionEnabled = true;
@@ -176,17 +202,44 @@ function handleTabCompletion(input) {
         );
         
         if (matches.length > 0) {
-            const completion = matches[0];
+            // 如果有补全提示显示，使用当前选中的项
+            const hint = input.parentElement.querySelector('.completion-hint');
+            if (hint) {
+                const selectedItem = hint.querySelector('.completion-item.selected') || 
+                                   hint.querySelector('.completion-item');
+                if (selectedItem) {
+                    const match = selectedItem.textContent;
+                    const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
+                    const afterCursor = input.value.substring(cursorPos);
+                    
+                    if (match.endsWith('(')) {
+                        input.value = beforeWord + match + ')' + afterCursor;
+                        const newCursorPos = beforeWord.length + match.length;
+                        input.setSelectionRange(newCursorPos, newCursorPos);
+                    } else {
+                        input.value = beforeWord + match + afterCursor;
+                        const newCursorPos = beforeWord.length + match.length;
+                        input.setSelectionRange(newCursorPos, newCursorPos);
+                    }
+                    
+                    calculateLine(input);
+                    removeCompletionHint(input);
+                    return;
+                }
+            }
+            
+            // 如果没有提示显示，使用第一个匹配项
+            const match = matches[0];
             const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
             const afterCursor = input.value.substring(cursorPos);
             
-            if (completion.endsWith('(')) {
-                input.value = beforeWord + completion + ')' + afterCursor;
-                const newCursorPos = beforeWord.length + completion.length;
+            if (match.endsWith('(')) {
+                input.value = beforeWord + match + ')' + afterCursor;
+                const newCursorPos = beforeWord.length + match.length;
                 input.setSelectionRange(newCursorPos, newCursorPos);
             } else {
-                input.value = beforeWord + completion + afterCursor;
-                const newCursorPos = beforeWord.length + completion.length;
+                input.value = beforeWord + match + afterCursor;
+                const newCursorPos = beforeWord.length + match.length;
                 input.setSelectionRange(newCursorPos, newCursorPos);
             }
             
@@ -225,11 +278,7 @@ function handleInput(event) {
             );
             
             if (matches.length > 0) {
-                const completion = matches[0];
-                const hint = completion.slice(lastWord.length);
-                if (hint) {
-                    showCompletionHint(input, textBeforeCursor + hint);
-                }
+                showCompletionHint(input, matches);
             }
         }
     }
@@ -237,11 +286,92 @@ function handleInput(event) {
     calculateLine(input);
 }
 
-function showCompletionHint(input, fullText) {
+function showCompletionHint(input, matches) {
+    removeCompletionHint(input);
+    
     const hint = document.createElement('div');
     hint.className = 'completion-hint';
-    hint.textContent = fullText;
+    
+    // 创建匹配列表
+    const list = document.createElement('ul');
+    list.className = 'completion-list';
+    
+    // 添加所有匹配项
+    matches.forEach(match => {
+        const item = document.createElement('li');
+        item.textContent = match;
+        item.className = 'completion-item';
+        // 添加点击事件
+        item.addEventListener('click', () => {
+            const cursorPos = input.selectionStart;
+            const textBeforeCursor = input.value.substring(0, cursorPos);
+            const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0];
+            const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
+            const afterCursor = input.value.substring(cursorPos);
+            
+            if (match.endsWith('(')) {
+                input.value = beforeWord + match + ')' + afterCursor;
+                const newCursorPos = beforeWord.length + match.length;
+                input.setSelectionRange(newCursorPos, newCursorPos);
+            } else {
+                input.value = beforeWord + match + afterCursor;
+                const newCursorPos = beforeWord.length + match.length;
+                input.setSelectionRange(newCursorPos, newCursorPos);
+            }
+            
+            calculateLine(input);
+            removeCompletionHint(input);
+        });
+        list.appendChild(item);
+    });
+    
+    hint.appendChild(list);
     input.parentElement.appendChild(hint);
+    
+    // 计算光标位置
+    const cursorPos = input.selectionStart;
+    const textBeforeCursor = input.value.substring(0, cursorPos);
+    
+    // 创建临时元素来测量文本宽度
+    const measureEl = document.createElement('span');
+    measureEl.style.font = window.getComputedStyle(input).font;
+    measureEl.style.visibility = 'hidden';
+    measureEl.style.position = 'absolute';
+    measureEl.textContent = textBeforeCursor;
+    document.body.appendChild(measureEl);
+    
+    // 获取光标位置
+    const textWidth = measureEl.offsetWidth;
+    document.body.removeChild(measureEl);
+    
+    // 获取输入框的位置信息
+    const inputRect = input.getBoundingClientRect();
+    const scrollLeft = input.scrollLeft;
+    
+    // 设置提示框位置
+    const cursorX = inputRect.left + textWidth - scrollLeft;
+    const cursorY = inputRect.top + inputRect.height;
+    
+    // 调整提示框位置，确保不超出视窗
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    let left = cursorX;
+    let top = cursorY;
+    
+    // 如果提示框会超出右边界，向左偏移
+    if (left + hint.offsetWidth > viewportWidth) {
+        left = viewportWidth - hint.offsetWidth - 10;
+    }
+    
+    // 如果提示框会超出底部，显示在输入框上方
+    if (top + hint.offsetHeight > viewportHeight) {
+        top = inputRect.top - hint.offsetHeight;
+    }
+    
+    hint.style.position = 'fixed';
+    hint.style.left = `${left}px`;
+    hint.style.top = `${top}px`;
 }
 
 function removeCompletionHint(input) {
@@ -318,7 +448,7 @@ function addResultClickHandler(resultElement) {
     resultElement.addEventListener('click', function() {
         // 检查是否有错误状态
         if (this.classList.contains('error')) {
-            return; // 如果是错误状态，直接返回不执行复制
+            return; // 如果是错误状态，直接返回不��行复制
         }
         
         const resultValue = this.querySelector('.result-value').textContent;
