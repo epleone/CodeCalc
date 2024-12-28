@@ -139,6 +139,64 @@ export const OPERATORS = {
         position: 'infix',
         types: [TYPE.STRING, TYPE.STRING],
         description: '字符串连接'
+    },
+
+    // 位运算符
+    '&': {
+        precedence: 1,
+        args: 2,
+        func: (x, y) => x & y,
+        position: 'infix',
+        types: [TYPE.NUMBER, TYPE.NUMBER],
+        description: '按位与'
+    },
+    '|': {
+        precedence: 1,
+        args: 2,
+        func: (x, y) => x | y,
+        position: 'infix',
+        types: [TYPE.NUMBER, TYPE.NUMBER],
+        description: '按位或'
+    },
+    '^': {
+        precedence: 1,
+        args: 2,
+        func: (x, y) => x ^ y,
+        position: 'infix',
+        types: [TYPE.NUMBER, TYPE.NUMBER],
+        description: '按位异或'
+    },
+    '~': {
+        precedence: 4,
+        args: 1,
+        func: x => ~x,
+        position: 'prefix',
+        types: [TYPE.NUMBER],
+        description: '按位取反'
+    },
+    '<<': {
+        precedence: 2,
+        args: 2,
+        func: (x, y) => x << y,
+        position: 'infix',
+        types: [TYPE.NUMBER, TYPE.NUMBER],
+        description: '左移'
+    },
+    '>>': {
+        precedence: 2,
+        args: 2,
+        func: (x, y) => x >> y,
+        position: 'infix',
+        types: [TYPE.NUMBER, TYPE.NUMBER],
+        description: '右移'
+    },
+    '>>>': {
+        precedence: 2,
+        args: 2,
+        func: (x, y) => x >>> y,
+        position: 'infix',
+        types: [TYPE.NUMBER, TYPE.NUMBER],
+        description: '无符号右移'
     }
 };
 
@@ -318,21 +376,21 @@ export const FUNCTIONS = {
     // 进制转换函数
     'bin': {
         args: 1,
-        func: x => x.toString(2),
+        func: x => "0b" + x.toString(2),
         types: [TYPE.NUMBER],
         asProperty: true,
         description: '十进制转二进制'
     },
     'oct': {
         args: 1,
-        func: x => x.toString(8),
+        func: x => "0o" + x.toString(8),
         types: [TYPE.NUMBER],
         asProperty: true,
         description: '十进制转八进制'
     },
     'hex': {
         args: 1,
-        func: x => x.toString(16),
+        func: x => "0x" + x.toString(16),
         types: [TYPE.NUMBER],
         asProperty: true,
         description: '十进制转十六进制'
