@@ -60,7 +60,7 @@
             const calculateBtn = document.getElementById('calculate');
             
             // 创建可视化器实例
-            const visualizer = new ASTVisualizer(astDiv);
+            let visualizer = new ASTVisualizer(astDiv);
 
             calculateBtn.onclick = function() {
                 const expr = input.value;
@@ -71,10 +71,16 @@
 
                     // 获取AST并可视化
                     const ast = Calculator.getASTNode(expr);
+                    
+                    // 清空之前的内容并重新创建可视化器
+                    astDiv.innerHTML = '';
+                    visualizer = new ASTVisualizer(astDiv);
                     visualizer.draw(ast);
                 } catch (e) {
                     resultDiv.textContent = `错误: ${e.message}`;
+                    // 清空并重置可视化器
                     astDiv.innerHTML = '';
+                    visualizer = new ASTVisualizer(astDiv);
                 }
             };
 
@@ -86,12 +92,23 @@
                 "2 * (3 + 4)",
                 "(1 + 2) * (-3 - 4)",
                 "max(1, 2, 3)",
-                "1# + 2",
-                "1#",
+                "#1 + 2",
+                "#(1+2)",
+                "#1",
+                "#e",
                 "150°",
                 "deg(150)",
+                "150.deg",
+                "rad(1.5)",
+                "1.5.rad",
+                "rad(1.5).deg",
+                "1.5.rad.deg",
                 "rad(PI/2)",
-                "e#"
+                "90.rad",
+                "(1+2).deg",
+                "max(1,2).deg",
+                "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))",
+                "150.max"
             ];
 
             const examplesDiv = document.getElementById('examples');
