@@ -292,4 +292,27 @@ export const FUNCTIONS = {
         asProperty: true,
         description: '弧度转换为度数'
     },
+
+    // 字符串函数
+    'upper': {
+        args: 1,
+        func: x => x.toUpperCase(),
+        types: [TYPE.STRING],
+        asProperty: true,
+        description: '转换为大写'
+    },
+    'lower': {
+        args: 1,
+        func: x => x.toLowerCase(),
+        types: [TYPE.STRING],
+        asProperty: true,
+        description: '转换为小写'
+    },
+    'length': {
+        args: 1,
+        func: x => x.length,
+        types: [TYPE.STRING],
+        asProperty: true,
+        description: '字符串长度'
+    }
 }; 
