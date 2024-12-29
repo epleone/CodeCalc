@@ -101,7 +101,45 @@
             { group: '最值复合', name: "幂函数最大值", input: "max(pow(2,1),pow(2,2),pow(2,3))", expected: "8" },
             { group: '最值复合', name: "复杂表达式", input: "max(sin(45°),cos(60°),tan(30°),sqrt(2)/2)", expected: "0.707107" },
             { group: '最值复合', name: "混合函数1", input: "min(log(pow(10,2)),sqrt(16),sin(PI/2))", expected: "1" },
-            { group: '最值复合', name: "混合函数2", input: "max(ln(e*e),pow(sqrt(4),2),sin(PI/2))", expected: "4" }
+            { group: '最值复合', name: "混合函数2", input: "max(ln(e*e),pow(sqrt(4),2),sin(PI/2))", expected: "4" },
+
+            // 属性函数链式调用测试
+            { group: '属性函数链', name: "数值属性链", input: "(123.456).abs.bin.hex", expected: "0x7b" },
+            { group: '属性函数链', name: "字符串属性链", input: "'HeLLo'.upper.lower.length", expected: "5" },
+            { group: '属性函数链', name: "角度属性链", input: "(45.deg).rad.deg", expected: "45" },
+            { group: '属性函数链', name: "混合属性链", input: "(0xFF).bin.length", expected: "10" },
+            { group: '属性函数链', name: "复杂属性链", input: "(-123.456).abs.hex.length", expected: "4" },
+
+
+            // 位运算复合测试
+            { group: '位运算复合', name: "与或组合", input: "(12 & 5) | (8 & 3)", expected: "4" },
+            { group: '位运算复合', name: "移位组合", input: "(8 << 2) >> 1", expected: "16" },
+            { group: '位运算复合', name: "复杂位运算", input: "~(15 & (8 | 4)) << 2", expected: "-56" },
+            { group: '位运算复合', name: "位运算进制", input: "(0xFF & 0xF0).hex", expected: "0xf0" },
+            { group: '位运算复合', name: "移位链式", input: "(1 << 4 << 2).bin", expected: "0b10000000" },
+
+            // 类型转换复合测试
+            { group: '类型转换', name: "数字转字符串", input: "str(123) + 'abc'", expected: "123abc" },
+            { group: '类型转换', name: "字符串转数字", input: "num('123') + 456", expected: "579" },
+            { group: '类型转换', name: "混合转换", input: "str(num('123') + 456)", expected: "579" },
+            { group: '类型转换', name: "进制转换", input: "str(0xFF) + str(0b1010)", expected: "25510" },
+
+            // 数学函数复合测试
+            { group: '数学函数复合', name: "绝对值嵌套", input: "(-(-5).abs).abs", expected: "5" },
+            { group: '数学函数复合', name: "幂函数组合", input: "sqrt(pow(2, pow(2, 2)))", expected: "4" },
+            { group: '数学函数复合', name: "对数幂组合", input: "pow(2, log(16))", expected: "4" },
+            { group: '数学函数复合', name: "复杂数学", input: "sqrt(pow(log(100), 2) + pow(sin(PI/2), 2))", expected: "2.236068" },
+
+            // 混合运算复合测试
+            { group: '混合运算复合', name: "数学位运算", input: "sqrt((16 & 12) << 2)", expected: "4" },
+            { group: '混合运算复合', name: "三角位运算", input: "(sin(PI/2) * 8).bin", expected: "0b1000" },
+            { group: '混合运算复合', name: "对数进制", input: "(pow(2, log(16))).hex", expected: "0x4" },
+            { group: '混合运算复合', name: "复杂混合", input: "((0xFF & 0xF0) >> 4).abs + sin(PI/2)", expected: "16" },
+
+            // 错误处理复合测试
+            { group: '错误处理复合', name: "无效属性链", input: "(123).length", expected: "属性 \"invalid\" 未定义" },
+            { group: '错误处理复合', name: "类型错误", input: "sin('abc')", expected: "无法将 abc 转换为数字类型" },
+            { group: '错误处理复合', name: "参数错误", input: "pow(2)", expected: "函数 \"pow\" 需要 2 个参数，但得到了 1 个" },
         ];
 
         // 使用与原测试页面相同的测试运行函数

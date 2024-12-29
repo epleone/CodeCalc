@@ -270,9 +270,20 @@ const Calculator = (function() {
                 // 检查是否是操作符、函数名或常量
                 let shouldBreak = false;
 
+                // 如果当前积累的字符串可能是特殊形式的开始（如 0x），继续收集
+                if (str === '0' && (char === 'x' || char === 'b' || char === 'o')) {
+                    str += char;
+                    i++;
+                    continue;
+                }
+
                 // 检查是否是操作符
                 for (const op of sortedOperators) {
-                    if (remainingExpr.startsWith(op)) {
+                    // 只有当当前字符串不是任何函数或常量的前缀时，才考虑运算符
+                    const isPrefix = [...functions, ...constants].some(name => 
+                        name.startsWith(str + char));
+                    
+                    if (!isPrefix && remainingExpr.startsWith(op)) {
                         shouldBreak = true;
                         break;
                     }
@@ -280,11 +291,6 @@ const Calculator = (function() {
 
                 // 检查是否是分隔符或定界符
                 if (delimiters.has(char) || separators.has(char)) {
-                    shouldBreak = true;
-                }
-
-                // 如果当前积累的字符串是一个函数名或常量，并且遇到了左括号，就应该停止
-                if (str && (functions.has(str) || constants.has(str)) && char === '(') {
                     shouldBreak = true;
                 }
 
