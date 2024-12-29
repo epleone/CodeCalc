@@ -200,7 +200,9 @@ function handleKeyDown(event, input) {
             previousInput.selectionStart = previousInput.value.length;
             previousInput.selectionEnd = previousInput.value.length;
             
-            if (!input.value && !currentLine.querySelector('.result').textContent) {
+            // 如果当前行是空的（没有输入也没有结果），就删除它
+            const resultValue = currentLine.querySelector('.result-value').textContent;
+            if (!input.value && !resultValue) {
                 currentLine.remove();
             }
         }
@@ -402,7 +404,10 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
     const list = document.createElement('ul');
     list.className = 'completion-list';
     
-    matches.forEach((match, index) => {
+    // 只显示前5个匹配项
+    const displayMatches = matches.slice(0, 5);
+    
+    displayMatches.forEach((match, index) => {
         const item = document.createElement('li');
         item.textContent = isPropertyCompletion ? match : match;
         item.className = 'completion-item';
