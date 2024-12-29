@@ -49,7 +49,12 @@ const Types = {
                 const num = parseFloat(value);
                 if (!isNaN(num)) return num;
             }
-
+            
+             // 处理普通数字
+             if (!/^-?\d+(\.\d+)?$/.test(value)) {
+                throw new Error(`无效的数字格式: ${value}`);
+            }
+            
             // 处理普通数字字符串
             const num = parseFloat(value);
             if (!isNaN(num)) {

@@ -541,6 +541,7 @@ const Calculator = (function() {
             }
             return node.value;  // 不转换为数字
         }
+                
 
         // 处理常量
         if (node.type === 'constant') {
@@ -562,9 +563,14 @@ const Calculator = (function() {
             // 处理赋值运算符
             if (node.value === '=' || op.isCompoundAssignment) {
                 const [left, right] = node.args;
-                // 检查左侧是否为标识符
-                if (left.type !== 'identifier') {
+                // 检查左侧是否为标识符类型的节点
+                if (left.type !== 'identifier' && left.type !== 'string') {
                     throw new Error('赋值运算符左侧必须是变量名');
+                }
+
+                // 检查左侧是否是合法的变量名
+                if (!isValidVariableName(left.value)) {
+                    throw new Error(`"${left.value}" 不是合法的变量名`);
                 }
                 
                 // 计算右侧表达式
