@@ -192,19 +192,32 @@ function handleKeyDown(event, input) {
         }
     } else if (event.key === 'Backspace' && input.value === '') {
         event.preventDefault();
-        const previousLine = currentLine.previousElementSibling;
+        const lines = document.querySelectorAll('.expression-line');
+        const currentIndex = Array.from(lines).indexOf(currentLine);
         
-        if (previousLine && document.querySelectorAll('.expression-line').length > 1) {
+        if (currentIndex === 0) {
+            // 如果是第一行
+            if (lines.length > 1) {
+                // 如果有多行，直接将所有内容上移一行
+                for (let i = 0; i < lines.length - 1; i++) {
+                    const currentInput = lines[i].querySelector('.input');
+                    const nextInput = lines[i + 1].querySelector('.input');
+                    currentInput.value = nextInput.value;
+                    currentInput.dispatchEvent(new Event('input'));
+                }
+                // 删除最后一行
+                lines[lines.length - 1].remove();
+                // 聚焦到第一行
+                lines[0].querySelector('.input').focus();
+            }
+        } else if (lines.length > 1) {
+            // 如果不是第一行，执行原有的回退逻辑
+            const previousLine = currentLine.previousElementSibling;
             const previousInput = previousLine.querySelector('.input');
             previousInput.focus();
             previousInput.selectionStart = previousInput.value.length;
             previousInput.selectionEnd = previousInput.value.length;
-            
-            // 如果当前行是空的（没有输入也没有结果），就删除它
-            const resultValue = currentLine.querySelector('.result-value').textContent;
-            if (!input.value && !resultValue) {
-                currentLine.remove();
-            }
+            currentLine.remove();
         }
     } else if (event.key === 'ArrowUp') {
         // 只在没有补全提示时处理上下行切换
