@@ -75,18 +75,19 @@ const OPERATORS = {
         position: 'infix',
         description: '乘法'
     },
-    'x': {
-        precedence: 2,
-        args: 2,
-        func: (x, y) => {
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) * BigInt(y);
-            }
-            return x * y;
-        },
-        position: 'infix',
-        description: '乘法'
-    },
+    // 单独处理吧
+    // 'x': {
+    //     precedence: 2,
+    //     args: 2,
+    //     func: (x, y) => {
+    //         if (typeof x === 'bigint' || typeof y === 'bigint') {
+    //             return BigInt(x) * BigInt(y);
+    //         }
+    //         return x * y;
+    //     },
+    //     position: 'infix',
+    //     description: '乘法'
+    // },
     '/': {
         precedence: 2,
         args: 2,
@@ -244,7 +245,7 @@ const OPERATORS = {
 const FUNCTIONS = {
     // 类型转换函数
     'str': {
-        func: x => x,
+        func: x => x.toString(),
         args: 1,
         acceptAny: true,
         description: '转换为字符串'

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>错误处理测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-case {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-stats {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>错误处理测试</h1>
+    <div id="test-stats" class="test-stats">
+        <span class="total">总测试数: 0</span>
+        <span class="passed">通过: 0</span>
+        <span class="failed">失败: 0</span>
+    </div>
+    <div id="test-controls">
+        <button id="runAllTests">运行所有测试</button>
+        <button id="clearResults">清除结果</button>
+    </div>
+    <div id="results"></div>
+
+    <script src="../src/types.js"></script>
+    <script src="../src/operators.js"></script>
+    <script src="../src/calculator.js"></script>
+
+    <script>
+        const calculate = Calculator.calculate;
+
+        const tests = [
+            // 语法错误
+            { group: '语法错误', name: "空括号", input: "()", expected: "error" },
+            { group: '语法错误', name: "括号不匹配1", input: "(1 + 2))", expected: "error" },
+            { group: '语法错误', name: "括号不匹配2", input: "((1 + 2)", expected: "error" },
+            { group: '语法错误', name: "空表达式", input: "", expected: "error" },
+            { group: '语法错误', name: "非法字符", input: "@#$", expected: "error" },
+            { group: '语法错误', name: "连续运算符", input: "1 ++ 2", expected: "error" },
+            { group: '语法错误', name: "缺少操作数1", input: "1 +", expected: "error" },
+            { group: '语法错误', name: "缺少操作数2", input: "* 2", expected: "error" },
+            { group: '语法错误', name: "多余的逗号", input: "max(1,,2)", expected: "error" },
+            { group: '语法错误', name: "括号内空表达式", input: "1 + ()", expected: "error" },
+
+            // 类型错误
+            { group: '类型错误', name: "字符串加数字", input: "'abc' + 123", expected: "error" },
+            { group: '类型错误', name: "字符串减法", input: "'abc' - 'def'", expected: "error" },
+            { group: '类型错误', name: "字符串乘法", input: "'abc' * 2", expected: "error" },
+            { group: '类型错误', name: "布尔运算", input: "true + false", expected: "error" },
+            { group: '类型错误', name: "数字属性", input: "(123).length", expected: "error" },
+            { group: '类型错误', name: "数字方法", input: "(123).upper", expected: "error" },
+            { group: '类型错误', name: "字符串数学函数", input: "sin('abc')", expected: "error" },
+            { group: '类型错误', name: "对象运算", input: "{} + []", expected: "error" },
+
+            // 函数错误
+            { group: '函数错误', name: "参数过多", input: "sin(1, 2)", expected: "error" },
+            { group: '函数错误', name: "参数不足", input: "pow(2)", expected: "error" },
+            { group: '函数错误', name: "未定义函数", input: "foo(1)", expected: "error" },
+            { group: '函数错误', name: "函数嵌套错误", input: "sin(max())", expected: "error" },
+            { group: '函数错误', name: "非法参数类型", input: "sqrt('abc')", expected: "error" },
+            { group: '函数错误', name: "函数作为值", input: "1 + sin", expected: "error" },
+
+            // 变量错误
+            { group: '变量错误', name: "未定义变量", input: "x + 1", expected: "error" },
+            { group: '变量错误', name: "保留字作变量", input: "sin = 1", expected: "error" },
+            { group: '变量错误', name: "非法变量名", input: "1a = 2", expected: "error" },
+            { group: '变量错误', name: "运算符作变量", input: "+ = 2", expected: "error" },
+            { group: '变量错误', name: "常量赋值", input: "PI = 3", expected: "error" },
+
+            // 运算符错误
+            { group: '运算符错误', name: "除零", input: "1/0", expected: "error" },
+            { group: '运算符错误', name: "模零", input: "1%0", expected: "error" },
+            { group: '运算符错误', name: "负数开方", input: "sqrt(-1)", expected: "error" },
+            { group: '运算符错误', name: "对数负数", input: "log(-1)", expected: "error" },
+            { group: '运算符错误', name: "左值错误", input: "1 = 2", expected: "error" },
+            { group: '运算符错误', name: "复合赋值错误", input: "1 += 2", expected: "error" },
+
+            // 数值错误
+            { group: '数值错误', name: "过大数值", input: "9.9e999", expected: "error" },
+            { group: '数值错误', name: "非法数值", input: "0xFF.toString()", expected: "error" },
+            { group: '数值错误', name: "非法进制", input: "0b123", expected: "error" },
+            { group: '数值错误', name: "非法十六进制", input: "0xGG", expected: "error" },
+            { group: '数值错误', name: "小数进制", input: "0b1.1", expected: "error" },
+
+            // 字符串错误
+            { group: '字符串错误', name: "未闭合引号1", input: "'abc", expected: "error" },
+            { group: '字符串错误', name: "未闭合引号2", input: "\"abc", expected: "error" },
+            { group: '字符串错误', name: "混合引号", input: "'abc\"", expected: "error" },
+            { group: '字符串错误', name: "非法转义", input: "'\\x'", expected: "error" },
+            { group: '字符串错误', name: "字符串括号", input: "('abc')", expected: "error" },
+
+            // 复合错误
+            { group: '复合错误', name: "嵌套括号过深", input: "(".repeat(101), expected: "error" },
+            { group: '复合错误', name: "复杂类型错误", input: "sin(max('abc', 123))", expected: "error" },
+            { group: '复合错误', name: "多重属性错误", input: "(123).toString().length", expected: "error" },
+            { group: '复合错误', name: "混合运算错误", input: "'abc' + (1 + 2)", expected: "error" },
+            { group: '复合错误', name: "复杂函数错误", input: "pow(sin('abc'), log(-1))", expected: "error" },
+
+            // 属性访问错误
+            { group: '属性访问错误', name: "数字的字符串属性", input: "(123).length", expected: "error" },
+            { group: '属性访问错误', name: "数字的大写属性", input: "(123).upper", expected: "error" },
+            { group: '属性访问错误', name: "数字的小写属性", input: "(123).lower", expected: "error" },
+            { group: '属性访问错误', name: "未定义属性", input: "(123).unknown", expected: "error" },
+            { group: '属性访问错误', name: "多重无效属性", input: "(123).abs.length", expected: "error" },
+            { group: '属性访问错误', name: "字符串的数字属性", input: "'abc'.abs", expected: "error" },
+            { group: '属性访问错误', name: "字符串的进制属性", input: "'abc'.hex", expected: "error" },
+            { group: '属性访问错误', name: "常量的属性", input: "PI.length", expected: "error" },
+            { group: '属性访问错误', name: "表达式结果属性", input: "(1+2).length", expected: "error" },
+            { group: '属性访问错误', name: "函数结果属性", input: "sin(PI).length", expected: "error" },
+
+            // 括号使用错误
+            { group: '括号错误', name: "括号中的字符串", input: "('abc')", expected: "error" },
+            { group: '括号错误', name: "括号中的常量", input: "(PI)", expected: "error" },
+            { group: '括号错误', name: "多层空括号", input: "((()))", expected: "error" },
+            { group: '括号错误', name: "函数后无括号", input: "sin 90", expected: "error" },
+            { group: '括号错误', name: "括号内多表达式", input: "(1,2,3)", expected: "error" },
+            { group: '括号错误', name: "括号内赋值", input: "(x=1)", expected: "error" },
+            { group: '括号错误', name: "括号后操作符", input: "(1)(2)", expected: "error" },
+            { group: '括号错误', name: "括号内无效字符", input: "(@#$)", expected: "error" },
+            { group: '括号错误', name: "括号不配对", input: "((1+2)*3", expected: "error" },
+            { group: '括号错误', name: "多余右括号", input: "(1+2))", expected: "error" },
+
+            // 数值解析错误
+            { group: '数值错误', name: "无效十六进制", input: "0xZ", expected: "error" },
+            { group: '数值错误', name: "无效二进制", input: "0b2", expected: "error" },
+            { group: '数值错误', name: "无效八进制", input: "0o9", expected: "error" },
+            { group: '数值错误', name: "小数点多个", input: "1.2.3", expected: "error" },
+            { group: '数值错误', name: "指数多个", input: "1e2e3", expected: "error" },
+            { group: '数值错误', name: "指数小数", input: "1e2.3", expected: "error" },
+            { group: '数值错误', name: "前导零", input: "0123", expected: "error" },
+            { group: '数值错误', name: "空十六进制", input: "0x", expected: "error" },
+            { group: '数值错误', name: "空二进制", input: "0b", expected: "error" },
+            { group: '数值错误', name: "空八进制", input: "0o", expected: "error" },
+
+            // 运算符优先级错误
+            { group: '运算符错误', name: "连续一元运算符", input: "--1", expected: "error" },
+            { group: '运算符错误', name: "后缀前缀混用", input: "1°°", expected: "error" },
+            { group: '运算符错误', name: "运算符连用", input: "1 */ 2", expected: "error" },
+            { group: '运算符错误', name: "位运算符连用", input: "1 &| 2", expected: "error" },
+            { group: '运算符错误', name: "赋值运算符连用", input: "x = y = 1", expected: "error" },
+            { group: '运算符错误', name: "复合赋值连用", input: "x += -= 1", expected: "error" },
+            { group: '运算符错误', name: "移位运算符连用", input: "1 << >> 2", expected: "error" },
+            { group: '运算符错误', name: "运算符结尾", input: "1 +", expected: "error" },
+            { group: '运算符错误', name: "运算符开头", input: "* 2", expected: "error" },
+            { group: '运算符错误', name: "括号间运算符", input: "()+()", expected: "error" },
+
+            // 函数调用错误
+            { group: '函数错误', name: "函数名后无括号", input: "sin", expected: "error" },
+            { group: '函数错误', name: "函数参数类型", input: "max('1', 2)", expected: "error" },
+            { group: '函数错误', name: "函数参数不足", input: "min()", expected: "error" },
+            { group: '函数错误', name: "函数参数过多", input: "abs(1,2)", expected: "error" },
+            { group: '函数错误', name: "函数嵌套空参", input: "sin(cos())", expected: "error" },
+            { group: '函数错误', name: "函数参数无效", input: "sqrt({})", expected: "error" },
+            { group: '函数错误', name: "函数参数未闭合", input: "pow(2,", expected: "error" },
+            { group: '函数错误', name: "函数参数多逗号", input: "max(1,,2)", expected: "error" },
+            { group: '函数错误', name: "函数参数尾逗号", input: "min(1,)", expected: "error" },
+            { group: '函数错误', name: "函数参数首逗号", input: "log(,1)", expected: "error" },
+
+            // 字符串操作错误
+            { group: '字符串错误', name: "字符串加数字", input: "'abc' + 123", expected: "error" },
+            { group: '字符串错误', name: "字符串减法", input: "'abc' - 'def'", expected: "error" },
+            { group: '字符串错误', name: "字符串乘除", input: "'abc' * 2", expected: "error" },
+            { group: '字符串错误', name: "字符串位运算", input: "'abc' & 'def'", expected: "error" },
+            { group: '字符串错误', name: "字符串数学函数", input: "sin('abc')", expected: "error" },
+            { group: '字符串错误', name: "字符串比较", input: "'abc' > 'def'", expected: "error" },
+            { group: '字符串错误', name: "字符串移位", input: "'abc' << 2", expected: "error" },
+            { group: '字符串错误', name: "字符串取反", input: "~'abc'", expected: "error" },
+            { group: '字符串错误', name: "字符串幂运算", input: "'abc' ** 2", expected: "error" },
+            { group: '字符串错误', name: "字符串模运算", input: "'abc' % 2", expected: "error" }
+        ];
+
+        function runTest(test) {
+            try {
+                const result = calculate(test.input);
+                // 如果执行到这里，说明没有抛出错误
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: "应该抛出错误",
+                    actual: result.toString(),
+                    success: false
+                };
+            } catch (error) {
+                // 抛出错误就是期望的行为
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: "error",
+                    actual: error.message,
+                    success: true
+                };
+            }
+        }
+
+        function runAllTests() {
+            const results = document.getElementById('results');
+            const statsDiv = document.getElementById('test-stats');
+            results.innerHTML = '';
+            let successCount = 0;
+            let totalTests = 0;
+
+            let currentGroup = '';
+            let groupDiv = null;
+
+            tests.forEach(test => {
+                if (currentGroup !== test.group) {
+                    currentGroup = test.group;
+                    groupDiv = document.createElement('div');
+                    groupDiv.innerHTML = `<h3>${test.group}</h3>`;
+                    results.appendChild(groupDiv);
+                }
+
+                totalTests++;
+                const result = runTest(test);
+                appendTestResult(groupDiv, result);
+                if (result.success) successCount++;
+            });
+
+            statsDiv.innerHTML = `
+                <span class="total">总测试数: ${totalTests}</span>
+                <span class="passed">通过: ${successCount}</span>
+                <span class="failed">失败: ${totalTests - successCount}</span>
+            `;
+        }
+
+        function appendTestResult(container, result) {
+            const div = document.createElement('div');
+            div.className = 'test-case';
+            div.innerHTML = `
+                <div class="test-input">
+                    <strong>${result.name}</strong> (${result.input})
+                </div>
+                <div class="test-result ${result.success ? 'success' : 'error'}">
+                    ${result.success ? '✓ 通过' : '✗ 失败'}<br>
+                    期望值: ${result.expected}<br>
+                    实际值: ${result.actual}
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('test-stats').innerHTML = `
+                <span class="total">总测试数: 0</span>
+                <span class="passed">通过: 0</span>
+                <span class="failed">失败: 0</span>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('runAllTests').addEventListener('click', runAllTests);
+            document.getElementById('clearResults').addEventListener('click', clearResults);
+        });
+    </script>
+</body>
+</html> 

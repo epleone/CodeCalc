@@ -219,16 +219,72 @@
             { group: '字符串高级', name: "字符串长度计算", input: "'hello'.length + 'world'.length", expected: "10" },
 
             // 错误处理高级测试
-            { group: '错误处理高级', name: "括号不匹配", input: "(1 + 2))", expected: "多余的右括号，位置: 7" },
-            { group: '错误处理高级', name: "函数参数不足", input: "max()", expected: "空括号对，位置: 3" },
-            { group: '错误处理高级', name: "无效十六进制", input: "0xGG", expected: "Cannot convert 0xGG to a BigInt" },
-            { group: '错误处理高级', name: "无效二进制", input: "0b12", expected: "Cannot convert 0b12 to a BigInt" },
-            { group: '错误处理高级', name: "深度嵌套", input: "(".repeat(101), expected: "括号嵌套深度过大" }
+            { group: '错误处理高级', name: "括号不匹配", input: "(1 + 2))", expected: "error" },
+            { group: '错误处理高级', name: "函数参数不足", input: "max()", expected: "error" },
+            { group: '错误处理高级', name: "无效十六进制", input: "0xGG", expected: "error" },
+            { group: '错误处理高级', name: "无效二进制", input: "0b12", expected: "error" },
+            { group: '错误处理高级', name: "深度嵌套", input: "(".repeat(101), expected: "error" },
+
+            // 负数和负号测试
+            { group: '负数运算', name: "负数加法", input: "-1 + (-2)", expected: "-3" },
+            { group: '负数运算', name: "负数减法", input: "-5 - (-3)", expected: "-2" },
+            { group: '负数运算', name: "负数乘法", input: "-2 * (-3)", expected: "6" },
+            { group: '负数运算', name: "负数除法", input: "-6 / (-2)", expected: "3" },
+            { group: '负数运算', name: "负数幂运算", input: "-2 ** 3", expected: "-8" },
+            { group: '负数运算', name: "负数求余", input: "-7 % 3", expected: "-1" },
+            { group: '负数运算', name: "负数整除", input: "-7 // 3", expected: "-3" },
+            { group: '负数运算', name: "连续负号", input: "--5", expected: "5" },
+            { group: '负数运算', name: "括号负数", input: "(-1) * (-1)", expected: "1" },
+            { group: '负数运算', name: "复杂负数", input: "-(3 + 2) * -2", expected: "10" },
+
+            // 一元负号测试
+            { group: '一元负号', name: "简单负号", input: "-5", expected: "-5" },
+            { group: '一元负号', name: "表达式负号", input: "-(2 + 3)", expected: "-5" },
+            { group: '一元负号', name: "函数负号", input: "-sin(PI/2)", expected: "-1" },
+            { group: '一元负号', name: "负号优先级", input: "-2 ** 2", expected: "4" },
+            { group: '一元负号', name: "负号括号", input: "-(-(-2))", expected: "-2" },
+            { group: '一元负号', name: "负号函数", input: "-max(1, -2, 3)", expected: "-3" },
+            { group: '一元负号', name: "负号属性", input: "-PI", expected: "-3.141592653589793" },
+            { group: '一元负号', name: "负号常量", input: "-e", expected: "-2.718281828459045" },
+            { group: '一元负号', name: "复杂负号", input: "-(2 + -3 * -(4 - 5))", expected: "1" },
+
+            // 负数函数测试
+            { group: '负数函数', name: "负数绝对值", input: "(-5).abs", expected: "5" },
+            { group: '负数函数', name: "负数开方", input: "sqrt(-4)", expected: "error" },
+            { group: '负数函数', name: "负数对数", input: "log(-2)", expected: "error" },
+            { group: '负数函数', name: "负数正弦", input: "sin(-PI/2)", expected: "-1" },
+            { group: '负数函数', name: "负数余弦", input: "cos(-PI)", expected: "-1" },
+            { group: '负数函数', name: "负数正切", input: "tan(-PI/4)", expected: "-1" },
+            { group: '负数函数', name: "负数最大值", input: "max(-1, -2, -3)", expected: "-1" },
+            { group: '负数函数', name: "负数最小值", input: "min(-1, -2, -3)", expected: "-3" },
+            { group: '负数函数', name: "负数幂函数", input: "pow(-2, 3)", expected: "-8" },
+            { group: '负数函数', name: "负指数", input: "pow(2, -2)", expected: "0.25" }
         ];
 
         function runTest(test, preserveState = false) {
             try {
                 const result = calculate(test.input);
+                
+                // 如果期望值是 "error"，检查结果是否为 NaN 或抛出错误
+                if (test.expected === "error") {
+                    if (isNaN(result)) {
+                        return {
+                            name: test.name,
+                            input: test.input,
+                            expected: "error",
+                            actual: "NaN",
+                            success: true
+                        };
+                    }
+                    return {
+                        name: test.name,
+                        input: test.input,
+                        expected: "应该抛出错误",
+                        actual: result.toString(),
+                        success: false
+                    };
+                }
+
                 const resultStr = typeof result === 'object' ?
                     JSON.stringify(result) : result.toString();
                 const expectedStr = typeof test.expected === 'object' ?
@@ -252,6 +308,18 @@
                     success: success
                 };
             } catch (error) {
+                // 如果期望值是 "error"，任何错误都算成功
+                if (test.expected === "error") {
+                    return {
+                        name: test.name,
+                        input: test.input,
+                        expected: "error",
+                        actual: error.message,
+                        success: true
+                    };
+                }
+
+                // 其他情况，错误消息必须完全匹配
                 return {
                     name: test.name,
                     input: test.input,

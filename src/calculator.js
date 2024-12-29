@@ -43,9 +43,11 @@ const Calculator = (function() {
                     }
                     
                     // 检查左括号后是否直接跟右括号
-                    if (noStrings[i + 1] === ')') {
-                        throw new Error(`空括号对，位置: ${i}`);
-                    }
+                    // 无参函数，这个是允许的
+                    // if (noStrings[i + 1] === ')') {
+                    //     throw new Error(`空括号对，位置: ${i}`);
+                    // }
+
                 } else if (noStrings[i] === ')') {
                     if (stack.length === 0) {
                         throw new Error(`多余的右括号，位置: ${i}`);
@@ -152,14 +154,14 @@ const Calculator = (function() {
             return processed;
         }
 
-        // 先检查括号匹配
+        // 先处理字符串字面量
+        expr = processStringLiterals(expr);
+
+        // 再检查括号匹配
         checkParentheses(expr);
 
-        // 检查变量名
+        // 最后检查变量名
         expr = checkVariableName(expr);
-        
-        // 处理字符串字面量
-        expr = processStringLiterals(expr);
 
         // 动态添加属性调用运算符
         for (const [name, func] of Object.entries(FUNCTIONS)) {

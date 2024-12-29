@@ -123,6 +123,150 @@
                         ]
                     }
                 ]
+            },
+            {
+                group: '负号变量测试',
+                tests: [
+                    {
+                        name: "负号赋值",
+                        steps: [
+                            { input: "num1 = -5", expected: "-5" },
+                            { input: "num1", expected: "-5" },
+                            { input: "-num1", expected: "5" }
+                        ]
+                    },
+                    {
+                        name: "连续负号",
+                        steps: [
+                            { input: "value = 5", expected: "5" },
+                            { input: "negValue = -value", expected: "-5" },
+                            { input: "posValue = -negValue", expected: "5" },
+                            { input: "-posValue", expected: "-5" }
+                        ]
+                    },
+                    {
+                        name: "负号运算",
+                        steps: [
+                            { input: "first = -3", expected: "-3" },
+                            { input: "second = -2", expected: "-2" },
+                            { input: "first * second", expected: "6" },
+                            { input: "-(first + second)", expected: "5" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '错误处理测试',
+                tests: [
+                    {
+                        name: "未定义变量",
+                        steps: [
+                            { input: "a = b", expected: "error" },
+                            { input: "a", expected: "error" }
+                        ]
+                    },
+                    {
+                        name: "非法赋值",
+                        steps: [
+                            { input: "1 = 2", expected: "error" },
+                            { input: "'abc' = 3", expected: "error" },
+                            { input: "sin = 5", expected: "error" }
+                        ]
+                    },
+                    {
+                        name: "变量类型错误",
+                        steps: [
+                            { input: "y = 'abc'", expected: "abc" },
+                            { input: "y + 1", expected: "abc1" },
+                            { input: "y - 1", expected: "error" },
+                            { input: "sin(y)", expected: "error" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '复合赋值测试',
+                tests: [
+                    {
+                        name: "加等于",
+                        steps: [
+                            { input: "count = 5", expected: "5" },
+                            { input: "count += 3", expected: "8" },
+                            { input: "count += -2", expected: "6" }
+                        ]
+                    },
+                    {
+                        name: "减等于",
+                        steps: [
+                            { input: "total = 10", expected: "10" },
+                            { input: "total -= 3", expected: "7" },
+                            { input: "total -= -2", expected: "9" }
+                        ]
+                    },
+                    {
+                        name: "乘除等于",
+                        steps: [
+                            { input: "amount = 4", expected: "4" },
+                            { input: "amount *= 3", expected: "12" },
+                            { input: "amount /= 2", expected: "6" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '变量深度嵌套',
+                tests: [
+                    {
+                        name: "多层赋值",
+                        steps: [
+                            { input: "a = 1", expected: "1" },
+                            { input: "b = a + 1", expected: "2" },
+                            { input: "c = b + a", expected: "3" },
+                            { input: "d = (a + b) * c", expected: "9" }
+                        ]
+                    },
+                    {
+                        name: "函数嵌套",
+                        steps: [
+                            { input: "a = PI/2", expected: "1.570796" },
+                            { input: "y = sin(a)", expected: "1" },
+                            { input: "z = cos(y * a)", expected: "0" },
+                            { input: "w = tan(z + y)", expected: "1.557408" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '变量属性测试',
+                tests: [
+                    {
+                        name: "数值属性",
+                        steps: [
+                            { input: "number = 123.456", expected: "123.456" },
+                            { input: "number.abs", expected: "123.456" },
+                            { input: "number.bin", expected: "error" },
+                            { input: "number.hex", expected: "error" }
+                        ]
+                    },
+                    {
+                        name: "字符串属性",
+                        steps: [
+                            { input: "text = 'Hello'", expected: "Hello" },
+                            { input: "text.upper", expected: "HELLO" },
+                            { input: "text.lower", expected: "hello" },
+                            { input: "text.length", expected: "5" }
+                        ]
+                    },
+                    {
+                        name: "非法属性",
+                        steps: [
+                            { input: "value = 123", expected: "123" },
+                            { input: "value.unknown", expected: "error" },
+                            { input: "value.upper", expected: "error" },
+                            { input: "value.sqrt.length", expected: "error" }
+                        ]
+                    }
+                ]
             }
         ];
 
@@ -133,8 +277,34 @@
             for (const step of test.steps) {
                 try {
                     const result = calculate(step.input);
-                    const resultStr = typeof result === 'object' ? result.value : result.toString();
-                    const success = Math.abs(Number(resultStr) - Number(step.expected)) < 1e-6;
+                    
+                    // 如果期望值是 "error"
+                    if (step.expected === "error") {
+                        // 如果结果是 NaN 或者不是数字，就认为测试通过
+                        if (isNaN(result) || typeof result !== 'number') {
+                            results.push({
+                                input: step.input,
+                                expected: "error",
+                                actual: result.toString(),
+                                success: true
+                            });
+                        } else {
+                            // 如果输出了数字，则测试失败
+                            results.push({
+                                input: step.input,
+                                expected: "应该抛出错误",
+                                actual: result.toString(),
+                                success: false
+                            });
+                        }
+                        continue;
+                    }
+
+                    const resultStr = result.toString();
+                    const success = step.expected === resultStr || 
+                                  (isFinite(resultStr) && isFinite(step.expected) && 
+                                   Math.abs(Number(resultStr) - Number(step.expected)) < 1e-6);
+                    
                     results.push({
                         input: step.input,
                         expected: step.expected,
@@ -143,16 +313,26 @@
                     });
                     
                     if (!success) {
-                        break; // 如果某一步失败，停止后续步骤
+                        break;
                     }
                 } catch (error) {
-                    results.push({
-                        input: step.input,
-                        expected: step.expected,
-                        actual: error.message,
-                        success: false
-                    });
-                    break;
+                    // 如果期望值是 "error"，任何错误都算成功
+                    if (step.expected === "error") {
+                        results.push({
+                            input: step.input,
+                            expected: "error",
+                            actual: error.message,
+                            success: true
+                        });
+                    } else {
+                        results.push({
+                            input: step.input,
+                            expected: step.expected,
+                            actual: error.message,
+                            success: false
+                        });
+                        break;
+                    }
                 }
             }
             

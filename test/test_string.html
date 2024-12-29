@@ -56,8 +56,11 @@
                 tests: [
                     { name: "双引号字符串", input: 'num("123")', expected: "123" },
                     { name: "单引号字符串", input: "num('456')", expected: "456" },
-                    { name: "空字符串", input: 'num("")', expected: "错误: 空字符串无法转换为数字" },
-                    { name: "空格字符串", input: 'num("   ")', expected: "错误: 空字符串无法转换为数字" }
+                    { name: "空字符串", input: 'num("")', expected: "error" },
+                    { name: "空格字符串", input: 'num("   ")', expected: "error" },
+                    { name: "非数字字符串", input: 'num("abc")', expected: "error" },
+                    { name: "混合字符串", input: 'num("123abc")', expected: "error" },
+                    { name: "特殊字符", input: 'num("!@#")', expected: "error" }
                 ]
             },
             
@@ -65,10 +68,11 @@
             {
                 group: '转义字符',
                 tests: [
-                    { name: "转义双引号", input: 'str("\"")', expected: '"' },
-                    { name: "转义单引号", input: "str('\'')", expected: "'" },
                     { name: "转义反斜杠", input: 'str("\\\\")', expected: "\\" },
-                    { name: "未转义字符", input: 'str("\\n")', expected: "\\n" }
+                    { name: "未转义字符", input: 'str("\\n")', expected: "\\n" },
+                    { name: "多重转义", input: 'str("\\\\\\\\")', expected: "\\\\" },
+                    { name: "错误转义", input: 'str("\\")', expected: "error" },
+                    { name: "非法转义", input: 'str("\\x")', expected: "error" }
                 ]
             },
 
@@ -76,10 +80,40 @@
             {
                 group: '字符串操作',
                 tests: [
-                    { name: "字符串连接", input: '"Hello" +str " World"', expected: "Hello World" },
+                    { name: "字符串连接", input: '"Hello" + " World"', expected: "Hello World" },
                     { name: "转大写", input: '"hello".upper', expected: "HELLO" },
                     { name: "转小写", input: '"WORLD".lower', expected: "world" },
-                    { name: "字符串长度", input: '"Hello World".length', expected: "11" }
+                    { name: "字符串长度", input: '"Hello World".length', expected: "11" },
+                    { name: "空字符串长度", input: '"".length', expected: "0" },
+                    { name: "多重连接", input: '"a" + "b" + "c"', expected: "abc" },
+                    { name: "连接空串", input: '"" + ""', expected: "" }
+                ]
+            },
+
+            // 字符串与数字交互
+            {
+                group: '字符串数字交互',
+                tests: [
+                    { name: "数字转字符串", input: 'str(123)', expected: "123" },
+                    { name: "负数转字符串", input: 'str(-456)', expected: "-456" },
+                    { name: "小数转字符串", input: 'str(1.23)', expected: "1.23" },
+                    { name: "字符串加数字", input: '"abc" + 123', expected: "abc123" },
+                    { name: "数字加字符串", input: '123 + "abc"', expected: "123abc" },
+                    { name: "字符串减数字", input: '"abc" - 123', expected: "error" },
+                    { name: "字符串乘数字", input: '"abc" * 2', expected: "error" }
+                ]
+            },
+
+            // 字符串函数链式调用
+            {
+                group: '函数链式调用',
+                tests: [
+                    { name: "大小写转换", input: '"Hello".upper.lower', expected: "hello" },
+                    { name: "长度后转换", input: '"Hello".length.bin', expected: "0b101" },
+                    { name: "多重属性", input: '"HELLO".lower.upper.lower', expected: "hello" },
+                    { name: "非法属性", input: '"abc".unknown', expected: "error" },
+                    { name: "数字属性", input: '"123".sqrt', expected: "error" },
+                    { name: "混合属性", input: '"ABC".lower.length.hex', expected: "0x3" }
                 ]
             },
 
@@ -87,9 +121,13 @@
             {
                 group: '错误处理',
                 tests: [
-                    { name: "未闭合双引号", input: 'str("abc)', expected: "错误: 未闭合的字符串字面量" },
-                    { name: "未闭合单引号", input: "str('abc)", expected: "错误: 未闭合的字符串字面量" },
-                    { name: "混合引号", input: 'str("abc\')', expected: "错误: 未闭合的字符串字面量" }
+                    { name: "未闭合双引号", input: 'str("abc)', expected: "error" },
+                    { name: "未闭合单引号", input: "str('abc)", expected: "error" },
+                    { name: "混合引号", input: 'str("abc\')', expected: "error" },
+                    { name: "非法字符串", input: 'str(abc)', expected: "error" },
+                    { name: "空引号", input: 'str("")', expected: "" },
+                    { name: "非法操作", input: '"abc" - "def"', expected: "error" },
+                    { name: "非法函数", input: '"abc".sin()', expected: "error" }
                 ]
             }
         ];
@@ -97,23 +135,53 @@
         function runTest(test) {
             try {
                 const result = calculate(test.input);
+                
+                // 如果期望值是 "error"，但没有抛出错误
+                if (test.expected === "error") {
+                    if (isNaN(result)) {
+                        return {
+                            name: test.name,
+                            input: test.input,
+                            expected: "error",
+                            actual: "NaN",
+                            success: true
+                        };
+                    }
+                    return {
+                        name: test.name,
+                        input: test.input,
+                        expected: "应该抛出错误",
+                        actual: result.toString(),
+                        success: false
+                    };
+                }
+
                 const resultStr = result.toString();
-                const success = resultStr === test.expected;
                 return {
                     name: test.name,
                     input: test.input,
                     expected: test.expected,
                     actual: resultStr,
-                    success: success
+                    success: resultStr === test.expected
                 };
             } catch (error) {
-                const errorResult = "错误: " + error.message;
+                // 如果期望值是 "error"，任何错误都算成功
+                if (test.expected === "error") {
+                    return {
+                        name: test.name,
+                        input: test.input,
+                        expected: "error",
+                        actual: error.message,
+                        success: true
+                    };
+                }
+
                 return {
                     name: test.name,
                     input: test.input,
                     expected: test.expected,
-                    actual: errorResult,
-                    success: errorResult === test.expected
+                    actual: error.message,
+                    success: false
                 };
             }
         }

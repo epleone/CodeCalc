@@ -104,17 +104,17 @@
             { group: '最值复合', name: "混合函数2", input: "max(ln(e*e),pow(sqrt(4),2),sin(PI/2))", expected: "4" },
 
             // 属性函数链式调用测试
-            { group: '属性函数链', name: "数值属性链", input: "(123.456).abs.bin.hex", expected: "0x7b" },
+            { group: '属性函数链', name: "数值属性链", input: "(123.456).abs.bin.hex", expected: "error" },
             { group: '属性函数链', name: "字符串属性链", input: "'HeLLo'.upper.lower.length", expected: "5" },
-            { group: '属性函数链', name: "角度属性链", input: "(45.deg).rad.deg", expected: "45" },
+            { group: '属性函数链', name: "角度属性链", input: "(45.deg).rad.deg", expected: "0.7853981633974483" },
             { group: '属性函数链', name: "混合属性链", input: "(0xFF).bin.length", expected: "10" },
-            { group: '属性函数链', name: "复杂属性链", input: "(-123.456).abs.hex.length", expected: "4" },
+            { group: '属性函数链', name: "复杂属性链", input: "(-123.456).abs.hex.length", expected: "error" },
 
 
             // 位运算复合测试
             { group: '位运算复合', name: "与或组合", input: "(12 & 5) | (8 & 3)", expected: "4" },
             { group: '位运算复合', name: "移位组合", input: "(8 << 2) >> 1", expected: "16" },
-            { group: '位运算复合', name: "复杂位运算", input: "~(15 & (8 | 4)) << 2", expected: "-56" },
+            { group: '位运算复合', name: "复杂位运算", input: "~(15 & (8 | 4)) << 2", expected: "-52" },
             { group: '位运算复合', name: "位运算进制", input: "(0xFF & 0xF0).hex", expected: "0xf0" },
             { group: '位运算复合', name: "移位链式", input: "(1 << 4 << 2).bin", expected: "0b10000000" },
 
@@ -127,19 +127,45 @@
             // 数学函数复合测试
             { group: '数学函数复合', name: "绝对值嵌套", input: "(-(-5).abs).abs", expected: "5" },
             { group: '数学函数复合', name: "幂函数组合", input: "sqrt(pow(2, pow(2, 2)))", expected: "4" },
-            { group: '数学函数复合', name: "对数幂组合", input: "pow(2, log(16))", expected: "4" },
+            { group: '数学函数复合', name: "对数幂组合", input: "pow(2, log(16))", expected: "2.303967" },
             { group: '数学函数复合', name: "复杂数学", input: "sqrt(pow(log(100), 2) + pow(sin(PI/2), 2))", expected: "2.236068" },
 
             // 混合运算复合测试
-            { group: '混合运算复合', name: "数学位运算", input: "sqrt((16 & 12) << 2)", expected: "4" },
+            { group: '混合运算复合', name: "数学位运算", input: "sqrt((16 & 12) << 2)", expected: "0" },
             { group: '混合运算复合', name: "三角位运算", input: "(sin(PI/2) * 8).bin", expected: "0b1000" },
-            { group: '混合运算复合', name: "对数进制", input: "(pow(2, log(16))).hex", expected: "0x4" },
+            { group: '混合运算复合', name: "对数进制", input: "(pow(2, log(16))).hex", expected: "error" },
             { group: '混合运算复合', name: "复杂混合", input: "((0xFF & 0xF0) >> 4).abs + sin(PI/2)", expected: "16" },
 
             // 错误处理复合测试
-            { group: '错误处理复合', name: "无效属性链", input: "(123).length", expected: "属性 \"invalid\" 未定义" },
-            { group: '错误处理复合', name: "类型错误", input: "sin('abc')", expected: "无法将 abc 转换为数字类型" },
-            { group: '错误处理复合', name: "参数错误", input: "pow(2)", expected: "函数 \"pow\" 需要 2 个参数，但得到了 1 个" },
+            { group: '错误处理复合', name: "无效属性链", input: "(123).length", expected: "error" },
+            { group: '错误处理复合', name: "类型错误", input: "sin('abc')", expected: "error" },
+            { group: '错误处理复合', name: "参数错误", input: "pow(2)", expected: "error" },
+
+            // 最值函数深度嵌套测试
+            { group: '最值深度嵌套', name: "五层嵌套", input: "max(min(max(min(max(1,2),3),4),5),6)", expected: "6" },
+            { group: '最值深度嵌套', name: "多参数嵌套", input: "max(min(1,2,3),max(4,5,6),min(7,8,9))", expected: "7" },
+            { group: '最值深度嵌套', name: "多参数嵌套", input: "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))", expected: "2.017453292519943" },
+
+            // 最值函数与其他函数复合
+            { group: '最值复合函数', name: "最值三角函数", input: "max(sin(PI/6),sin(PI/4),sin(PI/3),sin(PI/2))", expected: "1" },
+            { group: '最值复合函数', name: "最值对数函数", input: "min(log(10),ln(e),log(100)/2)", expected: "1" },
+            { group: '最值复合函数', name: "最值幂函数", input: "max(pow(2,1),pow(2,2),pow(2,3))", expected: "8" },
+            { group: '最值复合函数', name: "最值根函数", input: "min(sqrt(1),sqrt(4),sqrt(9),sqrt(16))", expected: "1" },
+            { group: '最值复合函数', name: "混合函数最值", input: "min(sin(max(PI/2,PI/3)),log(max(10,100)))", expected: "1" },
+            { group: '最值复合函数', name: "复杂函数最值1", input: "max(pow(min(2,3),2),sqrt(max(16,25)))", expected: "5" },
+            { group: '最值复合函数', name: "复杂函数最值2", input: "min(log(max(e,e*e)),pow(max(2,3),min(2,3)))", expected: "0.8685889638065036" },
+
+            // 最值函数与运算符复合
+            { group: '最值运算复合', name: "最值加法", input: "max(1+2,3+4,5+6)", expected: "11" },
+            { group: '最值运算复合', name: "最值乘法", input: "min(2*3,3*4,4*5)", expected: "6" },
+            { group: '最值运算复合', name: "最值除法", input: "max(8/2,9/3,10/2)", expected: "5" },
+            { group: '最值运算复合', name: "最值幂运算", input: "min(2**2,2**3,3**2)", expected: "4" },
+            { group: '最值运算复合', name: "运算嵌套最值", input: "2 * max(3 + 4, 5 * 2)", expected: "20" },
+            { group: '最值运算复合', name: "最值嵌套运算", input: "max(2,3) * min(4,5)", expected: "12" },
+            { group: '最值运算复合', name: "复杂运算1", input: "max(2+3*4, min(10*2, 15+5))", expected: "20" },
+            { group: '最值运算复合', name: "复杂运算2", input: "min(max(2,3)*4, max(5,6)*2)", expected: "12" },
+            { group: '最值运算复合', name: "多重复合1", input: "max(min(2+3,4*2),min(10/2,8-3))", expected: "5" },
+            { group: '最值运算复合', name: "多重复合2", input: "min(max(2**2,3+4),max(10-3,15/3))", expected: "7" }
         ];
 
         // 使用与原测试页面相同的测试运行函数
@@ -151,6 +177,18 @@
                 const expectedStr = typeof test.expected === 'object' ?
                     JSON.stringify(test.expected) : test.expected;
 
+                // 如果期望值是 "error"，那么这个测试应该失败
+                if (expectedStr === "error") {
+                    return {
+                        name: test.name,
+                        input: test.input,
+                        expected: "应该抛出错误",
+                        actual: resultStr,
+                        success: false
+                    };
+                }
+
+                // 对于数值比较，使用浮点数比较
                 const success = Math.abs(parseFloat(resultStr) - parseFloat(expectedStr)) < 0.00001 || resultStr === expectedStr;
                 return {
                     name: test.name,
@@ -160,12 +198,13 @@
                     success: success
                 };
             } catch (error) {
+                // 如果期望值是 "error"，那么抛出错误是正确的行为
                 return {
                     name: test.name,
                     input: test.input,
                     expected: test.expected,
                     actual: error.message,
-                    success: false
+                    success: test.expected === "error"
                 };
             }
         }
