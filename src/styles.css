@@ -618,3 +618,8 @@ input:checked + .slider:before {
 .message-icon:not(:hover) .message-text {
     transition-delay: 0.1s;
 }
+
+.completion-item.selected {
+    color: #ffffff;
+    font-weight: 500;
+}
