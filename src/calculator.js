@@ -11,8 +11,6 @@ const Calculator = (function() {
 
     // 添加变量字典
     const variables = new Map();
-    // 添加字符串常量计数器
-    let stringConstantCounter = 0;
 
     // 1. 预处理模块 - 处理属性调用和运算符生成
     function preprocess(expr, operators, functions) {
@@ -85,9 +83,9 @@ const Calculator = (function() {
             while ((match = assignmentRegex.exec(expr)) !== null) {
                 const varName = match[1];
                 
-                // 检查是否以保留的字符串常量前缀开头
-                if (varName.startsWith('_cc__str_idx_')) {
-                    throw new Error(`变量名不能以 "_cc__str_idx_" 开头，这是系统保留的前缀`);
+                // 修改检查的前缀
+                if (varName.startsWith('_ccstr_i')) {
+                    throw new Error(`变量名不能以 "_ccstr_i" 开头，这是系统保留的前缀`);
                 }
                 
                 // 检查是否与运算符冲突
@@ -117,16 +115,16 @@ const Calculator = (function() {
 
         // 处理字符串字面量
         function processStringLiterals(expr) {
-            // 重置字符串常量计数器
-            stringConstantCounter = 0;
+            // 将计数器移到函数内部
+            let stringConstantCounter = 0;
             
             // 匹配字符串字面量的正则表达式
             const stringLiteralRegex = /(['"])((?:\\.|[^\\])*?)\1/g;
             
             // 替换所有字符串字面量为字符串常量标识符
             const processed = expr.replace(stringLiteralRegex, (match, quote, content) => {
-                // 生成唯一的字符串常量标识符
-                const constName = `_cc__str_idx_${stringConstantCounter++}`;
+                // 修改生成的标识符前缀
+                const constName = `_ccstr_i${stringConstantCounter++}`;
                 
                 // 将字符串内容保存到变量字典中
                 // 处理转义字符
@@ -622,7 +620,7 @@ const Calculator = (function() {
                !OPERATORS.hasOwnProperty(name) &&
                !FUNCTIONS.hasOwnProperty(name) &&
                !CONSTANTS.hasOwnProperty(name) &&
-               !/^_cc__str_idx_/.test(name);  // 不能是内部字符串常量名
+               !/^_ccstr_i/.test(name);  // 修改检查的前缀
     }
 
     // 6. 返回公共API
@@ -664,7 +662,6 @@ const Calculator = (function() {
         // 添加清除所有内容（包括字符串常量）的方法
         clearAllCache() {
             variables.clear();
-            stringConstantCounter = 0;
         }
     };
 })();
