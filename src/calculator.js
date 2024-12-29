@@ -170,7 +170,7 @@ const Calculator = (function() {
                     args: 1,
                     func: func.func,
                     position: 'postfix',
-                    types: func.types
+                    acceptAny: func.acceptAny
                 };
             }
         }
@@ -304,6 +304,12 @@ const Calculator = (function() {
             let foundOperator = false;
             for (const op of sortedOperators) {
                 if (remainingExpr.startsWith(op)) {
+                    // 如果是赋值运算符，将前一个字符串token改为identifier类型
+                    if (op === '=' || OPERATORS[op].isCompoundAssignment) {
+                        if (tokens.length > 0 && tokens[tokens.length - 1][0] === 'string') {
+                            tokens[tokens.length - 1][0] = 'identifier';
+                        }
+                    }
                     // 移除连续运算符的检查
                     if (op === '-') {
                         // 特殊处理减号
@@ -492,20 +498,12 @@ const Calculator = (function() {
     }
 
     // 在 evaluate 函数之前添加参数转换函数
-    function convertArguments(args, types, nodeArgs, context) {
+    function convertArguments(args, acceptAny, nodeArgs, context) {
         const { name, type } = context;
-        return args.map((arg, index) => {
-            if (types && types[index] === TYPE.NUMBER) {
-                return Types.toNumber(arg);
-            } else if (types && types[index] === TYPE.VARIABLE) {
-                // 检查参数是否是变量
-                if (nodeArgs[index].type !== 'string' || !variables.has(nodeArgs[index].value)) {
-                    throw new Error(`${type} "${name}" 的第 ${index + 1} 个参数必须是已定义的变量`);
-                }
-                return arg;
-            }
-            return arg;
-        });
+        if (!acceptAny) {
+            return args.map(arg => Types.toNumber(arg));
+        }
+        return args;
     }
 
     // 4. 求值模块
@@ -521,7 +519,19 @@ const Calculator = (function() {
             if (variables.has(node.value)) {
                 return variables.get(node.value);
             }
-            return node.value;
+            // 如果不是变量，则转换为数字
+            return Types.toNumber(node.value);
+
+            // return node.value;
+        }
+
+        // 处理标识符节点 - 赋值表达式左侧的变量名
+        if (node.type === 'identifier') {
+            // 这里该不该报提醒？
+            if (variables.has(node.value)) {
+                return variables.get(node.value);
+            }
+            return node.value;  // 不转换为数字
         }
 
         // 处理常量
@@ -544,8 +554,8 @@ const Calculator = (function() {
             // 处理赋值运算符
             if (node.value === '=' || op.isCompoundAssignment) {
                 const [left, right] = node.args;
-                // 检查左侧是否为有效的变量名
-                if (left.type !== 'string' || !isValidVariableName(left.value)) {
+                // 检查左侧是否为标识符
+                if (left.type !== 'identifier') {
                     throw new Error('赋值运算符左侧必须是变量名');
                 }
                 
@@ -572,7 +582,7 @@ const Calculator = (function() {
             }
 
             // 其他运算符的处理
-            const convertedArgs = convertArguments(args, op.types, node.args, {
+            const convertedArgs = convertArguments(args, op.acceptAny, node.args, {
                 name: node.value,
                 type: '运算符'
             });
@@ -600,7 +610,7 @@ const Calculator = (function() {
             }
             
             // 检查并转换参数
-            const convertedArgs = convertArguments(args, func.types, node.args, {
+            const convertedArgs = convertArguments(args, func.acceptAny, node.args, {
                 name: node.value,
                 type: '函数'
             });
@@ -608,7 +618,7 @@ const Calculator = (function() {
             return func.func(...convertedArgs);
         }
 
-        throw new Error(`未知的节点类型: ${node.type}`);
+        throw new Error(`未处理的节点类型: ${node.type}`);
     }
 
     // 5. 辅助函数

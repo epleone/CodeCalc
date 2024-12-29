@@ -1,11 +1,8 @@
-// 类型定义
-const TYPE = {
-    ANY: 'any',
-    NUMBER: 'number',
-    STRING: 'string',
-    VARIABLE: 'variable',
-    ARRAY: 'array',
-};
+// 类型支持
+// 表达式所有的默认任意类型，或者只支持数字类型（由这个文件提供数字类型转换）
+// 对于任意类型，在表达式预处理的时候，生成默认变量，然后进行计算（字符串，日期，向量矩阵）
+// 对任意类型的支持，在函数内部自己完成
+
 
 // 类型转换工具
 const Types = {
@@ -18,7 +15,7 @@ const Types = {
         return typeof value === 'string';
     },
 
-    // 类型转换
+    // 字符串转数字，用于输入时处理
     toNumber(value) {
         if (typeof value === 'number') return value;
         if (typeof value === 'bigint') {
@@ -35,6 +32,16 @@ const Types = {
             // 处理空字符串
             if (!value.trim()) {
                 throw new Error('空字符串无法转换为数字');
+            }
+            
+            // 处理进制转换
+            if (value.startsWith('0x') || value.startsWith('0b') || value.startsWith('0o')) {
+                return BigInt(value);
+            }
+
+            // 处理大数，不包括小数点
+            if (value.length > 10 && !value.includes('.')) {
+                return BigInt(value);
             }
 
             // 处理科学计数法
@@ -56,6 +63,7 @@ const Types = {
         throw new Error(`无法将 ${value} 转换为数字类型`);
     },
 
+    // 数字转字符串，用于输出时显示
     toString(value, precision = 6) {
         // 处理 BigInt 类型
         if (typeof value === 'bigint') {
@@ -96,48 +104,4 @@ const Types = {
     }
 };
 
-// 测试代码
-if (typeof window === 'undefined') {
-    // 基本数字转换
-    console.log(Types.toNumber('123.45'));         // 123.45
-    console.log(Types.toNumber('123'));            // 123
-    
-    // 小数位数测试
-    console.log(Types.toString(123.456789));       // "123.456789"
-    console.log(Types.toString(123.4567891234));   // "123.456789"
-    console.log(Types.toString(123.45));           // "123.45"
-    console.log(Types.toString(123.450));          // "123.45"
-    console.log(Types.toString(123.0));            // "123"
-    console.log(Types.toString(123));              // "123"
-    
-    // 科学计数法
-    console.log(Types.toNumber('1.23e5'));         // 123000
-    console.log(Types.toNumber('1.23E-5'));        // 0.0000123
-    console.log(Types.toString(1.23456e-5));       // "0.0000123456"
-    
-    // 大数处理
-    console.log(Types.toString(1.23456e21));       // "1.234560e+21"
-    console.log(Types.toNumber('9007199254740991')); // 9007199254740991
-    
-    // 特殊数字
-    console.log(Types.toString(Infinity));         // "Infinity"
-    console.log(Types.toString(-Infinity));        // "-Infinity"
-    console.log(Types.toString(NaN));              // "NaN"
-    
-    // 错误处理
-    try {
-        Types.toNumber('abc');
-    } catch (e) {
-        console.log(e.message);                    // "无法将 abc 转换为数字类型"
-    }
-    
-    try {
-        Types.toNumber('');
-    } catch (e) {
-        console.log(e.message);                    // "空字符串无法转换为数字"
-    }
-} 
-
-// 暴露到全局作用域
-window.TYPE = TYPE;
 window.Types = Types; 
