@@ -1,6 +1,15 @@
+/**
+ * 代码说明需要遵守的标准：
+ * 1. 所有配置都必须在配置文件中定义和读取，包括运算符、函数、常量、分隔符、定界符
+ * 2. operators, functions, constants可能会修改，需要统一读取并使用参数传递，
+ * 函数内部不需要单独从外部读取
+ * 3. 防止卡死，最大遍历深度限制为100
+ */
+
 // 使用 IIFE 创建模块作用域
 const Calculator = (function() {
-    // 定义常量和类型（原来是从 operators.js 和 types.js 导入的）
+    // 定义常量和类型
+    const MAX_DEPTH = 100;  // 添加全局最大深度常量
     const OPERATORS = window.OPERATORS;
     const FUNCTIONS = window.FUNCTIONS;
     const CONSTANTS = window.CONSTANTS;
@@ -29,7 +38,7 @@ const Calculator = (function() {
                     maxDepth = Math.max(maxDepth, stack.length);
                     
                     // 检查嵌套深度是否过大
-                    if (maxDepth > 100) {
+                    if (maxDepth > MAX_DEPTH) {
                         throw new Error('括号嵌套深度过大');
                     }
                     
@@ -354,6 +363,13 @@ const Calculator = (function() {
     // 3. 语法分析模块
     function buildAst(tokens, operators, functions) {
         let current = 0;
+        let depth = 0;
+        
+        function checkDepth() {
+            if (depth > MAX_DEPTH) {
+                throw new Error('表达式嵌套深度过大，可能存在无限递归');
+            }
+        }
 
         function createNode(value, args, type) {
             return { value, args, type };
@@ -411,6 +427,9 @@ const Calculator = (function() {
         }
 
         function parseUnary() {
+            depth++;
+            checkDepth();
+
             if (current >= tokens.length) {
                 throw new Error('意外的表达式结束');
             }
@@ -425,9 +444,14 @@ const Calculator = (function() {
                 return createNode(value, [operand], 'operator');
             }
             return parsePrimary();
+
+            depth--;
         }
 
         function parseExpression(precedence = 0) {
+            depth++;
+            checkDepth();
+
             let left = parseUnary();
 
             while (current < tokens.length) {
@@ -460,6 +484,7 @@ const Calculator = (function() {
                 left = createNode(value, [left, right], 'operator');
             }
 
+            depth--;
             return left;
         }
 
@@ -484,7 +509,11 @@ const Calculator = (function() {
     }
 
     // 4. 求值模块
-    function evaluate(node, operators, functions) {
+    function evaluate(node, operators, functions, depth = 0) {
+        if (depth > MAX_DEPTH) {
+            throw new Error('表达式求值嵌套深度过大，可能存在无限递归');
+        }
+
         if (!node) return 0;
 
         // 处理字符串节点 - 可能是变量名
@@ -501,7 +530,7 @@ const Calculator = (function() {
         }
 
         // 递归计算参数
-        const args = node.args.map(arg => evaluate(arg, operators, functions));
+        const args = node.args.map(arg => evaluate(arg, operators, functions, depth + 1));
 
         // 处理运算符
         if (node.type === 'operator') {
@@ -521,7 +550,7 @@ const Calculator = (function() {
                 }
                 
                 // 计算右侧表达式
-                const rightValue = evaluate(right, operators, functions);
+                const rightValue = evaluate(right, operators, functions, depth + 1);
                 
                 if (op.isCompoundAssignment) {
                     // 对于复合赋值，检查变量是否已定义
@@ -557,12 +586,13 @@ const Calculator = (function() {
 
             // 检查参数数量
             if (func.args !== undefined) {
-                if (Array.isArray(func.args)) {
-                    const [min, max] = func.args;
-                    if (args.length < min || args.length > max) {
-                        throw new Error(`函数 "${node.value}" 需要 ${min} 到 ${max} 个参数，但得到了 ${args.length} 个`);
+                if (func.args === -1) {
+                    // 不限制参数数量的情况
+                    if (args.length === 0) {
+                        throw new Error(`函数 "${node.value}" 至少需要1个参数`);
                     }
                 } else {
+                    // 处理固定参数数量
                     if (args.length !== func.args) {
                         throw new Error(`函数 "${node.value}" 需要 ${func.args} 个参数，但得到了 ${args.length} 个`);
                     }
@@ -575,10 +605,6 @@ const Calculator = (function() {
                 type: '函数'
             });
             
-            // 特殊处理 max 和 min 函数
-            if (node.value === 'max' || node.value === 'min') {
-                return args.length === 1 ? func.func(convertedArgs) : func.func(...convertedArgs);
-            }
             return func.func(...convertedArgs);
         }
 
