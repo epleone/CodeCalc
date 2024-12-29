@@ -41,6 +41,9 @@ const completions = generateCompletions();
 // 添加全局变量
 let isCompletionEnabled = true;
 
+// 添加一个标记来跟踪是否使用过方向键
+let hasUsedArrowKeys = false;
+
 function calculateLine(input) {
     const resultContainer = input.parentElement.querySelector('.result-container');
     const result = resultContainer.querySelector('.result');
@@ -132,6 +135,7 @@ function handleKeyDown(event, input) {
     if (hint) {
         if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             event.preventDefault();
+            hasUsedArrowKeys = true;  // 标记已使用方向键
             
             const items = Array.from(hint.querySelectorAll('.completion-item'));
             const selectedItem = hint.querySelector('.completion-item.selected');
@@ -151,16 +155,34 @@ function handleKeyDown(event, input) {
             
             items[nextIndex].classList.add('selected');
             return;
-        } else if (event.key === 'Enter' || event.key === 'Tab') {
-            // 处理 Enter 和 Tab 补全
+        } else if (event.key === 'Enter') {
+            if (hasUsedArrowKeys) {
+                // 如果使用过方向键，应用补全
+                event.preventDefault();
+                const selectedItem = hint.querySelector('.completion-item.selected');
+                if (selectedItem) {
+                    const match = selectedItem.textContent;
+                    const cursorPos = input.selectionStart;
+                    const textBeforeCursor = input.value.substring(0, cursorPos);
+                    
+                    const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
+                    applyCompletion(input, match, !!dotMatch);
+                }
+            } else {
+                // 如果没有使用过方向键，移除补全提示
+                removeCompletionHint(input);
+            }
+            return;
+        } else if (event.key === 'Tab') {
+            // Tab 键不需要方向键的限制
             event.preventDefault();
-            const selectedItem = hint.querySelector('.completion-item.selected');
+            const selectedItem = hint.querySelector('.completion-item.selected') || 
+                               hint.querySelector('.completion-item');
             if (selectedItem) {
                 const match = selectedItem.textContent;
                 const cursorPos = input.selectionStart;
                 const textBeforeCursor = input.value.substring(0, cursorPos);
                 
-                // 检查是否是属性函数补全
                 const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
                 applyCompletion(input, match, !!dotMatch);
                 return;
@@ -488,6 +510,7 @@ function removeCompletionHint(input) {
     const hint = input.parentElement.querySelector('.completion-hint');
     if (hint) {
         hint.remove();
+        hasUsedArrowKeys = false;  // 重置标记
     }
 }
 
