@@ -1,8 +1,10 @@
 // 类型定义
 const TYPE = {
+    ANY: 'any',
     NUMBER: 'number',
     STRING: 'string',
-    ANY: 'any'
+    VARIABLE: 'variable',
+    ARRAY: 'array',
 };
 
 // 类型转换工具

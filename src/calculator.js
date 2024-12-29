@@ -468,15 +468,29 @@ const Calculator = (function() {
         return parseExpression();
     }
 
+    // 在 evaluate 函数之前添加参数转换函数
+    function convertArguments(args, types, nodeArgs, context) {
+        const { name, type } = context;
+        return args.map((arg, index) => {
+            if (types && types[index] === TYPE.NUMBER) {
+                return Types.toNumber(arg);
+            } else if (types && types[index] === TYPE.VARIABLE) {
+                // 检查参数是否是变量
+                if (nodeArgs[index].type !== 'string' || !variables.has(nodeArgs[index].value)) {
+                    throw new Error(`${type} "${name}" 的第 ${index + 1} 个参数必须是已定义的变量`);
+                }
+                return arg;
+            }
+            return arg;
+        });
+    }
+
     // 4. 求值模块
     function evaluate(node, operators, functions) {
-        console.log('开始计算节点:', node);
-
         if (!node) return 0;
 
         // 处理字符串节点 - 可能是变量名
         if (node.type === 'string') {
-            console.log('处理字符串节点:', node.value);
             if (variables.has(node.value)) {
                 return variables.get(node.value);
             }
@@ -485,19 +499,15 @@ const Calculator = (function() {
 
         // 处理常量
         if (node.type === 'constant') {
-            console.log('处理常量节点:', node.value, '=', CONSTANTS[node.value]);
             return CONSTANTS[node.value];
         }
 
         // 递归计算参数
-        console.log('计算参数:', node.args);
         const args = node.args.map(arg => evaluate(arg, operators, functions));
-        console.log('参数计算结果:', args);
 
         // 处理运算符
         if (node.type === 'operator') {
             const op = OPERATORS[node.value];
-            console.log('处理运算符:', node.value, '类型定义:', op.types);
 
             // 检查参数数量
             if (op.args !== undefined && args.length !== op.args) {
@@ -535,64 +545,45 @@ const Calculator = (function() {
             }
 
             // 其他运算符的处理
-            const convertedArgs = args.map((arg, index) => {
-                if (op.types && op.types[index] === TYPE.NUMBER) {
-                    const converted = Types.toNumber(arg);
-                    console.log(`参数 ${index} 转换:`, arg, '->', converted);
-                    return converted;
-                }
-                return arg;
+            const convertedArgs = convertArguments(args, op.types, node.args, {
+                name: node.value,
+                type: '运算符'
             });
             
-            const result = op.func(...convertedArgs);
-            console.log('运算结果:', result);
-            return result;
+            return op.func(...convertedArgs);
         }
 
         // 处理函数
         if (node.type === 'function') {
             const func = FUNCTIONS[node.value];
-            console.log('处理函数:', node.value, '类型定义:', func.types);
 
             // 检查参数数量
             if (func.args !== undefined) {
                 if (Array.isArray(func.args)) {
-                    // 如果 args 是数组，表示可接受的参数数量范围
                     const [min, max] = func.args;
                     if (args.length < min || args.length > max) {
                         throw new Error(`函数 "${node.value}" 需要 ${min} 到 ${max} 个参数，但得到了 ${args.length} 个`);
                     }
                 } else {
-                    // 如果 args 是数字，表示固定的参数数量
                     if (args.length !== func.args) {
                         throw new Error(`函数 "${node.value}" 需要 ${func.args} 个参数，但得到了 ${args.length} 个`);
                     }
                 }
             }
             
-            // 根据函数定义的类型要求转换参数
-            const convertedArgs = args.map((arg, index) => {
-                if (func.types && func.types[index] === TYPE.NUMBER) {
-                    const converted = Types.toNumber(arg);
-                    console.log(`参数 ${index} 转换:`, arg, '->', converted);
-                    return converted;
-                }
-                return arg;
+            // 检查并转换参数
+            const convertedArgs = convertArguments(args, func.types, node.args, {
+                name: node.value,
+                type: '函数'
             });
             
             // 特殊处理 max 和 min 函数
-            let result;
             if (node.value === 'max' || node.value === 'min') {
-                result = args.length === 1 ? func.func(convertedArgs) : func.func(...convertedArgs);
-            } else {
-                result = func.func(...convertedArgs);
+                return args.length === 1 ? func.func(convertedArgs) : func.func(...convertedArgs);
             }
-            
-            console.log('函数计算结果:', result);
-            return result;
+            return func.func(...convertedArgs);
         }
 
-        console.error('未知节点类型:', node);
         throw new Error(`未知的节点类型: ${node.type}`);
     }
 
