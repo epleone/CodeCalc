@@ -20,6 +20,24 @@ const Calculator = (function() {
 
     // 添加变量字典
     const variables = new Map();
+    
+    // 添加警告和提示信息收集器
+    const warnings = [];
+    const infos = [];
+
+    // 添加信息收集方法
+    function addWarning(message) {
+        warnings.push(message);
+    }
+
+    function addInfo(message) {
+        infos.push(message);
+    }
+
+    function clearMessages() {
+        warnings.length = 0;
+        infos.length = 0;
+    }
 
     // 1. 预处理模块 - 处理属性调用和运算符生成
     function preprocess(expr, operators, functions) {
@@ -371,7 +389,48 @@ const Calculator = (function() {
             }
         }
 
-        return tokens;
+        // 在返回tokens之前添加后处理
+        function postProcessTokens(tokens) {
+            // 检查是否存在变量x
+            const hasXVariable = tokens.some(token => 
+                (token[0] === 'identifier' || token[0] === 'string') && 
+                token[1] === 'x'
+            );
+
+            if (!hasXVariable && !variables.has('x')) {
+                // 如果没有x变量，处理所有的字符串token
+                for (let i = 0; i < tokens.length; i++) {
+                    if (tokens[i][0] === 'string') {
+                        // 跳过16进制数的处理
+                        if (tokens[i][1].startsWith('0x')) {
+                            continue;
+                        }
+                        
+                        const parts = tokens[i][1].split('x');
+                        if (parts.length > 1) {
+                            // 重构tokens数组
+                            const newTokens = [];
+                            for (let j = 0; j < parts.length; j++) {
+                                if (parts[j]) {
+                                    newTokens.push(['string', parts[j]]);
+                                }
+                                if (j < parts.length - 1) {
+                                    newTokens.push(['operator', '*']);
+                                    addWarning('使用x作为乘法符号');
+                                }
+                            }
+                            // 替换原来的token
+                            tokens.splice(i, 1, ...newTokens);
+                            i += newTokens.length - 1; // 调整索引
+                        }
+                    }
+                }
+            }
+            return tokens;
+        }
+
+        const processedTokens = postProcessTokens(tokens);
+        return processedTokens;
     }
 
     // 3. 语法分析模块
@@ -591,6 +650,7 @@ const Calculator = (function() {
                 } else {
                     // 普通赋值
                     variables.set(left.value, rightValue);
+                    addInfo(`添加变量 ${left.value}: ${rightValue}`)
                     return rightValue;
                 }
             }
@@ -676,6 +736,8 @@ const Calculator = (function() {
     // 6. 返回公共API
     return {
         calculate(expr) {
+            clearMessages(); // 清除之前的消息
+
             const operators = new Set(Object.keys(OPERATORS));
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));
@@ -683,7 +745,12 @@ const Calculator = (function() {
             const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions);
             const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
-            return evaluate(ast, operators, functions);
+            const result = evaluate(ast, operators, functions);
+            return { 
+                value: result,
+                info: infos.length > 0 ? infos : null, 
+                warning: warnings.length > 0 ? warnings : null
+            };
         },
 
         getASTNode(expr) {

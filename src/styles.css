@@ -211,23 +211,22 @@ body {
     padding-right: 1.5rem;
 }
 
+/* 消息图标基础样式 */
 .message-icon {
     position: absolute;
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    cursor: pointer;
-    font-weight: bold;
     width: 1.5rem;
     height: 1.5rem;
-    text-align: center;
-    line-height: 1.5rem;
-    background: inherit;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    background: inherit;
 }
 
+/* 图标背景色 */
 .expression-line:nth-child(even) .message-icon {
     background-color: #e9ecef;
 }
@@ -236,37 +235,134 @@ body {
     background-color: #f8f9fa;
 }
 
+/* 图标颜色 */
 .message-icon.error {
     color: #dc3545;
+}
+
+.message-icon.error::before {
+    content: "❌";
+    font-size: 1rem;
 }
 
 .message-icon.warning {
     color: #f0ad4e;
 }
 
+.message-icon.warning::before {
+    content: "";
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f0ad4e'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
+    background-size: 1.2rem 1.2rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.message-icon.info {
+    color: #28a745;
+}
+
+.message-icon.info::before {
+    content: "";
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2328a745'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+    background-size: 1.2rem 1.2rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* 消息文本容器基础样式 */
 .message-text {
     visibility: hidden;
     opacity: 0;
     position: absolute;
+    right: calc(100% + 8px);
     top: 50%;
     transform: translateY(-50%);
-    right: 100%;
-    color: white;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0;  /* 移除间距，使用margin来控制层叠 */
+}
+
+/* 错误消息样式 */
+.message-icon.error .message-text {
     padding: 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.875rem;
     white-space: nowrap;
-    z-index: 1000;
-    margin-right: 8px;
-    transition: visibility 0.2s, opacity 0.2s;
-}
-
-.message-icon.error .message-text {
     background-color: rgba(220, 53, 69, 0.9);
+    color: white;
 }
 
-.message-icon.warning .message-text {
-    background-color: rgba(240, 173, 78, 0.9);
+/* Material Design 风格的消息样式 */
+.message-content {
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    position: relative;
+    transform: translateY(0);
+    margin-top: 0;
+    z-index: 3;
+}
+
+/* 层叠效果 */
+.message-content + .message-content {
+    margin-top: -30px;  /* 调整重叠程度，露出一点上一条消息 */
+    transform: translateY(6px);  /* 微调偏移量 */
+    opacity: 0.97;  /* 稍微提高透明度 */
+    z-index: 2;
+}
+
+.message-content + .message-content + .message-content {
+    transform: translateY(12px);  /* 再次微调偏移量 */
+    opacity: 0.94;
+    z-index: 1;
+}
+
+/* 消息类型样式 */
+.message-content.warning {
+    background-color: rgba(240, 173, 78, 0.95);
+}
+
+.message-content.info {
+    background-color: rgba(40, 167, 69, 0.95);
+}
+
+/* 悬停展开效果 */
+.message-text:hover .message-content {
+    transform: translateY(0) !important;
+    margin-top: 4px !important;
+    opacity: 1;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);  /* 悬停时增加阴影 */
+}
+
+/* 悬停显示效果 */
+.message-icon:hover .message-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 确保消息框在其他内容之上 */
+.expression-line {
+    position: relative;
+    z-index: 1;
+}
+
+.expression-line:hover {
+    z-index: 10;
 }
 
 .completion-hint {
@@ -305,55 +401,6 @@ body {
 
 .completion-item + .completion-item {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.message-icon.error::before {
-    content: "❌";
-    font-size: 1rem;
-}
-
-.message-icon.warning::before {
-    content: "";
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23f0ad4e'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
-    background-size: 1.2rem 1.2rem;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    left: 0;
-    top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.message-icon.info {
-    color: #28a745;
-}
-
-.message-icon.info::before {
-    content: "";
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2328a745'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
-    background-size: 1.2rem 1.2rem;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    left: 0;
-    top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.message-icon.info .message-text {
-    background-color: rgba(40, 167, 69, 0.9);
-}
-
-.result.error .result-value {
-    color: #dc3545;
 }
 
 .message-icon.warning:hover .message-text,
@@ -620,4 +667,33 @@ input:checked + .slider:before {
 .completion-item.selected {
     color: #ffffff;
     font-weight: 500;
+}
+
+.message-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transform: translateY(-50%);
+}
+
+.message-item {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    color: white;
+}
+
+.message-item.warning {
+    background-color: rgba(240, 173, 78, 0.9);
+}
+
+.message-item.info {
+    background-color: rgba(40, 167, 69, 0.9);
+}
+
+.message-icon:hover .message-text {
+    visibility: visible;
+    opacity: 1;
 }

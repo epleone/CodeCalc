@@ -60,13 +60,39 @@ function calculateLine(input) {
     }
 
     // 设置状态
-    function setState(value, type, message) {
+    function setState(value, type, messages) {
         result.innerHTML = `<span class="result-value">${value}</span>`;
-        result.classList.remove('warning', 'error', 'info');  // 先移除所有状态
-        result.classList.add('has-value', type);  // 再添加新状态
-        messageIcon.className = `message-icon ${type}`;
-        messageIcon.style.display = 'inline';
-        messageText.textContent = message;
+        result.classList.remove('warning', 'error', 'info');
+        result.classList.add('has-value');
+
+        // 清除之前的消息
+        messageText.innerHTML = '';
+        
+        if (type === 'error') {
+            // 错误消息保持原样处理
+            result.classList.add('error');
+            messageIcon.className = 'message-icon error';
+            messageIcon.style.display = 'inline';
+            messageText.textContent = messages;
+            return;
+        }
+
+        // 处理警告和提示消息
+        if (Array.isArray(messages) && messages.length > 0) {
+            // 设置图标类型
+            messageIcon.className = `message-icon ${type}`;
+            messageIcon.style.display = 'inline';
+            
+            // 为每条消息创建提示框
+            messages.forEach(msg => {
+                const msgContent = document.createElement('div');
+                msgContent.className = `message-content ${msg.type}`;
+                msgContent.textContent = msg.text;
+                messageText.appendChild(msgContent);
+            });
+        } else {
+            messageIcon.style.display = 'none';
+        }
     }
 
     // 设置正常结果
@@ -87,14 +113,23 @@ function calculateLine(input) {
 
     try {
         const value = Calculator.calculate(expression);
-        if (typeof value === 'object') {
-            if (value.warning) {
-                setState(value.value, 'warning', value.warning);
-            } else if (value.info) {
-                setState(value.value, 'info', value.info);
-            }
+        const messages = [];
+        let type = null;
+
+        // 按优先级收集消息
+        if (value.warning && value.warning.length > 0) {
+            messages.push(...value.warning.map(msg => ({ text: msg, type: 'warning' })));
+            type = 'warning';
+        }
+        if (value.info && value.info.length > 0) {
+            messages.push(...value.info.map(msg => ({ text: msg, type: 'info' })));
+            type = type || 'info';
+        }
+
+        if (messages.length > 0) {
+            setState(value.value, type, messages);
         } else {
-            setNormalState(value);
+            setNormalState(value.value);
         }
     } catch (error) {
         setState('', 'error', error.message);
