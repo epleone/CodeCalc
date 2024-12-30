@@ -27,11 +27,15 @@ const Calculator = (function() {
 
     // 添加信息收集方法
     function addWarning(message) {
-        warnings.push(message);
+        if (!warnings.includes(message)) {  // 检查是否已存在相同消息
+            warnings.push(message);
+        }
     }
 
     function addInfo(message) {
-        infos.push(message);
+        if (!infos.includes(message)) {  // 检查是否已存在相同消息
+            infos.push(message);
+        }
     }
 
     function clearMessages() {
@@ -405,6 +409,11 @@ const Calculator = (function() {
                         if (tokens[i][1].startsWith('0x')) {
                             continue;
                         }
+
+                        // 检查是否是变量名,如果是则跳过处理
+                        if (variables.has(tokens[i][1])) {
+                            continue;
+                        }
                         
                         const parts = tokens[i][1].split('x');
                         if (parts.length > 1) {
@@ -651,6 +660,11 @@ const Calculator = (function() {
                     // 普通赋值
                     variables.set(left.value, rightValue);
                     addInfo(`添加变量 ${left.value}: ${rightValue}`)
+
+                    // 检查是否是x变量，提示无法使用x做为乘法
+                    if (left.value === 'x') {
+                        addWarning(`将无法使用x做为乘法符号`)
+                    }
                     return rightValue;
                 }
             }
@@ -776,9 +790,10 @@ const Calculator = (function() {
             return Object.fromEntries(variables);
         },
 
-        // 添加清除所有内容（包括字符串常量）的方法
+        // 修改清除方法，同时清除变量和消息
         clearAllCache() {
-            variables.clear();
+            variables.clear();  // 清除所有变量
+            clearMessages();    // 清除所有消息
         }
     };
 })();

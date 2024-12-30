@@ -273,7 +273,15 @@
                 // 尝试计算结果
                 try {
                     const result = Calculator.calculate(expr);
-                    resultDiv.textContent = `结果: ${result}`;
+                    resultDiv.textContent = `结果: ${result.value}`;
+                    
+                    // 添加警告和提示信息显示
+                    if (result.warning) {
+                        resultDiv.textContent += `\n警告: ${result.warning.join(', ')}`;
+                    }
+                    if (result.info) {
+                        resultDiv.textContent += `\n提示: ${result.info.join(', ')}`;
+                    }
                 } catch (e) {
                     resultDiv.textContent = `计算错误: ${e.message}`;
                 }

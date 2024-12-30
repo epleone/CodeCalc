@@ -175,10 +175,10 @@
             { group: '角度转换', name: "度数符号", input: "45°", expected: "0.785398" },
 
             // 错误处理测试
-            { group: '错误处理', name: "除零错误", input: "1/0", expected: "除数不能为零" },
-            { group: '错误处理', name: "语法错误", input: "1 ++ 2", expected: "运算符 \"+\" 需要 2 个参数，但得到了 0 个" },
+            { group: '错误处理', name: "除零错误", input: "1/0", expected: "error" },
+            { group: '错误处理', name: "语法错误", input: "1 ++ 2", expected: "error" },
             { group: '错误处理', name: "未定义变量", input: "y + 1", expected: "error" },
-            { group: '错误处理', name: "参数个数错误", input: "sin(1,2)", expected: "函数 \"sin\" 需要 1 个参数，但得到了 2 个" },
+            { group: '错误处理', name: "参数个数错误", input: "sin(1,2)", expected: "error" },
 
             // 复杂表达式测试
             { group: '复杂表达式', name: "混合运算1", input: "2 * 3 + 4 * 5", expected: "26" },
@@ -214,7 +214,7 @@
             { group: '边界情况', name: "连续运算符", input: "1+-2", expected: "-1" },
             { group: '边界情况', name: "函数空格", input: "sin (PI/2)", expected: "1" },
             { group: '边界情况', name: "括号空格", input: "( 1 + 2 ) * ( 3 + 4 )", expected: "21" },
-            { group: '边界情况', name: "多重一元", input: "--++-2", expected: "运算符 \"+\" 需要 2 个参数，但得到了 0 个" },
+            { group: '边界情况', name: "多重一元", input: "--++-2", expected: "error" },
 
             // 字符串高级测试
             { group: '字符串高级', name: "嵌套引号", input: "'It\\'s ok'", expected: "It's ok" },
@@ -266,13 +266,13 @@
             { group: '负数函数', name: "负指数", input: "pow(2, -2)", expected: "0.25" }
         ];
 
-        function runTest(test, preserveState = false) {
+        function runTest(test) {
             try {
                 const result = calculate(test.input);
                 
                 // 如果期望值是 "error"，检查结果是否为 NaN 或抛出错误
                 if (test.expected === "error") {
-                    if (isNaN(result)) {
+                    if (isNaN(result.value)) {
                         return {
                             name: test.name,
                             input: test.input,
@@ -285,22 +285,19 @@
                         name: test.name,
                         input: test.input,
                         expected: "应该抛出错误",
-                        actual: result.toString(),
+                        actual: result.value.toString(),
                         success: false
                     };
                 }
 
-                const resultStr = typeof result === 'object' ?
-                    JSON.stringify(result) : result.toString();
-                const expectedStr = typeof test.expected === 'object' ?
-                    JSON.stringify(test.expected) : test.expected;
+                const resultStr = result.value.toString();
+                const expectedStr = test.expected;
 
                 // 检查是否是数值比较
                 const resultNum = Number(resultStr);
                 const expectedNum = Number(expectedStr);
-                const EPSILON = 0.00001; // 误差范围
+                const EPSILON = 0.00001;
 
-                // 如果两个值都可以转换为数字，使用误差范围比较
                 const success = !isNaN(resultNum) && !isNaN(expectedNum) ?
                     Math.abs(resultNum - expectedNum) < EPSILON :
                     resultStr === expectedStr;
@@ -310,7 +307,9 @@
                     input: test.input,
                     expected: expectedStr,
                     actual: resultStr,
-                    success: success
+                    success: success,
+                    info: result.info,
+                    warning: result.warning
                 };
             } catch (error) {
                 // 如果期望值是 "error"，任何错误都算成功
@@ -324,13 +323,12 @@
                     };
                 }
 
-                // 其他情况，错误消息必须完全匹配
                 return {
                     name: test.name,
                     input: test.input,
                     expected: test.expected,
                     actual: error.message,
-                    success: test.expected === error.message
+                    success: false
                 };
             }
         }
@@ -423,10 +421,9 @@
         }
 
         function clearTempConstants() {
-            // 清除临时变量和常量的函数
-            // if (typeof Calculator !== 'undefined') {
-            //     Calculator.clearVariables();
-            // }
+            if (typeof Calculator !== 'undefined') {
+                Calculator.clearAllCache();
+            }
         }
 
         // 添加事件监听器

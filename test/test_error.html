@@ -181,32 +181,74 @@
         function runTest(test) {
             try {
                 const result = calculate(test.input);
-                // 如果结果是 NaN，也应该认为是错误
-                if (typeof result === 'number' && isNaN(result)) {
+                
+                // 如果期望值是 "error"，检查结果是否为 NaN 或抛出错误
+                if (test.expected === "error") {
+                    if (isNaN(result.value)) {
+                        return {
+                            name: test.name,
+                            input: test.input,
+                            expected: "error",
+                            actual: "NaN",
+                            success: true,
+                            info: result.info,
+                            warning: result.warning
+                        };
+                    }
+                    return {
+                        name: test.name,
+                        input: test.input,
+                        expected: "应该抛出错误",
+                        actual: result.value.toString(),
+                        success: false,
+                        info: result.info,
+                        warning: result.warning
+                    };
+                }
+
+                const resultStr = result.value.toString();
+                const expectedStr = test.expected;
+
+                // 检查是否是数值比较
+                const resultNum = Number(resultStr);
+                const expectedNum = Number(expectedStr);
+                const EPSILON = 0.00001;
+
+                const success = !isNaN(resultNum) && !isNaN(expectedNum) ?
+                    Math.abs(resultNum - expectedNum) < EPSILON :
+                    resultStr === expectedStr;
+
+                return {
+                    name: test.name,
+                    input: test.input,
+                    expected: expectedStr,
+                    actual: resultStr,
+                    success: success,
+                    info: result.info,
+                    warning: result.warning
+                };
+            } catch (error) {
+                // 如果期望值是 "error"，任何错误都算成功
+                if (test.expected === "error") {
                     return {
                         name: test.name,
                         input: test.input,
                         expected: "error",
-                        actual: "NaN",
-                        success: true
+                        actual: error.message,
+                        success: true,
+                        info: null,
+                        warning: null
                     };
                 }
-                // 如果执行到这里，说明没有抛出错误且不是 NaN
+
                 return {
                     name: test.name,
                     input: test.input,
-                    expected: "应该抛出错误",
-                    actual: result.toString(),
-                    success: false
-                };
-            } catch (error) {
-                // 抛出错误就是期望的行为
-                return {
-                    name: test.name,
-                    input: test.input,
-                    expected: "error",
+                    expected: test.expected,
                     actual: error.message,
-                    success: true
+                    success: false,
+                    info: null,
+                    warning: null
                 };
             }
         }
@@ -253,6 +295,8 @@
                     ${result.success ? '✓ 通过' : '✗ 失败'}<br>
                     期望值: ${result.expected}<br>
                     实际值: ${result.actual}
+                    ${result.warning ? '<br>警告: ' + result.warning.join(', ') : ''}
+                    ${result.info ? '<br>提示: ' + result.info.join(', ') : ''}
                 </div>
             `;
             container.appendChild(div);
@@ -265,6 +309,12 @@
                 <span class="passed">通过: 0</span>
                 <span class="failed">失败: 0</span>
             `;
+        }
+
+        function clearTempConstants() {
+            if (typeof Calculator !== 'undefined') {
+                Calculator.clearAllCache();
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {

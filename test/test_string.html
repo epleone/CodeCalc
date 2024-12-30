@@ -238,6 +238,12 @@
             `;
         }
 
+        function clearTempConstants() {
+            if (typeof Calculator !== 'undefined') {
+                Calculator.clearAllCache();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('runAllTests').addEventListener('click', runAllTests);
             document.getElementById('clearResults').addEventListener('click', clearResults);

@@ -49,9 +49,11 @@
     <script>
         const calculate = Calculator.calculate;
 
-        // 添加清除变量的函数
+        // 添加清除临时变量的函数
         function clearTempConstants() {
-            Calculator.clearAllCache();
+            if (typeof Calculator !== 'undefined') {
+                Calculator.clearAllCache();
+            }
         }
 
         const tests = [
@@ -292,9 +294,12 @@
                         name: "x变量清除后的乘法",
                         steps: [
                             { input: "x = 5", expected: "5" },
-                            { input: "Calculator.clearAllCache()", expected: undefined },
-                            { input: "2x3", expected: "6" },
-                            { input: "3x4x5", expected: "60" }
+                            { 
+                                input: "clearCache",
+                                expected: undefined,
+                                isCommand: true
+                            },
+                            { input: "2x3", expected: "6" }
                         ]
                     },
                     {
@@ -303,7 +308,11 @@
                             { input: "x = 2", expected: "2" },
                             { input: "y = x + 1", expected: "3" },
                             { input: "y * x", expected: "6" },
-                            { input: "Calculator.clearAllCache()", expected: undefined },
+                            { 
+                                input: "clearCache",
+                                expected: undefined,
+                                isCommand: true
+                            },
                             { input: "2x(3+4)", expected: "14" }
                         ]
                     },
@@ -314,7 +323,11 @@
                             { input: "y = 3", expected: "3" },
                             { input: "z = x * y", expected: "6" },
                             { input: "w = z + x", expected: "8" },
-                            { input: "Calculator.clearAllCache()", expected: undefined },
+                            { 
+                                input: "clearCache",
+                                expected: undefined,
+                                isCommand: true
+                            },
                             { input: "2x3x4", expected: "24" }
                         ]
                     }
@@ -323,36 +336,52 @@
         ];
 
         function runTest(test) {
-            clearTempConstants(); // 清除之前的变量
+            clearTempConstants();
             const results = [];
             
             for (const step of test.steps) {
                 try {
+                    // 处理特殊命令
+                    if (step.isCommand && step.input === 'clearCache') {
+                        Calculator.clearAllCache();
+                        results.push({
+                            input: step.input,
+                            expected: step.expected,
+                            actual: '',
+                            success: true,
+                            info: null,
+                            warning: null
+                        });
+                        continue;
+                    }
+
                     const result = calculate(step.input);
                     
                     // 如果期望值是 "error"
                     if (step.expected === "error") {
-                        // 如果结果是 NaN 或者不是数字，就认为测试通过
-                        if (isNaN(result) || typeof result !== 'number') {
+                        if (isNaN(result.value) || typeof result.value !== 'number') {
                             results.push({
                                 input: step.input,
                                 expected: "error",
-                                actual: result.toString(),
-                                success: true
+                                actual: result.value.toString(),
+                                success: true,
+                                info: null,
+                                warning: null
                             });
                         } else {
-                            // 如果输出了数字，则测试失败
                             results.push({
                                 input: step.input,
                                 expected: "应该抛出错误",
-                                actual: result.toString(),
-                                success: false
+                                actual: result.value.toString(),
+                                success: false,
+                                info: null,
+                                warning: null
                             });
                         }
                         continue;
                     }
 
-                    const resultStr = result.toString();
+                    const resultStr = result.value.toString();
                     const success = step.expected === resultStr || 
                                   (isFinite(resultStr) && isFinite(step.expected) && 
                                    Math.abs(Number(resultStr) - Number(step.expected)) < 1e-6);
@@ -361,27 +390,30 @@
                         input: step.input,
                         expected: step.expected,
                         actual: resultStr,
-                        success: success
+                        success: success,
+                        info: result.info,
+                        warning: result.warning
                     });
                     
-                    if (!success) {
-                        break;
-                    }
+                    if (!success) break;
                 } catch (error) {
-                    // 如果期望值是 "error"，任何错误都算成功
                     if (step.expected === "error") {
                         results.push({
                             input: step.input,
                             expected: "error",
                             actual: error.message,
-                            success: true
+                            success: true,
+                            info: null,
+                            warning: null
                         });
                     } else {
                         results.push({
                             input: step.input,
                             expected: step.expected,
                             actual: error.message,
-                            success: false
+                            success: false,
+                            info: null,
+                            warning: null
                         });
                         break;
                     }

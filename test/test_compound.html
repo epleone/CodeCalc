@@ -172,10 +172,8 @@
         function runTest(test) {
             try {
                 const result = calculate(test.input);
-                const resultStr = typeof result === 'object' ?
-                    JSON.stringify(result) : result.toString();
-                const expectedStr = typeof test.expected === 'object' ?
-                    JSON.stringify(test.expected) : test.expected;
+                const resultStr = result.value.toString();
+                const expectedStr = test.expected;
 
                 // 如果期望值是 "error"，那么这个测试应该失败
                 if (expectedStr === "error") {
@@ -184,7 +182,9 @@
                         input: test.input,
                         expected: "应该抛出错误",
                         actual: resultStr,
-                        success: false
+                        success: false,
+                        info: result.info,
+                        warning: result.warning
                     };
                 }
 
@@ -195,10 +195,11 @@
                     input: test.input,
                     expected: expectedStr,
                     actual: resultStr,
-                    success: success
+                    success: success,
+                    info: result.info,
+                    warning: result.warning
                 };
             } catch (error) {
-                // 如果期望值是 "error"，那么抛出错误是正确的行为
                 return {
                     name: test.name,
                     input: test.input,
@@ -264,6 +265,13 @@
                 <span class="passed">通过: 0</span>
                 <span class="failed">失败: 0</span>
             `;
+        }
+
+        // 添加清除临时变量的函数
+        function clearTempConstants() {
+            if (typeof Calculator !== 'undefined') {
+                Calculator.clearAllCache();
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
