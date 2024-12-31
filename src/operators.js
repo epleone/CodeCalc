@@ -133,11 +133,19 @@ const OPERATORS = {
         position: 'infix',
         description: '按位与'
     },
+    'and': {
+        alias: '&',
+        description: '按位与'
+    },
     '|': {
         precedence: 1,
         args: 2,
         func: (x, y) => x | y,
         position: 'infix',
+        description: '按位或'
+    },
+    'or': {
+        alias: '|',
         description: '按位或'
     },
     '^': {
@@ -152,6 +160,10 @@ const OPERATORS = {
         args: 1,
         func: x => ~x,
         position: 'prefix',
+        description: '按位取反'
+    },
+    "not":{
+        alias: '~',
         description: '按位取反'
     },
     '<<': {
@@ -271,7 +283,8 @@ const FUNCTIONS = {
     'sin': {
         func: Math.sin,
         args: 1,
-        description: '正弦函数'
+        description: '正弦函数',
+        preventSelfReference: true
     },
     'cos': {
         func: Math.cos,
@@ -329,18 +342,21 @@ const FUNCTIONS = {
         args: 1,
         func: x => Math.abs(x),
         asProperty: true,
-        description: '绝对值'
+        description: '绝对值',
+        preventSelfReference: true
     },
     'deg': {
         args: 1,
         func: x => x * CONSTANTS.PI / 180,
         asProperty: true,
+        preventSelfReference: true, // 禁止自引用
         description: '度数转换为弧度'
     },
     'rad': {
         args: 1,
         func: x => x * 180 / CONSTANTS.PI,
         asProperty: true,
+        preventSelfReference: true,
         description: '弧度转换为度数'
     },
 

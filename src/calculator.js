@@ -194,7 +194,8 @@ const Calculator = (function() {
                     args: 1,
                     func: func.func,
                     position: 'postfix',
-                    acceptAny: func.acceptAny
+                    ...(func.acceptAny && { acceptAny: true }),
+                    ...(func.preventSelfReference && { preventSelfReference: func.preventSelfReference })
                 };
             }
         }
@@ -608,6 +609,50 @@ const Calculator = (function() {
         if (nodeCount < validTokenCount) {
             throw new Error(`解析错误：AST节点不全(${nodeCount} < ${validTokenCount})`);
         }
+
+        // 添加防止函数和运算符自引用的检查
+        function checkASTForSelfApplication(ast) {
+            if (ast.type === 'function') {
+                const funcName = ast.value;
+                // 检查设置了 preventSelfReference 的函数
+                if (FUNCTIONS[funcName] && FUNCTIONS[funcName].preventSelfReference) {
+                    // 递归检查参数中是否有同名函数调用
+                    const checkNode = (node) => {
+                        if (!node) return false;
+                        if (node.type === 'function' && node.value === funcName) {
+                            return true;
+                        }
+                        return node.args?.some(checkNode) || false;
+                    };
+                    
+                    if (ast.args.some(checkNode)) {
+                        throw new Error(`函数 ${funcName} 不能作用在自己身上`);
+                    }
+                }
+            } else if (ast.type === 'operator') {
+                const opName = ast.value;
+                // 检查设置了 preventSelfReference 的运算符
+                if (OPERATORS[opName] && OPERATORS[opName].preventSelfReference) {
+                    // 递归检查参数中是否有同名运算符
+                    const checkNode = (node) => {
+                        if (!node) return false;
+                        if (node.type === 'operator' && node.value === opName) {
+                            return true;
+                        }
+                        return node.args?.some(checkNode) || false;
+                    };
+                    
+                    if (ast.args.some(checkNode)) {
+                        throw new Error(`运算符 ${opName} 不能作用在自己身上`);
+                    }
+                }
+            }
+            // 继续检查子节点
+            ast.args?.forEach(checkASTForSelfApplication);
+        }
+
+        // 执行自引用检查
+        checkASTForSelfApplication(ast);
 
         return ast;
     }
