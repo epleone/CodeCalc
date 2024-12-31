@@ -138,6 +138,7 @@ function calculateLine(input) {
 
 function addNewLine() {
     const container = document.getElementById('expression-container');
+    const lines = document.querySelectorAll('.expression-line');
     const newLine = document.createElement('div');
     newLine.className = 'expression-line';
     newLine.innerHTML = `
@@ -160,6 +161,55 @@ function addNewLine() {
     addResultClickHandler(result);
     
     newLine.querySelector('.input').focus();
+}
+
+// 添加一个统一的删除行处理函数
+function handleLineDelete(input) {
+    // 临时禁用补全
+    const originalCompletionState = isCompletionEnabled;
+    isCompletionEnabled = false;
+    
+    const lines = document.querySelectorAll('.expression-line');
+    const currentLine = input.closest('.expression-line');
+    const currentIndex = Array.from(lines).indexOf(currentLine);
+    
+    // 如果只有一行，则清空内容
+    if (lines.length === 1) {
+        input.value = '';
+        input.dispatchEvent(new Event('input'));
+        Calculator.clearAllCache();  // 清除缓存
+        isCompletionEnabled = originalCompletionState; // 恢复补全状态
+        return;
+    }
+    
+    // 将后面的内容上移
+    for (let i = currentIndex; i < lines.length - 1; i++) {
+        const currentInput = lines[i].querySelector('.input');
+        const nextInput = lines[i + 1].querySelector('.input');
+        currentInput.value = nextInput.value;
+        currentInput.dispatchEvent(new Event('input'));
+    }
+    
+    // 删除最后一行
+    lines[lines.length - 1].remove();
+    
+    // 设置焦点
+    if (currentIndex === 0) {
+        lines[0].querySelector('.input').focus();
+    } else {
+        const previousLine = lines[currentIndex - 1];
+        const previousInput = previousLine.querySelector('.input');
+        previousInput.focus();
+        previousInput.selectionStart = previousInput.value.length;
+        previousInput.selectionEnd = previousInput.value.length;
+    }
+    
+    // 清除缓存并重新计算所有行
+    Calculator.clearAllCache();  // 清除缓存
+    recalculateAllLines();      // 重新计算所有行
+    
+    // 恢复补全状态
+    isCompletionEnabled = originalCompletionState;
 }
 
 function handleKeyDown(event, input) {
@@ -232,14 +282,42 @@ function handleKeyDown(event, input) {
         if (!hint) {  // 只在没有补全提示时处理换行
             event.preventDefault();
             
+            const currentLine = input.closest('.expression-line');
+            const lines = document.querySelectorAll('.expression-line');
+            const currentIndex = Array.from(lines).indexOf(currentLine);
+            const isLastTwoLines = currentIndex >= lines.length - 2;  // 判断是否在最后两行
+            
+            // 处理 Shift + Enter
+            if (event.shiftKey) {
+                // 在最后两行时，行为和普通 Enter 一致
+                if (isLastTwoLines) {
+                    const expression = input.value.trim();
+                    const hasExpression = expression !== '';
+                    
+                    if (hasExpression) {
+                        if (currentIndex === lines.length - 1) {
+                            addNewLine();
+                        } else {
+                            const nextLine = currentLine.nextElementSibling;
+                            if (nextLine) {
+                                nextLine.querySelector('.input').focus();
+                            }
+                        }
+                    }
+                    return;
+                }
+                
+                // 其他行按 Shift + Enter，插入新行
+                insertNewLine(currentLine);
+                return;
+            }
+            
+            // 普通 Enter 键的处理
             const expression = input.value.trim();
             const hasExpression = expression !== '';
             
             if (hasExpression) {
-                const lines = document.querySelectorAll('.expression-line');
-                const isLastLine = input === lines[lines.length - 1].querySelector('.input');
-                
-                if (isLastLine) {
+                if (currentIndex === lines.length - 1) {
                     addNewLine();
                 } else {
                     const nextLine = currentLine.nextElementSibling;
@@ -249,39 +327,37 @@ function handleKeyDown(event, input) {
                 }
             }
         }
-    } else if (event.key === 'Backspace' && input.value === '') {
-        event.preventDefault();
-        const lines = document.querySelectorAll('.expression-line');
-        const currentIndex = Array.from(lines).indexOf(currentLine);
-        
-        if (currentIndex === 0) {
-            // 如果是第一行
-            if (lines.length > 1) {
-                // 如果有多行，直接将所有内容上移一行
-                for (let i = 0; i < lines.length - 1; i++) {
-                    const currentInput = lines[i].querySelector('.input');
-                    const nextInput = lines[i + 1].querySelector('.input');
-                    currentInput.value = nextInput.value;
-                    currentInput.dispatchEvent(new Event('input'));
-                }
-                // 删除最后一行
-                lines[lines.length - 1].remove();
-                // 聚焦到第一行
-                lines[0].querySelector('.input').focus();
-            }
-        } else if (lines.length > 1) {
-            // 如果不是第一行，执行原有的回退逻辑
-            const previousLine = currentLine.previousElementSibling;
-            const previousInput = previousLine.querySelector('.input');
-            previousInput.focus();
-            previousInput.selectionStart = previousInput.value.length;
-            previousInput.selectionEnd = previousInput.value.length;
-            currentLine.remove();
+    } else if (event.key === 'Backspace') {
+        // 如果输入框为空，删除当前行
+        if (input.value === '') {
+            event.preventDefault();
+            handleLineDelete(input);
+            return;
         }
+        
+        // 如果光标在行首且不是第一行，移动到上一行末尾
+        if (input.selectionStart === 0 && input.selectionEnd === 0) {
+            const currentLine = input.closest('.expression-line');
+            const previousLine = currentLine.previousElementSibling;
+            
+            if (previousLine) {
+                event.preventDefault();
+                const previousInput = previousLine.querySelector('.input');
+                
+                // 聚焦到上一行末尾
+                previousInput.focus();
+                previousInput.selectionStart = previousInput.value.length;
+                previousInput.selectionEnd = previousInput.value.length;
+            }
+        }
+    } else if (event.key === 'Delete') {
+        event.preventDefault();
+        handleLineDelete(input);
     } else if (event.key === 'ArrowUp') {
         // 只在没有补全提示时处理上下行切换
         if (!hint) {
             event.preventDefault();
+            const currentLine = input.closest('.expression-line'); // 获取当前行元素
             const previousLine = currentLine.previousElementSibling;
             if (previousLine) {
                 const previousInput = previousLine.querySelector('.input');
@@ -295,6 +371,7 @@ function handleKeyDown(event, input) {
         // 只在没有补全提示时处理上下行切换
         if (!hint) {
             event.preventDefault();
+            const currentLine = input.closest('.expression-line'); // 获取当前行元素
             const nextLine = currentLine.nextElementSibling;
             if (nextLine) {
                 const nextInput = nextLine.querySelector('.input');
@@ -313,41 +390,6 @@ function handleKeyDown(event, input) {
 
     if (!hint || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) {
         removeCompletionHint(input);
-    }
-
-    // 修改为直接使用 Delete 键
-    if (event.key === 'Delete') {
-        event.preventDefault();
-        const lines = document.querySelectorAll('.expression-line');
-        
-        // 如果只有一行，则清空内容
-        if (lines.length === 1) {
-            input.value = '';
-            input.dispatchEvent(new Event('input'));
-            return;
-        }
-        
-        const currentIndex = Array.from(lines).indexOf(currentLine);
-        
-        // 如果是最后一行，聚焦到前一行
-        if (currentIndex === lines.length - 1) {
-            const previousLine = lines[currentIndex - 1];
-            const previousInput = previousLine.querySelector('.input');
-            previousInput.focus();
-            previousInput.selectionStart = previousInput.value.length;
-            previousInput.selectionEnd = previousInput.value.length;
-            currentLine.remove();
-        } else {
-            // 如果不是最后一行，将后面的内容上移
-            for (let i = currentIndex; i < lines.length - 1; i++) {
-                const currentInput = lines[i].querySelector('.input');
-                const nextInput = lines[i + 1].querySelector('.input');
-                currentInput.value = nextInput.value;
-                currentInput.dispatchEvent(new Event('input'));
-            }
-            // 删除最后一行
-            lines[lines.length - 1].remove();
-        }
     }
 }
 
@@ -463,6 +505,10 @@ function handleAsteriskInput(event, input) {
 
 function handleInput(event) {
     const input = event.target;
+    const currentLine = input.closest('.expression-line');
+    const lines = document.querySelectorAll('.expression-line');
+    const currentIndex = Array.from(lines).indexOf(currentLine);
+    
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
     
@@ -499,7 +545,24 @@ function handleInput(event) {
         }
     }
     
+    // 计算当前行
     calculateLine(input);
+    
+    // 临时保存补全状态
+    const originalCompletionState = isCompletionEnabled;
+    // 临时禁用补全
+    isCompletionEnabled = false;
+    
+    // 依次计算后面所有有输入的行
+    for (let i = currentIndex + 1; i < lines.length; i++) {
+        const nextInput = lines[i].querySelector('.input');
+        if (nextInput.value.trim()) {  // 只计算有输入内容的行
+            calculateLine(nextInput);
+        }
+    }
+    
+    // 恢复补全状态
+    isCompletionEnabled = originalCompletionState;
 }
 
 function showCompletionHint(input, matches, isPropertyCompletion) {
@@ -827,4 +890,90 @@ function applyCompletion(input, match, isPropertyCompletion) {
     
     calculateLine(input);
     removeCompletionHint(input);
+} 
+
+// 修改 insertNewLine 函数
+function insertNewLine(currentLine) {
+    const container = document.getElementById('expression-container');
+    const lines = document.querySelectorAll('.expression-line');
+    const currentIndex = Array.from(lines).indexOf(currentLine);
+    
+    // 创建新行
+    const newLine = document.createElement('div');
+    newLine.className = 'expression-line';
+    newLine.innerHTML = `
+        <input type="text" class="input" placeholder="输入表达式" 
+               oninput="handleInput(event)"
+               onkeydown="handleKeyDown(event, this)">
+        <div class="result-container">
+            <div class="result">
+                <span class="result-value"></span>
+            </div>
+            <div class="message-icon" style="display: none;">
+                <div class="message-text"></div>
+            </div>
+        </div>
+    `;
+    
+    // 如果是最后一行，直接添加
+    if (currentIndex === lines.length - 1) {
+        container.appendChild(newLine);
+    } else {
+        // 否则，将当前行后面的所有行下移
+        const tempValues = [];
+        // 保存所有需要下移的行的内容
+        for (let i = currentIndex + 1; i < lines.length; i++) {
+            tempValues.push({
+                value: lines[i].querySelector('.input').value,
+                index: i
+            });
+        }
+        
+        // 插入新行
+        currentLine.insertAdjacentElement('afterend', newLine);
+        
+        // 恢复下移的行的内容并重新计算结果
+        const newLines = document.querySelectorAll('.expression-line');
+        tempValues.forEach((item) => {
+            const input = newLines[item.index + 1].querySelector('.input');
+            input.value = item.value;
+            calculateLine(input);
+        });
+    }
+    
+    // 为新行的结果添加点击处理
+    const result = newLine.querySelector('.result');
+    addResultClickHandler(result);
+    
+    // 聚焦到新行
+    const newInput = newLine.querySelector('.input');
+    newInput.focus();
+    
+    // 重新计算所有行的结果
+    const allLines = document.querySelectorAll('.expression-line');
+    allLines.forEach(line => {
+        const input = line.querySelector('.input');
+        if (input.value) {
+            calculateLine(input);
+        }
+    });
+} 
+
+// 添加重新计算所有行的辅助函数
+function recalculateAllLines() {
+    // 临时保存补全状态
+    const originalCompletionState = isCompletionEnabled;
+    // 临时禁用补全
+    isCompletionEnabled = false;
+    
+    const lines = document.querySelectorAll('.expression-line');
+    lines.forEach(line => {
+        const input = line.querySelector('.input');
+        if (input.value.trim()) {  // 只计算有输入内容的行
+            calculateLine(input);
+        }
+    });
+    
+    // 恢复补全状态
+    isCompletionEnabled = originalCompletionState;
 } 
