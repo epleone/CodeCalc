@@ -355,7 +355,12 @@ const Calculator = (function() {
                         } else if (delimiters.has(op)) {
                             tokens.push(['delimiter', op]);
                         } else {
-                            tokens.push(['operator', op]);
+                            // 检查是否有别名
+                            if (OPERATORS[op] && OPERATORS[op].alias) {
+                                tokens.push(['operator', OPERATORS[op].alias]);
+                            } else {
+                                tokens.push(['operator', op]);
+                            }
                         }
                     }
                     lastTokenType = 'operator';
@@ -380,7 +385,12 @@ const Calculator = (function() {
                 const str = collectString();
                 if (str) {
                     if (functions.has(str)) {
-                        tokens.push(['function', str]);
+                        // 检查函数是否有别名
+                        if (FUNCTIONS[str] && FUNCTIONS[str].alias) {
+                            tokens.push(['function', FUNCTIONS[str].alias]);
+                        } else {
+                            tokens.push(['function', str]);
+                        }
                         lastTokenType = 'function';
                     } else if (constants.has(str)) {
                         tokens.push(['constant', str]);

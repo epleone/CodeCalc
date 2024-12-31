@@ -156,7 +156,11 @@
                     };
                 }
 
-                const resultStr = result.toString();
+                // 修改这里：处理结果的显示
+                const resultStr = typeof result.value === 'object' && result.value !== null 
+                    ? JSON.stringify(result.value)  // 对象类型用 JSON.stringify 处理
+                    : result.value.toString();      // 基本类型直接 toString
+
                 return {
                     name: test.name,
                     input: test.input,

@@ -115,10 +115,7 @@ const OPERATORS = {
         description: '前缀自增'
     },
     '°': {
-        precedence: 3,
-        args: 1,
-        func: x => x * CONSTANTS.PI / 180,
-        position: 'postfix',
+        alias: '.deg',
         description: '角度转弧度'
     },
     'unary-': {

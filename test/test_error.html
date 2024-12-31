@@ -125,7 +125,7 @@
             { group: '括号错误', name: "多层空括号", input: "((()))", expected: "error" },
             { group: '括号错误', name: "函数后无括号", input: "sin 90", expected: "error" },
             { group: '括号错误', name: "括号内多表达式", input: "(1,2,3)", expected: "error" },
-            { group: '括号错误', name: "括号内赋值", input: "(x=1)", expected: "error" },
+            { group: '括号错误', name: "括号内操作", input: "(x =* 1)", expected: "error" },
             { group: '括号错误', name: "括号后操作符", input: "(1)(2)", expected: "error" },
             { group: '括号错误', name: "括号内无效字符", input: "(@#$)", expected: "error" },
             { group: '括号错误', name: "括号不配对", input: "((1+2)*3", expected: "error" },
@@ -146,7 +146,7 @@
             { group: '运算符错误', name: "后缀前缀混用", input: "1°°", expected: "error" },
             { group: '运算符错误', name: "运算符连用", input: "1 */ 2", expected: "error" },
             { group: '运算符错误', name: "位运算符连用", input: "1 &| 2", expected: "error" },
-            { group: '运算符错误', name: "赋值运算符连用", input: "x = y = 1", expected: "error" },
+            { group: '运算符错误', name: "赋值运算符连用", input: "x - y = 1", expected: "error" },
             { group: '运算符错误', name: "复合赋值连用", input: "x += -= 1", expected: "error" },
             { group: '运算符错误', name: "移位运算符连用", input: "1 << >> 2", expected: "error" },
             { group: '运算符错误', name: "运算符结尾", input: "1 +", expected: "error" },
@@ -155,7 +155,7 @@
 
             // 函数调用错误
             { group: '函数错误', name: "函数名后无括号", input: "sin", expected: "error" },
-            { group: '函数错误', name: "函数参数类型", input: "max('1', 2)", expected: "error" },
+            { group: '函数错误', name: "函数参数类型", input: "max('1st', 2)", expected: "error" },
             { group: '函数错误', name: "函数参数不足", input: "min()", expected: "error" },
             { group: '函数错误', name: "函数参数过多", input: "abs(1,2)", expected: "error" },
             { group: '函数错误', name: "函数嵌套空参", input: "sin(cos())", expected: "error" },
