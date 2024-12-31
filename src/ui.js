@@ -163,20 +163,23 @@ function addNewLine() {
 }
 
 function handleKeyDown(event, input) {
-    const currentLine = input.parentElement;
-    
-    // 添加补全提示框的方向键处理
     const hint = input.parentElement.querySelector('.completion-hint');
     if (hint) {
         if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             event.preventDefault();
-            hasUsedArrowKeys = true;  // 标记已使用方向键
+            hasUsedArrowKeys = true;
             
             const items = Array.from(hint.querySelectorAll('.completion-item'));
             const selectedItem = hint.querySelector('.completion-item.selected');
             let nextIndex = 0;
             
             if (selectedItem) {
+                // 隐藏当前选中项的描述
+                const currentDesc = selectedItem.querySelector('.description');
+                if (currentDesc) {
+                    currentDesc.style.display = 'none';
+                }
+                
                 const currentIndex = items.indexOf(selectedItem);
                 if (event.key === 'ArrowUp') {
                     nextIndex = (currentIndex - 1 + items.length) % items.length;
@@ -188,20 +191,23 @@ function handleKeyDown(event, input) {
                 nextIndex = items.length - 1;
             }
             
+            // 显示新选中项的描述
             items[nextIndex].classList.add('selected');
+            const newDesc = items[nextIndex].querySelector('.description');
+            if (newDesc) {
+                newDesc.style.display = '';
+            }
             return;
         } else if (event.key === 'Enter') {
+            event.preventDefault();
             if (hasUsedArrowKeys) {
                 // 如果使用过方向键，应用补全
-                event.preventDefault();
                 const selectedItem = hint.querySelector('.completion-item.selected');
                 if (selectedItem) {
-                    const match = selectedItem.textContent;
-                    const cursorPos = input.selectionStart;
-                    const textBeforeCursor = input.value.substring(0, cursorPos);
-                    
-                    const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
-                    applyCompletion(input, match, !!dotMatch);
+                    const textElement = selectedItem.querySelector('.text');
+                    const match = textElement.textContent;
+                    const isPropertyCompletion = selectedItem.getAttribute('data-type') === 'property';
+                    applyCompletion(input, match, isPropertyCompletion);
                 }
             } else {
                 // 如果没有使用过方向键，移除补全提示
@@ -209,19 +215,15 @@ function handleKeyDown(event, input) {
             }
             return;
         } else if (event.key === 'Tab') {
-            // Tab 键不需要方向键的限制
             event.preventDefault();
-            const selectedItem = hint.querySelector('.completion-item.selected') || 
-                               hint.querySelector('.completion-item');
+            const selectedItem = hint.querySelector('.completion-item.selected');
             if (selectedItem) {
-                const match = selectedItem.textContent;
-                const cursorPos = input.selectionStart;
-                const textBeforeCursor = input.value.substring(0, cursorPos);
-                
-                const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
-                applyCompletion(input, match, !!dotMatch);
-                return;
+                const textElement = selectedItem.querySelector('.text');
+                const match = textElement.textContent;
+                const isPropertyCompletion = selectedItem.getAttribute('data-type') === 'property';
+                applyCompletion(input, match, isPropertyCompletion);
             }
+            return;
         }
     }
     
@@ -311,6 +313,41 @@ function handleKeyDown(event, input) {
 
     if (!hint || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) {
         removeCompletionHint(input);
+    }
+
+    // 修改为直接使用 Delete 键
+    if (event.key === 'Delete') {
+        event.preventDefault();
+        const lines = document.querySelectorAll('.expression-line');
+        
+        // 如果只有一行，则清空内容
+        if (lines.length === 1) {
+            input.value = '';
+            input.dispatchEvent(new Event('input'));
+            return;
+        }
+        
+        const currentIndex = Array.from(lines).indexOf(currentLine);
+        
+        // 如果是最后一行，聚焦到前一行
+        if (currentIndex === lines.length - 1) {
+            const previousLine = lines[currentIndex - 1];
+            const previousInput = previousLine.querySelector('.input');
+            previousInput.focus();
+            previousInput.selectionStart = previousInput.value.length;
+            previousInput.selectionEnd = previousInput.value.length;
+            currentLine.remove();
+        } else {
+            // 如果不是最后一行，将后面的内容上移
+            for (let i = currentIndex; i < lines.length - 1; i++) {
+                const currentInput = lines[i].querySelector('.input');
+                const nextInput = lines[i + 1].querySelector('.input');
+                currentInput.value = nextInput.value;
+                currentInput.dispatchEvent(new Event('input'));
+            }
+            // 删除最后一行
+            lines[lines.length - 1].remove();
+        }
     }
 }
 
@@ -449,7 +486,7 @@ function handleInput(event) {
             }
         } else {
             // 普通函数补全
-            const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*{2})*$/)[0].toLowerCase();
+            const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0].toLowerCase();
             if (lastWord) {
                 const matches = completions.filter(c => 
                     c.toLowerCase().startsWith(lastWord)
@@ -474,21 +511,45 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
     const list = document.createElement('ul');
     list.className = 'completion-list';
     
-    // 只显示前5个匹配项
     const displayMatches = matches.slice(0, 5);
     
     displayMatches.forEach((match, index) => {
         const item = document.createElement('li');
-        item.textContent = isPropertyCompletion ? match : match;
         item.className = 'completion-item';
-        // 默认选中第一项
+        
+        // 添加类型标记
+        const type = isPropertyCompletion ? 'property' : 
+                    match.endsWith('(') ? 'function' : 'constant';
+        item.setAttribute('data-type', type);
+        
+        // 添加主要文本
+        const text = document.createElement('span');
+        text.className = 'text';
+        text.textContent = match;
+        item.appendChild(text);
+        
+        // 添加描述信息（如果有），但初始不显示
+        if (FUNCTIONS[match.replace(/[(.]/g, '')]) {
+            const desc = document.createElement('span');
+            desc.className = 'description';
+            desc.textContent = FUNCTIONS[match.replace(/[(.]/g, '')].description;
+            desc.style.display = 'none';  // 初始隐藏
+            item.appendChild(desc);
+        }
+        
         if (index === 0) {
             item.classList.add('selected');
+            // 只显示选中项的描述
+            const desc = item.querySelector('.description');
+            if (desc) {
+                desc.style.display = '';
+            }
         }
         
         item.addEventListener('click', () => {
             applyCompletion(input, match, isPropertyCompletion);
         });
+        
         list.appendChild(item);
     });
     
@@ -584,44 +645,83 @@ function handleContainerClick(event) {
 document.querySelector('.input').focus(); 
 
 // 添加以下函数
-function copyToClipboard(text) {
-    // 创建临时文本区域
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    
-    try {
-        document.execCommand('copy');
-        showCopyNotification();
-    } catch (err) {
-        console.error('复制失败:', err);
-    }
-    
-    document.body.removeChild(textarea);
-}
-
-function showCopyNotification() {
+function showCopyNotification(text) {
     const notification = document.querySelector('.copy-notification');
-    notification.classList.add('show');
-    
-    // 1秒后隐藏提示
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 1000);
+    if (!notification) {
+        // 创建通知元素
+        const newNotification = document.createElement('div');
+        newNotification.className = 'copy-notification';
+        newNotification.textContent = '已复制到剪贴板';
+        document.body.appendChild(newNotification);
+        
+        // 延迟添加show类以触发动画
+        requestAnimationFrame(() => {
+            newNotification.classList.add('show');
+        });
+        
+        // 2秒后移除
+        setTimeout(() => {
+            newNotification.classList.remove('show');
+            // 动画结束后移除元素
+            newNotification.addEventListener('transitionend', () => {
+                newNotification.remove();
+            });
+        }, 2000);
+    }
 }
 
-// 为结果添加点击事件处理
-function addResultClickHandler(resultElement) {
-    resultElement.addEventListener('click', function() {
-        // 检查是否有错误状态
-        if (this.classList.contains('error')) {
-            return; // 如果是错误状态，直接返回不执行复制
+function copyToClipboard(text) {
+    // 使用新的 Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            showCopyNotification();
+        }).catch(err => {
+            console.error('复制失败:', err);
+        });
+    } else {
+        // 降级方案
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        
+        try {
+            document.execCommand('copy');
+            showCopyNotification();
+        } catch (err) {
+            console.error('复制失败:', err);
         }
+        
+        document.body.removeChild(textarea);
+    }
+}
+
+// 修改结果点击处理函数
+function addResultClickHandler(resultElement) {
+    resultElement.addEventListener('click', function(e) {
+        if (this.classList.contains('error')) return;
         
         const resultValue = this.querySelector('.result-value').textContent;
         if (resultValue.trim()) {
+            // 添加点击反馈
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            this.appendChild(ripple);
+            
+            // 计算涟漪效果的位置
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            
+            // 复制内容
             copyToClipboard(resultValue);
+            
+            // 移除涟漪效果
+            setTimeout(() => ripple.remove(), 1000);
         }
     });
 }
@@ -697,27 +797,30 @@ function applyCompletion(input, match, isPropertyCompletion) {
     const textBeforeCursor = input.value.substring(0, cursorPos);
     const afterCursor = input.value.substring(cursorPos);
     
+    // 确保只使用函数名部分，不包含描述
+    const completionText = match.split(/\s+/)[0];  // 只取第一部分（函数名）
+    
     if (isPropertyCompletion) {
-        // 属性函数补全，直接添加函数名
+        // 属性函数补全
         const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
         if (dotMatch) {
             const beforeDot = textBeforeCursor.slice(0, -dotMatch[0].length);
-            input.value = beforeDot + '.' + match + afterCursor;
-            const newCursorPos = beforeDot.length + match.length + 1;
+            input.value = beforeDot + '.' + completionText + afterCursor;
+            const newCursorPos = beforeDot.length + completionText.length + 1;
             input.setSelectionRange(newCursorPos, newCursorPos);
         }
     } else {
-        // 普通函数补全，保持原有逻辑
+        // 普通函数补全
         const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0];
         const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
         
-        if (match.endsWith('(')) {
-            input.value = beforeWord + match + ')' + afterCursor;
-            const newCursorPos = beforeWord.length + match.length;
+        if (completionText.endsWith('(')) {
+            input.value = beforeWord + completionText + ')' + afterCursor;
+            const newCursorPos = beforeWord.length + completionText.length;
             input.setSelectionRange(newCursorPos, newCursorPos);
         } else {
-            input.value = beforeWord + match + afterCursor;
-            const newCursorPos = beforeWord.length + match.length;
+            input.value = beforeWord + completionText + afterCursor;
+            const newCursorPos = beforeWord.length + completionText.length;
             input.setSelectionRange(newCursorPos, newCursorPos);
         }
     }
