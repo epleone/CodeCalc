@@ -447,6 +447,15 @@ const Calculator = (function() {
         let current = 0;
         let depth = 0;
         
+        // 添加token统计
+        const validTokenCount = tokens.filter(token => {
+            const [type] = token;
+            return type !== 'delimiter' && type !== 'separator';
+        }).length;
+
+        // 添加节点计数器
+        let nodeCount = 0;
+
         function checkDepth() {
             if (depth > MAX_DEPTH) {
                 throw new Error('表达式嵌套深度过大，可能存在无限递归');
@@ -454,6 +463,7 @@ const Calculator = (function() {
         }
 
         function createNode(value, args, type) {
+            nodeCount++;  // 每创建一个节点就计数
             return { value, args, type };
         }
 
@@ -465,47 +475,59 @@ const Calculator = (function() {
             const [type, value] = tokens[current];
             current++;
 
-            // 处理函数调用
-            if (type === 'function') {
-                if (current >= tokens.length || 
-                    tokens[current][0] !== 'delimiter' || 
-                    tokens[current][1] !== '(') {
-                    throw new Error('函数调用缺少左括号');
-                }
-                current++; // 跳过左括号
-
-                const args = [];
-                while (current < tokens.length && 
-                       (tokens[current][0] !== 'delimiter' || 
-                        tokens[current][1] !== ')')) {
-                    args.push(parseExpression(0));
-                    if (tokens[current][0] === 'separator') {
-                        current++; // 跳过逗号
+            // 根据不同类型创建相应的节点
+            switch(type) {
+                case 'function':
+                    // 处理函数调用
+                    return parseFunctionCall(value);
+                
+                case 'constant':
+                case 'identifier':
+                case 'string':
+                    // 这些都是叶子节点
+                    return createNode(value, [], type);
+                    
+                case 'delimiter':
+                    if (value === '(') {
+                        const expr = parseExpression(0);
+                        expectDelimiter(')');
+                        return expr;
                     }
+                    throw new Error(`意外的定界符: ${value}`);
+                    
+                default:
+                    throw new Error(`意外的token类型: ${type}`);
+            }
+        }
+
+        function parseFunctionCall(funcName) {
+            expectDelimiter('(');
+            const args = [];
+            
+            while (current < tokens.length) {
+                if (tokens[current][0] === 'delimiter' && 
+                    tokens[current][1] === ')') {
+                    break;
                 }
                 
-                if (current >= tokens.length) {
-                    throw new Error('缺少右括号');
+                args.push(parseExpression(0));
+                
+                if (tokens[current][0] === 'separator') {
+                    current++;
                 }
-                current++; // 跳过右括号
-
-                return createNode(value, args, 'function');
             }
+            
+            expectDelimiter(')');
+            return createNode(funcName, args, 'function');
+        }
 
-            // 处理括号表达式
-            if (type === 'delimiter' && value === '(') {
-                const expr = parseExpression(0);
-                if (current >= tokens.length || 
-                    tokens[current][0] !== 'delimiter' || 
-                    tokens[current][1] !== ')') {
-                    throw new Error('缺少右括号');
-                }
-                current++; // 跳过右括号
-                return expr;
+        function expectDelimiter(expected) {
+            if (current >= tokens.length || 
+                tokens[current][0] !== 'delimiter' || 
+                tokens[current][1] !== expected) {
+                throw new Error(`期望定界符 "${expected}"`);
             }
-
-            // 处理其他基本类型
-            return createNode(value, [], type);
+            current++;
         }
 
         function parseUnary() {
@@ -570,7 +592,14 @@ const Calculator = (function() {
             return left;
         }
 
-        return parseExpression();
+        const ast = parseExpression();
+
+        // 检查节点数量是否合理
+        if (nodeCount < validTokenCount) {
+            throw new Error(`解析错误：AST节点不全(${nodeCount} < ${validTokenCount})`);
+        }
+
+        return ast;
     }
 
     // 在 evaluate 函数之前添加参数转换函数

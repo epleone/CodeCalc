@@ -75,19 +75,6 @@ const OPERATORS = {
         position: 'infix',
         description: '乘法'
     },
-    // 单独处理吧
-    // 'x': {
-    //     precedence: 2,
-    //     args: 2,
-    //     func: (x, y) => {
-    //         if (typeof x === 'bigint' || typeof y === 'bigint') {
-    //             return BigInt(x) * BigInt(y);
-    //         }
-    //         return x * y;
-    //     },
-    //     position: 'infix',
-    //     description: '乘法'
-    // },
     '/': {
         precedence: 2,
         args: 2,

@@ -46,6 +46,11 @@ const Types = {
 
             // 处理科学计数法
             if (value.includes('e') || value.includes('E')) {
+                // 检查科学计数法格式
+                const scientificRegex = /^-?\d+\.?\d*[eE]-?\d+$/;
+                if (!scientificRegex.test(value)) {
+                    throw new Error(`无效的科学计数法格式: ${value}`);
+                }
                 const num = parseFloat(value);
                 if (!isNaN(num)) return num;
             }
