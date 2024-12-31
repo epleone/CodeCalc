@@ -400,6 +400,44 @@ const FUNCTIONS = {
         func: x => "0x" + BigInt(x).toString(16),
         asProperty: true,
         description: '十进制转十六进制'
+    },
+
+    // Base64 编码函数
+    'base64': {
+        args: 1,
+        func: x => {
+            try {
+                // 确保输入是字符串
+                if (typeof x !== 'string') {
+                    x = String(x);
+                }
+                return btoa(x);
+            } catch (e) {
+                throw new Error('Base64编码失败: ' + e.message);
+            }
+        },
+        description: 'Base64编码',
+        acceptAny: true,
+        asProperty: true
+    },
+
+    // Base64 解码函数
+    'unbase64': {
+        args: 1,
+        func: x => {
+            try {
+                // 确保输入是字符串
+                if (typeof x !== 'string') {
+                    x = String(x);
+                }
+                return atob(x);
+            } catch (e) {
+                throw new Error('Base64解码失败: ' + e.message);
+            }
+        },
+        description: 'Base64解码',
+        acceptAny: true,
+        asProperty: true
     }
 };
 
