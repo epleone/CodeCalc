@@ -565,6 +565,18 @@ function handleInput(event) {
     isCompletionEnabled = originalCompletionState;
 }
 
+// 1. 创建一个统一的事件处理函数
+function createCompletionItemHandler(input, match, isPropertyCompletion, item) {
+    return function handler(event) {
+        applyCompletion(input, match, isPropertyCompletion);
+        // 使用完立即移除事件监听器
+        item.removeEventListener('click', handler);
+        // 移除补全框
+        removeCompletionHint(input);
+    };
+}
+
+// 2. 修改 showCompletionHint 函数中创建补全项的部分
 function showCompletionHint(input, matches, isPropertyCompletion) {
     removeCompletionHint(input);
     
@@ -591,33 +603,44 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
         text.textContent = match;
         item.appendChild(text);
         
-        // 添加描述信息（如果有），但初始不显示
+        // 添加描述信息
         if (FUNCTIONS[match.replace(/[(.]/g, '')]) {
             const desc = document.createElement('span');
             desc.className = 'description';
             desc.textContent = FUNCTIONS[match.replace(/[(.]/g, '')].description;
-            desc.style.display = 'none';  // 初始隐藏
+            desc.style.display = 'none';
             item.appendChild(desc);
         }
         
         if (index === 0) {
             item.classList.add('selected');
-            // 只显示选中项的描述
             const desc = item.querySelector('.description');
             if (desc) {
                 desc.style.display = '';
             }
         }
         
-        item.addEventListener('click', () => {
-            applyCompletion(input, match, isPropertyCompletion);
-        });
+        // 使用新的事件处理方式
+        const handler = createCompletionItemHandler(input, match, isPropertyCompletion, item);
+        item.addEventListener('click', handler, { once: true });  // 使用 once 选项
         
         list.appendChild(item);
     });
     
+    // 添加补全框的清理函数
+    const cleanup = () => {
+        // 移除所有事件监听器
+        hint.querySelectorAll('.completion-item').forEach(item => {
+            item.replaceWith(item.cloneNode(true));
+        });
+        hint.remove();
+    };
+    
+    // 在补全框被移除时清理
+    hint.addEventListener('remove', cleanup, { once: true });
+    
     hint.appendChild(list);
-    input.parentElement.appendChild(hint);
+    document.body.appendChild(hint);
     
     // 计算光标位置
     const cursorPos = input.selectionStart;
@@ -665,12 +688,14 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
     hint.style.top = `${top}px`;
 }
 
+// 3. 修改 removeCompletionHint 函数
 function removeCompletionHint(input) {
-    const hint = input.parentElement.querySelector('.completion-hint');
-    if (hint) {
+    document.querySelectorAll('.completion-hint').forEach(hint => {
+        // 触发清理事件
+        hint.dispatchEvent(new Event('remove'));
         hint.remove();
-        hasUsedArrowKeys = false;  // 重置标记
-    }
+    });
+    hasUsedArrowKeys = false;
 }
 
 // 修改 clearAll 函数
