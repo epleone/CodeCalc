@@ -94,8 +94,19 @@
             if(type == "regex") {
                 const inputs = document.querySelectorAll('.input');
                 const lastInput = inputs[inputs.length - 1];  // 获取最后一个输入框
-                lastInput.value = payload || "";
-                lastInput.dispatchEvent(new Event('input'));
+                
+                // 如果最后一行不为空，则新增一行
+                if (lastInput.value.trim() !== '') {
+                    addNewLine();
+                    const newInputs = document.querySelectorAll('.input');
+                    const newLastInput = newInputs[newInputs.length - 1];
+                    newLastInput.value = payload || "";
+                    newLastInput.dispatchEvent(new Event('input'));
+                } else {
+                    // 如果最后一行为空，直接在最后一行输入
+                    lastInput.value = payload || "";
+                    lastInput.dispatchEvent(new Event('input'));
+                }
             }
         });
 
