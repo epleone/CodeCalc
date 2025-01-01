@@ -283,8 +283,7 @@ const FUNCTIONS = {
     'sin': {
         func: Math.sin,
         args: 1,
-        description: '正弦函数',
-        preventSelfReference: true
+        description: '正弦函数'
     },
     'cos': {
         func: Math.cos,
@@ -342,8 +341,7 @@ const FUNCTIONS = {
         args: 1,
         func: x => Math.abs(x),
         asProperty: true,
-        description: '绝对值',
-        preventSelfReference: true
+        description: '绝对值'
     },
     'deg': {
         args: 1,
@@ -354,7 +352,13 @@ const FUNCTIONS = {
     },
     'rad': {
         args: 1,
-        func: x => x * 180 / CONSTANTS.PI,
+        func: x => {
+            let degrees = x * 180 / CONSTANTS.PI;
+            // 将角度规范化到0-360度之间
+            degrees = degrees % 360;
+            if (degrees < 0) degrees += 360;
+            return degrees;
+        },
         asProperty: true,
         preventSelfReference: true,
         description: '弧度转换为度数'

@@ -206,46 +206,6 @@ const Calculator = (function() {
         return { expr, operators: sortedOperators };
     }
 
-    // 预处理辅助函数
-    function collectFunctionName(expr, start) {
-        let funcName = '';
-        let i = start;
-        while (i < expr.length && /[a-zA-Z]/.test(expr[i])) {
-            funcName += expr[i];
-            i++;
-        }
-        return { funcName, length: i - start };
-    }
-
-    function collectPrecedingExpr(expr, start) {
-        let depth = 0;
-        let i = start;
-
-        // 跳过空白字符
-        while (i >= 0 && /\s/.test(expr[i])) i--;
-
-        if (i >= 0) {
-            if (expr[i] === ')') {
-                depth = 1;
-                i--;
-                while (i >= 0 && depth > 0) {
-                    if (expr[i] === '(') depth--;
-                    if (expr[i] === ')') depth++;
-                    i--;
-                }
-                while (i >= 0 && /[a-zA-Z0-9]/.test(expr[i])) i--;
-            } else {
-                while (i >= 0 && /[a-zA-Z0-9]/.test(expr[i])) i--;
-            }
-        }
-
-        return {
-            start: i,
-            expr1: expr.slice(0, i + 1),
-            expr2: expr.slice(i + 1, start + 1)
-        };
-    }
-
     // 2. 词法分析模块
     function tokenize(expr, operators, functions, constants) {
         const tokens = [];
@@ -616,34 +576,18 @@ const Calculator = (function() {
                 const funcName = ast.value;
                 // 检查设置了 preventSelfReference 的函数
                 if (FUNCTIONS[funcName] && FUNCTIONS[funcName].preventSelfReference) {
-                    // 递归检查参数中是否有同名函数调用
-                    const checkNode = (node) => {
-                        if (!node) return false;
-                        if (node.type === 'function' && node.value === funcName) {
-                            return true;
-                        }
-                        return node.args?.some(checkNode) || false;
-                    };
-                    
-                    if (ast.args.some(checkNode)) {
-                        throw new Error(`函数 ${funcName} 不能作用在自己身上`);
+                    // 只检查直接参数
+                    if (ast.args.some(arg => arg.type === 'function' && arg.value === funcName)) {
+                        throw new Error(`函数 ${funcName} 不能直接作用在自己身上`);
                     }
                 }
             } else if (ast.type === 'operator') {
                 const opName = ast.value;
                 // 检查设置了 preventSelfReference 的运算符
                 if (OPERATORS[opName] && OPERATORS[opName].preventSelfReference) {
-                    // 递归检查参数中是否有同名运算符
-                    const checkNode = (node) => {
-                        if (!node) return false;
-                        if (node.type === 'operator' && node.value === opName) {
-                            return true;
-                        }
-                        return node.args?.some(checkNode) || false;
-                    };
-                    
-                    if (ast.args.some(checkNode)) {
-                        throw new Error(`运算符 ${opName} 不能作用在自己身上`);
+                    // 只检查直接参数
+                    if (ast.args.some(arg => arg.type === 'operator' && arg.value === opName)) {
+                        throw new Error(`运算符 ${opName} 不能直接作用在自己身上`);
                     }
                 }
             }
@@ -794,33 +738,6 @@ const Calculator = (function() {
     }
 
     // 5. 辅助函数
-    function isStartOfNumber(tokens) {
-        return !tokens.length || 
-            (tokens[tokens.length-1][0] === 'operator' && 
-             tokens[tokens.length-1][1] === '(') ||
-            (tokens[tokens.length-1][0] === 'separator');
-    }
-
-    function generateMermaidAST(node, counter = {count: 0}) {
-        if (!node) return { nodes: '', edges: '' };
-
-        const currentId = `node${counter.count++}`;
-        let nodes = `${currentId}["${typeof node.value === 'number' ? 
-            node.value.toString() : 
-            node.value}"];\n`;
-        let edges = '';
-
-        for (let i = 0; i < node.args.length; i++) {
-            const child = node.args[i];
-            const childResult = generateMermaidAST(child, counter);
-            nodes += childResult.nodes;
-            edges += childResult.edges;
-            edges += `${currentId} -->|"arg${i + 1}"| node${counter.count-1};\n`;
-        }
-
-        return { nodes, edges };
-    }
-
     // 添加到辅助函数部分
     function isValidVariableName(name) {
         // 检查是否是合法的变量名（字母或下划线开头，后面可以是字母、数字或下划线）

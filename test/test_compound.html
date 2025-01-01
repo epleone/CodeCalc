@@ -165,7 +165,29 @@
             { group: '最值运算复合', name: "复杂运算1", input: "max(2+3*4, min(10*2, 15+5))", expected: "20" },
             { group: '最值运算复合', name: "复杂运算2", input: "min(max(2,3)*4, max(5,6)*2)", expected: "12" },
             { group: '最值运算复合', name: "多重复合1", input: "max(min(2+3,4*2),min(10/2,8-3))", expected: "5" },
-            { group: '最值运算复合', name: "多重复合2", input: "min(max(2**2,3+4),max(10-3,15/3))", expected: "7" }
+            { group: '最值运算复合', name: "多重复合2", input: "min(max(2**2,3+4),max(10-3,15/3))", expected: "7" },
+
+            // 自引用检测
+            { group: '自引用检测', name: "直接自引用函数", input: "abs(abs(5))", expected: "5" },
+            { group: '自引用检测', name: "间接自引用函数", input: "abs(sin(abs(5)))", expected: "0.958924" },
+            { group: '自引用检测', name: "直接自引用运算符1", input: "5.deg.deg", expected: "error" },
+            { group: '自引用检测', name: "直接自引用运算符2", input: "5°.deg", expected: "error" },
+            { group: '自引用检测', name: "直接自引用运算符3", input: "5°°", expected: "error" },
+            { group: '自引用检测', name: "直接自引用运算符4", input: "5.rad.rad", expected: "error" },
+            { group: '自引用检测', name: "直接自引用运算符5", input: "5.rad.rad.deg", expected: "error" },
+            { group: '自引用检测', name: "直接自引用运算符6", input: "5.rad.deg.deg", expected: "error" },
+            { group: '自引用检测', name: "间接自引用运算符1", input: "5.deg.rad.deg", expected: "0.0872664625" },
+            { group: '自引用检测', name: "间接自引用运算符2", input: "5.rad.deg.rad", expected: "286.4788975654116" },
+            { group: '自引用检测', name: "复杂自引用1", input: "max(max(1,2),3)", expected: "3" },
+            { group: '自引用检测', name: "复杂自引用2", input: "max(min(max(1,2),3),4)", expected: "4" },
+            { group: '自引用检测', name: "复杂自引用3", input: "(5.deg.rad).deg", expected: "0.0872664625" },
+            { group: '自引用检测', name: "复杂自引用4", input: "abs(sin(cos(abs(1))))", expected: "0.514395" },
+            { group: '自引用检测', name: "复杂自引用5", input: "max(1, max(2,3))", expected: "3" },
+            { group: '自引用检测', name: "复杂自引用6", input: "min(1, min(2,3))", expected: "1" },
+            { group: '自引用检测', name: "复杂自引用7", input: "5.hex.hex", expected: "0x5" },
+            { group: '自引用检测', name: "复杂自引用8", input: "5.hex.bin.hex", expected: "0x5" },
+            { group: '自引用检测', name: "复杂自引用9", input: "abs(max(abs(1), 2))", expected: "2" },
+            { group: '自引用检测', name: "复杂自引用10", input: "max(abs(max(1,2)), 3)", expected: "3" }
         ];
 
         // 使用与原测试页面相同的测试运行函数
