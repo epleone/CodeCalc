@@ -32,36 +32,33 @@
             <div class="tooltip">
                 <div class="tooltip-icon">?</div>
                 <div class="tooltip-text">
-                    快捷键：<br>
-                    • Enter: 新建行<br>
-                    • Backspace: 删除空行并上移<br>
+                    • Shift + Enter: 下方插入行<br>
                     • Delete: 删除当前行<br>
                     <br>
                     变量：<br>
-                    • a = 2x3<br>
-                    • b = a + 1<br>
-                    <br>
-                    默认常数：<br>
-                    • PI=3.14159, e=2.71828<br>
+                    • 基本赋值：a = 5<br>
+                    • 复合赋值：+=, -=, *=, &=, |= 等<br>
                     <br>
                     基本运算：<br>
-                    • +, -, *xX, /, //(整除), %(余数), **(幂)<br>
-                    • +=、-=、*=、/=<br>
-                    <br>
-                    角度转换弧度：角度值 + ° 转为弧度<br>
-                    • 30° = 30 * PI / 180<br>
-                    • sin(45°) = sin(45 * PI / 180)<br>
+                    • 算术运算：+, -, *, /, //, %, **<br>
+                    • 位运算：&, |, ^, ~, <<, >>, >>><br>
                     <br>
                     数学函数：<br>
-                    • 三角函数：sin(45°), cos(PI/2), tan(PI/4)<br>
-                    • 反三角函数：asin(0.5), acos(0), atan(1)<br>
-                    • log(100), ln(e), exp(2)=e²<br>
-                    • sqrt(2), root(8,3)=2, pow(2,3)=8<br>
-                    • max(1,2,3)=3, min(1,2,3)=1<br>
+                    • 三角函数：sin, cos, tan, asin, acos, atan, sinh, cosh, tanh<br>
+                    • 对数指数：log, ln, exp, pow, sqrt<br>
+                    • 其他：abs, max, min<br>
                     <br>
-                    进制：<br>
-                    • 其它进制转十进制：0b111, 0o111, 0x111<br>
-                    • 十进制转其它进制：bin(111), oct(111), hex(111)<br>
+                    其它：<br>
+                    • 字符串操作：+, .length, .upper, .lower <br>
+                    • base64 编解码：base64(s) 或 .base64, unbase64(s) 或 .unbase64<br>
+                    • 角度转换 度数： 45° 或 .deg 弧度：rad(PI) <br>
+                    • 进制转换：0b123, 0o567, 0xffd, bin, oct, hex<br>
+                    • 常量：PI: 3.14159... e: 2.71828...<br>
+                    <!-- <br> -->
+                    <!-- <div class="github-link">
+                        <svg height="16" viewBox="0 0 16 16" width="16" style="vertical-align: text-bottom; margin-right: 4px;"><path fill="#fff" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                        <a href="https://github.com/epleone/CodeCalc" target="_blank" style="color: #fff; text-decoration: none; font-size: 14px;">CodeCalc</a>
+                    </div> -->
                 </div>
             </div>
             <div class="completion-toggle">
