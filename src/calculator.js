@@ -219,31 +219,18 @@ const Calculator = (function() {
         const sortedOperators = [...operators].sort((a, b) => b.length - a.length);
         let lastTokenType = null;  // 添加上一个 token 的类型记录
 
+        // 检查区分负号-和减号-
         function shouldBeUnaryMinus() {
             if (tokens.length === 0) return true;
             
-            const lastToken = tokens[tokens.length - 1];
-            const [type, value] = lastToken;
+            const [type, value] = tokens[tokens.length - 1];
             
-            // 如果前一个 token 是数字、常量或右括号，那就是减号
-            if (type === 'string' || 
-                type === 'constant' || 
-                (type === 'delimiter' && value === ')')) {
-                return false;
-            }
-            
-            // 如果前一个 token 是左括号、分隔符，那就是负号
-            if ((type === 'delimiter' && value === '(') ||
-                type === 'separator') {
-                return true;
-            }
-
-            // 如果前一个 token 是运算符，那就是负号
-            if (type === 'operator') {
-                return true;
-            }
-
-            return false; // 其他情况默认为减号
+            // 只有在这些情况下是二元减号，其他都是一元负号
+            return !(
+                type === 'string' ||           // 数字/变量后
+                type === 'constant' ||         // 常量后
+                (type === 'delimiter' && value === ')')  // 右括号后
+            );
         }
 
         function collectString() {
@@ -571,7 +558,12 @@ const Calculator = (function() {
         }
 
         // 添加防止函数和运算符自引用的检查
-        function checkASTForSelfApplication(ast) {
+        function checkASTForSelfApplication(ast, depth = 0) {
+            // 添加深度检查
+            if (depth > MAX_DEPTH) {
+                throw new Error('自引用检查嵌套深度过大，可能存在无限递归');
+            }
+
             if (ast.type === 'function') {
                 const funcName = ast.value;
                 // 检查设置了 preventSelfReference 的函数
@@ -591,8 +583,8 @@ const Calculator = (function() {
                     }
                 }
             }
-            // 继续检查子节点
-            ast.args?.forEach(checkASTForSelfApplication);
+            // 继续检查子节点，增加深度计数
+            ast.args?.forEach(arg => checkASTForSelfApplication(arg, depth + 1));
         }
 
         // 执行自引用检查
@@ -737,8 +729,63 @@ const Calculator = (function() {
         throw new Error(`未处理的节点类型: ${node.type}`);
     }
 
-    // 5. 辅助函数
-    // 添加到辅助函数部分
+    // 5. 格式化输出模块
+    function formatOutput(result, ast, operators, functions) {
+        // 防御性检查
+        if (!ast) {
+            return { 
+                value: result,
+                info: infos.length > 0 ? infos : null, 
+                warning: warnings.length > 0 ? warnings : null
+            };
+        }
+
+        try {
+            // 直接使用 ast 节点
+            let targetNode = ast;
+
+            // 如果是赋值运算符，获取右侧表达式节点
+            if (targetNode.isCompoundAssignment) {
+                targetNode = targetNode.args[1];
+            }
+
+            // 根据节点类型查找对应的 repr 方法
+            let repr;
+            if (targetNode.type === 'function' && FUNCTIONS[targetNode.value]) {
+                repr = FUNCTIONS[targetNode.value].repr;
+            } else if (targetNode.type === 'operator' && OPERATORS[targetNode.value]) {
+                repr = OPERATORS[targetNode.value].repr;
+            }
+
+            // 如果找到了 repr 方法就调用它
+            if (typeof repr === 'function') {
+                try {
+                    const formattedResult = repr(result);
+                    // 确保 repr 返回了有效值
+                    if (formattedResult !== undefined) {
+                        result = formattedResult;
+                    }
+                } catch (error) {
+                    throw new Error(`格式化输出时发生错误: ${error.message}`);
+                }
+            }
+
+            return { 
+                value: result,
+                info: infos.length > 0 ? infos : null, 
+                warning: warnings.length > 0 ? warnings : null
+            };
+        } catch (error) {
+            addWarning(`格式化输出时发生错误: ${error.message}`);
+            return { 
+                value: result,
+                info: infos.length > 0 ? infos : null, 
+                warning: warnings.length > 0 ? warnings : null
+            };
+        }
+    }
+
+    // 6. 辅助函数
     function isValidVariableName(name) {
         // 检查是否是合法的变量名（字母或下划线开头，后面可以是字母、数字或下划线）
         return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name) && 
@@ -748,7 +795,7 @@ const Calculator = (function() {
                !/^_ccstr_i/.test(name);  // 修改检查的前缀
     }
 
-    // 6. 返回公共API
+    // 7. 返回公共API
     return {
         calculate(expr) {
             clearMessages(); // 清除之前的消息
@@ -761,11 +808,10 @@ const Calculator = (function() {
             const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
             const result = evaluate(ast, operators, functions);
-            return { 
-                value: result,
-                info: infos.length > 0 ? infos : null, 
-                warning: warnings.length > 0 ? warnings : null
-            };
+            // 添加格式化处理，传入完整的上下文
+            const exprResult = formatOutput(result, ast, operators, functions);
+            
+            return exprResult;
         },
 
         getASTNode(expr) {
