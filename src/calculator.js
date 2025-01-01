@@ -186,6 +186,7 @@ const Calculator = (function() {
         expr = checkVariableName(expr);
 
         // 动态添加属性调用运算符
+        // TODO: 如果有新属性，需要手动动态添加
         for (const [name, func] of Object.entries(FUNCTIONS)) {
             if (func.asProperty) {
                 operators.add('.' + name);
@@ -195,6 +196,7 @@ const Calculator = (function() {
                     func: func.func,
                     position: 'postfix',
                     ...(func.acceptAny && { acceptAny: true }),
+                    ...(func.repr && { repr: func.repr }),
                     ...(func.preventSelfReference && { preventSelfReference: func.preventSelfReference })
                 };
             }
@@ -729,7 +731,7 @@ const Calculator = (function() {
         throw new Error(`未处理的节点类型: ${node.type}`);
     }
 
-    // 5. 格式化输出模块
+    // 5. 格式化输出模块, 添加额外提醒信息info
     function formatOutput(result, ast, operators, functions) {
         // 防御性检查
         if (!ast) {
@@ -761,9 +763,10 @@ const Calculator = (function() {
             if (typeof repr === 'function') {
                 try {
                     const formattedResult = repr(result);
-                    // 确保 repr 返回了有效值
+                    // 确保 repr 返回了有效值, 并添加到INFO中
                     if (formattedResult !== undefined) {
-                        result = formattedResult;
+                        // result = formattedResult;
+                        addInfo(formattedResult);
                     }
                 } catch (error) {
                     throw new Error(`格式化输出时发生错误: ${error.message}`);

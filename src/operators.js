@@ -348,7 +348,7 @@ const FUNCTIONS = {
         func: x => x * CONSTANTS.PI / 180,
         asProperty: true,
         preventSelfReference: true,       // 禁止自引用
-        repr: x => x.toString() + ' deg', // 格式化输出函数
+        repr: x => x.toString() + '弧度', // 格式化输出函数
         description: '度数转换为弧度'
     },
     'rad': {
