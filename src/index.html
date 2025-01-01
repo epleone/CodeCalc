@@ -92,9 +92,10 @@
         // utools 相关代码保持不变
         window.utools.onPluginEnter(({ code, type, payload }) => {
             if(type == "regex") {
-                const inputElement = document.querySelector('.input');
-                inputElement.value = payload || "";
-                inputElement.dispatchEvent(new Event('input'));
+                const inputs = document.querySelectorAll('.input');
+                const lastInput = inputs[inputs.length - 1];  // 获取最后一个输入框
+                lastInput.value = payload || "";
+                lastInput.dispatchEvent(new Event('input'));
             }
         });
 

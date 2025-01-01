@@ -808,6 +808,7 @@ const Calculator = (function() {
     // 7. 返回公共API
     return {
         calculate(expr) {
+            // TODO: 添加超时处理
             clearMessages(); // 清除之前的消息
 
             const operators = new Set(Object.keys(OPERATORS));

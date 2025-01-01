@@ -37,7 +37,6 @@
 - `PI`: 3.14159...
 - `e`: 2.71828...
 
-项目地址：[CodeCalc](https://github.com/epleone/CodeCalc)
 
 ### 备注
 灵感来源：[itribs/rcalculator](https://github.com/itribs/rcalculator)
