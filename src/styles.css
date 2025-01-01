@@ -443,15 +443,31 @@ body {
 
 /* 函数补全特殊样式 */
 .completion-item[data-type="function"] {
-    color: #2196F3;
+    color: #000;
 }
 
+/* 函数补全选中状态 */
+.completion-item[data-type="function"].selected {
+    color: #000;
+    font-weight: bold;
+}
+
+/* 保持属性补全的原有样式 */
 .completion-item[data-type="property"] {
     color: #607d8b;
 }
 
+.completion-item[data-type="property"].selected {
+    color: #455a64;
+}
+
+/* 常量补全样式保持不变 */
 .completion-item[data-type="constant"] {
     color: #795548;
+}
+
+.completion-item[data-type="constant"].selected {
+    color: #5d4037;
 }
 
 /* 补全提示的描述信息 */
