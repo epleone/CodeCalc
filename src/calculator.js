@@ -191,7 +191,7 @@ const Calculator = (function() {
             if (func.asProperty) {
                 operators.add('.' + name);
                 OPERATORS['.' + name] = {
-                    precedence: 3,
+                    precedence: 7,
                     args: 1,
                     func: func.func,
                     position: 'postfix',
@@ -499,17 +499,21 @@ const Calculator = (function() {
             }
 
             const [type, value] = tokens[current];
-            // 处理所有前缀运算符
+            
+            // 处理前缀运算符
             if (type === 'operator' && 
                 OPERATORS[value] && 
                 OPERATORS[value].position === 'prefix') {
                 current++;
-                const operand = parseUnary();  // 递归处理后续前缀运算符
-                return createNode(value, [operand], 'operator');
+                
+                // 使用更高的优先级，确保只解析到下一个基本表达式
+                const right = parseExpression(OPERATORS[value].precedence + 1);
+                depth--;
+                return createNode(value, [right], 'operator');
             }
-            return parsePrimary();
-
+            
             depth--;
+            return parsePrimary();
         }
 
         function parseExpression(precedence = 0) {
@@ -517,7 +521,7 @@ const Calculator = (function() {
             checkDepth();
 
             let left = parseUnary();
-
+            
             while (current < tokens.length) {
                 const [type, value] = tokens[current];
                 
@@ -539,15 +543,16 @@ const Calculator = (function() {
                 }
 
                 current++;
-                // 对于赋值运算符，使用右结合性
-                const nextPrecedence = OPERATORS[value].isCompoundAssignment || value === '=' ?
-                    OPERATORS[value].precedence :
-                    OPERATORS[value].precedence + 1;
+                const op = OPERATORS[value];
+                // 赋值运算符是右结合的，其他运算符是左结合的
+                const nextPrecedence = op.isCompoundAssignment ? 
+                    op.precedence :  // 赋值运算符使用相同优先级，实现右结合
+                    op.precedence + 1;  // 其他运算符增加优先级，实现左结合
                     
                 const right = parseExpression(nextPrecedence);
                 left = createNode(value, [left, right], 'operator');
             }
-
+            
             depth--;
             return left;
         }
@@ -651,7 +656,7 @@ const Calculator = (function() {
             }
             
             // 处理赋值运算符
-            if (node.value === '=' || op.isCompoundAssignment) {
+            if (op.isCompoundAssignment) {
                 const [left, right] = node.args;
                 // 检查左侧是否为标识符类型的节点
                 if (left.type !== 'identifier' && left.type !== 'string') {
@@ -666,7 +671,19 @@ const Calculator = (function() {
                 // 计算右侧表达式
                 const rightValue = evaluate(right, operators, functions, depth + 1);
                 
-                if (op.isCompoundAssignment) {
+                // 对于等号，直接赋值
+                if (node.value === '=') {
+                    // 普通赋值
+                    variables.set(left.value, rightValue);
+                    addInfo(`添加变量 ${left.value}: ${rightValue}`)
+
+                    // 检查是否是x变量，提示无法使用x做为乘法
+                    if (left.value === 'x') {
+                        addWarning(`将无法使用x做为乘法符号`)
+                    }
+                    return rightValue;
+                }
+                else {
                     // 对于复合赋值，检查变量是否已定义
                     if (!variables.has(left.value)) {
                         throw new Error(`变量 "${left.value}" 未定义`);
@@ -678,16 +695,6 @@ const Calculator = (function() {
                     // 更新变量的值
                     variables.set(left.value, result);
                     return result;
-                } else {
-                    // 普通赋值
-                    variables.set(left.value, rightValue);
-                    addInfo(`添加变量 ${left.value}: ${rightValue}`)
-
-                    // 检查是否是x变量，提示无法使用x做为乘法
-                    if (left.value === 'x') {
-                        addWarning(`将无法使用x做为乘法符号`)
-                    }
-                    return rightValue;
                 }
             }
 

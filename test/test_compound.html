@@ -187,7 +187,23 @@
             { group: '自引用检测', name: "复杂自引用7", input: "5.hex.hex", expected: "0x5" },
             { group: '自引用检测', name: "复杂自引用8", input: "5.hex.bin.hex", expected: "0x5" },
             { group: '自引用检测', name: "复杂自引用9", input: "abs(max(abs(1), 2))", expected: "2" },
-            { group: '自引用检测', name: "复杂自引用10", input: "max(abs(max(1,2)), 3)", expected: "3" }
+            { group: '自引用检测', name: "复杂自引用10", input: "max(abs(max(1,2)), 3)", expected: "3" },
+
+            // 添加 max、min 和负数的混合测试
+            { group: '负数与函数', name: "max负数基础", input: "max(-1, -2, -3)", expected: "-1" },
+            { group: '负数与函数', name: "min负数基础", input: "min(-1, -2, -3)", expected: "-3" },
+            { group: '负数与函数', name: "max负数运算", input: "max(2 * -3, -2 ** 2)", expected: "-4" },
+            { group: '负数与函数', name: "min负数括号", input: "min(-2 * 3, (-2) ** 2)", expected: "-6" },
+            { group: '负数与函数', name: "负号max", input: "-max(1, 2, 3)", expected: "-3" },
+            { group: '负数与函数', name: "负号min括号", input: "-(min(1, 2, 3))", expected: "-1" },
+            { group: '负数与函数', name: "max幂运算负号", input: "max(-2 ** 2, -(2 ** 2))", expected: "-4" },
+            { group: '负数与函数', name: "min不同形式负数", input: "min((-2) ** 2, -2 ** 2)", expected: "-4" },
+            { group: '负数与函数', name: "嵌套min-max负号", input: "-min(-1, -max(-2, -3))", expected: "1" },
+            { group: '负数与函数', name: "复杂max负数表达式", input: "max(2 + -3, -2 * 3, (-2) ** 3)", expected: "-1" },
+            { group: '负数与函数', name: "复杂max负数表达式", input: "max(2 + -3, -2 ** 2)", expected: "-1" },
+            { group: '负数与函数', name: "复杂max负数表达式", input: "max(2 + -3, (-2) ** 2)", expected: "4" },
+            { group: '负数与函数', name: "复杂max负数表达式", input: "max(0, -1 + (-2))", expected: "0" },
+
         ];
 
         // 使用与原测试页面相同的测试运行函数

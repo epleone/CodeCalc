@@ -33,7 +33,7 @@ function createAssignmentOperator(baseOp) {
 const OPERATORS = {
     // 基本算术运算符
     '+': {
-        precedence: 1,
+        precedence: 2,
         args: 2,
         func: (x, y) => {
             if (typeof x === 'string' || typeof y === 'string') {
@@ -52,7 +52,7 @@ const OPERATORS = {
         description: '加法'
     },
     '-': {
-        precedence: 1,
+        precedence: 2,
         args: 2,
         func: (x, y) => {
             if (typeof x === 'bigint' || typeof y === 'bigint') {
@@ -64,7 +64,7 @@ const OPERATORS = {
         description: '减法'
     },
     '*': {
-        precedence: 2,
+        precedence: 4,
         args: 2,
         func: (x, y) => {
             if (typeof x === 'bigint' || typeof y === 'bigint') {
@@ -76,7 +76,7 @@ const OPERATORS = {
         description: '乘法'
     },
     '/': {
-        precedence: 2,
+        precedence: 4,
         args: 2,
         func: (x, y) => y !== 0 ? x / y : (() => { throw new Error('除数不能为零'); })(),
         position: 'infix',
@@ -85,21 +85,21 @@ const OPERATORS = {
 
     // 高级算术运算符
     '//': {
-        precedence: 2,
+        precedence: 4,
         args: 2,
         func: (x, y) => Math.floor(x / y),
         position: 'infix',
         description: '整除'
     },
     '%': {
-        precedence: 2,
+        precedence: 4,
         args: 2,
         func: (x, y) => x % y,
         position: 'infix',
         description: '取模'
     },
     '**': {
-        precedence: 3,
+        precedence: 5,
         args: 2,
         func: (x, y) => Math.pow(x, y),
         position: 'infix',
@@ -108,7 +108,7 @@ const OPERATORS = {
 
     // 一元运算符
     '#': {
-        precedence: 3,
+        precedence: 6,
         args: 1,
         func: x => x + 1,
         position: 'prefix',
@@ -119,7 +119,7 @@ const OPERATORS = {
         description: '角度转弧度'
     },
     'unary-': {
-        precedence: 1,
+        precedence: 2,
         args: 1,
         func: x => -x,
         position: 'prefix',
@@ -156,7 +156,7 @@ const OPERATORS = {
         description: '按位异或'
     },
     '~': {
-        precedence: 4,
+        precedence: 6,
         args: 1,
         func: x => ~x,
         position: 'prefix',
@@ -167,21 +167,21 @@ const OPERATORS = {
         description: '按位取反'
     },
     '<<': {
-        precedence: 2,
+        precedence: 3,
         args: 2,
         func: (x, y) => x << y,
         position: 'infix',
         description: '左移'
     },
     '>>': {
-        precedence: 2,
+        precedence: 3,
         args: 2,
         func: (x, y) => x >> y,
         position: 'infix',
         description: '右移'
     },
     '>>>': {
-        precedence: 2,
+        precedence: 3,
         args: 2,
         func: (x, y) => x >>> y,
         position: 'infix',
@@ -195,6 +195,7 @@ const OPERATORS = {
         func: (a, b) => b,
         position: 'infix',
         acceptAny: true,
+        isCompoundAssignment: true,
         description: '赋值'
     },
     '+=': {

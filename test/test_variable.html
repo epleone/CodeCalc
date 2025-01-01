@@ -58,7 +58,70 @@
 
         const tests = [
             {
-                group: '基本变量赋值',
+                group: '变量x作为乘号',
+                tests: [
+                    {
+                        name: "x作为变量",
+                        steps: [
+                            { input: "x = 5", expected: "5" },
+                            { input: "x + 3", expected: "8" },
+                            { input: "2 * x", expected: "10" },
+                            { input: "x * x", expected: "25" }
+                        ]
+                    },
+                    {
+                        name: "x变量后不能用x乘法",
+                        steps: [
+                            { input: "x = 5", expected: "5" },
+                            { input: "3x2", expected: "error" },
+                            { input: "2x3", expected: "error" }
+                        ]
+                    },
+                    {
+                        name: "x变量清除后的乘法",
+                        steps: [
+                            { input: "x = 5", expected: "5" },
+                            { 
+                                input: "clearCache",
+                                expected: undefined,
+                                isCommand: true
+                            },
+                            { input: "2x3", expected: "6" }
+                        ]
+                    },
+                    {
+                        name: "x变量与表达式",
+                        steps: [
+                            { input: "x = 2", expected: "2" },
+                            { input: "y = x + 1", expected: "3" },
+                            { input: "y * x", expected: "6" },
+                            { 
+                                input: "clearCache",
+                                expected: undefined,
+                                isCommand: true
+                            },
+                            { input: "2x(3+4)", expected: "14" }
+                        ]
+                    },
+                    {
+                        name: "复杂x变量运算",
+                        steps: [
+                            { input: "x = 2", expected: "2" },
+                            { input: "y = 3", expected: "3" },
+                            { input: "z = x * y", expected: "6" },
+                            { input: "w = z + x", expected: "8" },
+                            { 
+                                input: "clearCache",
+                                expected: undefined,
+                                isCommand: true
+                            },
+                            { input: "2x3x4", expected: "24" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '基本赋值',
                 tests: [
                     {
                         name: "简单赋值",
@@ -68,11 +131,30 @@
                         ]
                     },
                     {
+                        name: "表达式赋值",
+                        steps: [
+                            { input: "b = 2 + 3", expected: "5" },
+                            { input: "b", expected: "5" }
+                        ]
+                    },
+                    {
                         name: "连续赋值",
                         steps: [
-                            { input: "a = 5", expected: "5" },
-                            { input: "a = a + 3", expected: "8" },
-                            { input: "a", expected: "8" }
+                            { input: "c = d = 10", expected: "10" },
+                            { input: "c", expected: "10" },
+                            { input: "d", expected: "10" }
+                        ]
+                    },
+                    {
+                        name: "多重连续赋值",
+                        steps: [
+                            { input: "c = d = 1", expected: "1" },
+                            { input: "c", expected: "1" },
+                            { input: "d", expected: "1" },
+                            { input: "x = y = z = 5", expected: "5" },
+                            { input: "x", expected: "5" },
+                            { input: "y", expected: "5" },
+                            { input: "z", expected: "5" }
                         ]
                     }
                 ]
@@ -271,64 +353,81 @@
                 ]
             },
             {
-                group: 'x变量与乘法测试',
+                group: '复合赋值',
                 tests: [
                     {
-                        name: "x作为变量",
+                        name: "加法赋值",
                         steps: [
                             { input: "x = 5", expected: "5" },
-                            { input: "x + 3", expected: "8" },
-                            { input: "2 * x", expected: "10" },
-                            { input: "x * x", expected: "25" }
+                            { input: "x += 3", expected: "8" },
+                            { input: "x", expected: "8" }
                         ]
                     },
                     {
-                        name: "x变量后不能用x乘法",
+                        name: "减法赋值",
                         steps: [
-                            { input: "x = 5", expected: "5" },
-                            { input: "3x2", expected: "error" },
-                            { input: "2x3", expected: "error" }
+                            { input: "y = 10", expected: "10" },
+                            { input: "y -= 4", expected: "6" },
+                            { input: "y", expected: "6" }
                         ]
                     },
                     {
-                        name: "x变量清除后的乘法",
+                        name: "乘法赋值",
                         steps: [
-                            { input: "x = 5", expected: "5" },
-                            { 
-                                input: "clearCache",
-                                expected: undefined,
-                                isCommand: true
-                            },
-                            { input: "2x3", expected: "6" }
+                            { input: "z = 3", expected: "3" },
+                            { input: "z *= 4", expected: "12" },
+                            { input: "z", expected: "12" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '混合赋值',
+                tests: [
+                    {
+                        name: "变量间赋值",
+                        steps: [
+                            { input: "a = 5", expected: "5" },
+                            { input: "b = a", expected: "5" },
+                            { input: "b += 2", expected: "7" },
+                            { input: "a", expected: "5" }
                         ]
                     },
                     {
-                        name: "x变量与表达式",
+                        name: "复杂表达式赋值",
                         steps: [
                             { input: "x = 2", expected: "2" },
-                            { input: "y = x + 1", expected: "3" },
-                            { input: "y * x", expected: "6" },
-                            { 
-                                input: "clearCache",
-                                expected: undefined,
-                                isCommand: true
-                            },
-                            { input: "2x(3+4)", expected: "14" }
+                            { input: "y = x * 3 + 1", expected: "7" },
+                            { input: "z = (x + y) * 2", expected: "18" }
                         ]
                     },
                     {
-                        name: "复杂x变量运算",
+                        name: "未定义变量错误",
                         steps: [
-                            { input: "x = 2", expected: "2" },
-                            { input: "y = 3", expected: "3" },
-                            { input: "z = x * y", expected: "6" },
-                            { input: "w = z + x", expected: "8" },
-                            { 
-                                input: "clearCache",
-                                expected: undefined,
-                                isCommand: true
-                            },
-                            { input: "2x3x4", expected: "24" }
+                            { input: "undefined_var += 5", expected: "error" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '特殊情况',
+                tests: [
+                    {
+                        name: "非法变量名",
+                        steps: [
+                            { input: "1a = 5", expected: "error" }
+                        ]
+                    },
+                    {
+                        name: "保留字作为变量名",
+                        steps: [
+                            { input: "sin = 5", expected: "error" }
+                        ]
+                    },
+                    {
+                        name: "赋值左侧必须是变量名",
+                        steps: [
+                            { input: "1 + 2 = 3", expected: "error" }
                         ]
                     }
                 ]
