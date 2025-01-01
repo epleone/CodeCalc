@@ -298,16 +298,19 @@ const FUNCTIONS = {
     'asin': {
         func: Math.asin,
         args: 1,
+        repr: x => '弧度: ' + Types.radianToPi(x) + " | 角度: " + Types.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反正弦函数'
     },
     'acos': {
         func: Math.acos,
         args: 1,
+        repr: x => '弧度: ' + Types.radianToPi(x) + " | 角度: " + Types.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反余弦函数'
     },
     'atan': {
         func: Math.atan,
         args: 1,
+        repr: x => '弧度: ' + Types.radianToPi(x) + " | 角度: " + Types.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反正切函数'
     },
 
@@ -348,21 +351,15 @@ const FUNCTIONS = {
         func: x => x * CONSTANTS.PI / 180,
         asProperty: true,
         preventSelfReference: true,       // 禁止自引用
-        repr: x => x.toString() + '弧度', // 格式化输出函数
+        repr: x => '弧度: ' + Types.radianToPi(x) + " | 角度: " + Types.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '度数转换为弧度'
     },
     'rad': {
         args: 1,
-        func: x => {
-            let degrees = x * 180 / CONSTANTS.PI;
-            // 将角度规范化到0-360度之间
-            degrees = degrees % 360;
-            if (degrees < 0) degrees += 360;
-            return degrees;
-        },
+        func: Types.radianToDeg,
         asProperty: true,
         preventSelfReference: true,
-        repr: x => x.toString() + '°',  // 格式化输出函数
+        repr: x => '角度: ' + x.toFixed(3) + '°',  // 格式化输出函数
         description: '弧度转换为度数'
     },
 

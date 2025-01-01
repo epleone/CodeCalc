@@ -111,7 +111,47 @@ const Types = {
             return rounded.toString().replace(/\.?0+$/, '');
         }
         return String(value);
-    }
+    },
+
+    // 辅助函数：尝试弧度数字转换为 PI 的倍数或分数形式
+    radianToPi(ratio) {
+        // 转换为 PI 的倍数
+        const piRatio = ratio / Math.PI;
+
+        // 检查是否为整数倍
+        if (Number.isInteger(piRatio)) {
+            if (piRatio === 1) return 'PI';
+            if (piRatio === -1) return '-PI';
+            return `${piRatio}*PI`;     
+        }
+
+        // 检查常见的分数
+        const denominators = [2, 3, 4, 6, 8, 12];
+        for (const den of denominators) {
+            const num = piRatio * den;
+            if (Math.abs(Math.round(num) - num) < 1e-10) {
+                const roundedNum = Math.round(num);
+                if (Math.abs(roundedNum) === 1) {
+                    return roundedNum > 0 ? `PI/${den}` : `-PI/${den}`;
+                }
+                return `${roundedNum}*PI/${den}`;
+            }
+        }
+
+        // 如果无法简化，返回小数形式
+        return `${piRatio.toFixed(6)}*PI`;
+    },
+
+    // 定义弧度转角度
+    radianToDeg(radian) {
+        let degrees = radian * 180 / Math.PI;
+        // 将角度规范化到0-360度之间
+        degrees = degrees % 360;
+        if (degrees < 0) degrees += 360;
+        return degrees;
+    },
+
+
 };
 
 window.Types = Types; 
