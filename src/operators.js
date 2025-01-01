@@ -235,7 +235,55 @@ const OPERATORS = {
         position: 'infix',
         description: '除法赋值',
         isCompoundAssignment: true
-    }
+    },
+    '&=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => oldValue & rightValue,
+        position: 'infix',
+        description: '按位与赋值',
+        isCompoundAssignment: true
+    },
+    '|=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => oldValue | rightValue,
+        position: 'infix',
+        description: '按位或赋值',
+        isCompoundAssignment: true
+    },
+    '^=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => oldValue ^ rightValue,
+        position: 'infix',
+        description: '按位异或赋值',
+        isCompoundAssignment: true
+    },
+    '<<=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => oldValue << rightValue,
+        position: 'infix',
+        description: '左移赋值',
+        isCompoundAssignment: true
+    },
+    '>>=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => oldValue >> rightValue,
+        position: 'infix',
+        description: '右移赋值',
+        isCompoundAssignment: true
+    },
+    '>>>=': {
+        precedence: 0,
+        args: 2,
+        func: (oldValue, rightValue) => oldValue >>> rightValue,
+        position: 'infix',
+        description: '无符号右移赋值',
+        isCompoundAssignment: true
+    },
 };
 
 // 函数定义

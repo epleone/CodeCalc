@@ -356,27 +356,13 @@
                 group: '复合赋值',
                 tests: [
                     {
-                        name: "加法赋值",
+                        name: "复杂函数复合赋值",
                         steps: [
-                            { input: "x = 5", expected: "5" },
-                            { input: "x += 3", expected: "8" },
-                            { input: "x", expected: "8" }
-                        ]
-                    },
-                    {
-                        name: "减法赋值",
-                        steps: [
-                            { input: "y = 10", expected: "10" },
-                            { input: "y -= 4", expected: "6" },
-                            { input: "y", expected: "6" }
-                        ]
-                    },
-                    {
-                        name: "乘法赋值",
-                        steps: [
-                            { input: "z = 3", expected: "3" },
-                            { input: "z *= 4", expected: "12" },
-                            { input: "z", expected: "12" }
+                            { input: "a = 10", expected: "10" },
+                            { input: "a += max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))", expected: "12.017453292519943" },
+                            { input: "a -= max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))", expected: "10" },
+                            { input: "a *= max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))", expected: "20.17453292519943" },
+                            { input: "a /= max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))", expected: "10" }
                         ]
                     }
                 ]
@@ -428,6 +414,214 @@
                         name: "赋值左侧必须是变量名",
                         steps: [
                             { input: "1 + 2 = 3", expected: "error" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '三角函数复合',
+                tests: [
+                    {
+                        name: "sin基本赋值",
+                        steps: [
+                            { input: "sin(PI/2)", expected: "1" },
+                            { input: "a = sin(PI/2)", expected: "1" },
+                            { input: "a", expected: "1" },
+                            { input: "a += sin(PI/3)", expected: "1.866025" },
+                            { input: "a -= sin(PI/6)", expected: "1.366025" },
+                            { input: "a *= sin(PI/2)", expected: "1.366025" },
+                            { input: "a /= sin(PI/3)", expected: "1.577350" }
+                        ]
+                    },
+                    {
+                        name: "cos基本赋值",
+                        steps: [
+                            { input: "cos(PI/3)", expected: "0.5" },
+                            { input: "b = cos(PI/3)", expected: "0.5" },
+                            { input: "b", expected: "0.5" },
+                            { input: "b += cos(PI/6)", expected: "1.366025" },
+                            { input: "b -= cos(PI/4)", expected: "0.6589186" },
+                            { input: "b *= cos(0)", expected: "0.6589186" },
+                            { input: "b /= cos(PI/6)", expected: "0.76085369" }
+                        ]
+                    },
+                    {
+                        name: "tan基本赋值",
+                        steps: [
+                            { input: "tan(PI/4)", expected: "1" },
+                            { input: "c = tan(PI/4)", expected: "1" },
+                            { input: "c", expected: "1" },
+                            { input: "c += tan(PI/6)", expected: "1.577350" },
+                            { input: "c -= tan(PI/3)", expected: "-0.154700" },
+                            { input: "c *= tan(PI/4)", expected: "-0.154700" },
+                            { input: "c /= tan(PI/6)", expected: "-0.267949" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '对数函数复合',
+                tests: [
+                    {
+                        name: "log基本赋值",
+                        steps: [
+                            { input: "log(100)", expected: "2" },
+                            { input: "x = log(100)", expected: "2" },
+                            { input: "x", expected: "2" },
+                            { input: "x += log(1000)", expected: "5" },
+                            { input: "x -= log(10)", expected: "4" },
+                            { input: "x *= log(100)", expected: "8" },
+                            { input: "x /= log(10)", expected: "8" }
+                        ]
+                    },
+                    {
+                        name: "ln基本赋值",
+                        steps: [
+                            { input: "ln(e)", expected: "1" },
+                            { input: "y = ln(e)", expected: "1" },
+                            { input: "y", expected: "1" },
+                            { input: "y += ln(e*e)", expected: "3" },
+                            { input: "y -= ln(e)", expected: "2" },
+                            { input: "y *= ln(e)", expected: "2" },
+                            { input: "y /= ln(e)", expected: "2" }
+                        ]
+                    },
+                ]
+            },
+            {
+                group: '幂函数复合',
+                tests: [
+                    {
+                        name: "pow基本赋值",
+                        steps: [
+                            { input: "pow(2,3)", expected: "8" },
+                            { input: "p = pow(2,3)", expected: "8" },
+                            { input: "p", expected: "8" },
+                            { input: "p += pow(2,2)", expected: "12" },
+                            { input: "p -= pow(2,1)", expected: "10" },
+                            { input: "p *= pow(2,1)", expected: "20" },
+                            { input: "p /= pow(2,2)", expected: "5" }
+                        ]
+                    },
+                    {
+                        name: "sqrt基本赋值",
+                        steps: [
+                            { input: "sqrt(16)", expected: "4" },
+                            { input: "q = sqrt(16)", expected: "4" },
+                            { input: "q", expected: "4" },
+                            { input: "q += sqrt(9)", expected: "7" },
+                            { input: "q -= sqrt(4)", expected: "5" },
+                            { input: "q *= sqrt(4)", expected: "10" },
+                            { input: "q /= sqrt(4)", expected: "5" }
+                        ]
+                    },
+                    {
+                        name: "exp基本赋值",
+                        steps: [
+                            { input: "exp(1)", expected: "2.718282" },
+                            { input: "r = exp(1)", expected: "2.718282" },
+                            { input: "r", expected: "2.718282" },
+                            { input: "r += exp(0)", expected: "3.718282" },
+                            { input: "r -= exp(0)", expected: "2.718282" },
+                            { input: "r *= exp(0)", expected: "2.718282" },
+                            { input: "r /= exp(0)", expected: "2.718282" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '基本算术运算赋值',
+                tests: [
+                    {
+                        name: "加减乘除赋值",
+                        steps: [
+                            { input: "a = 10 + 5", expected: "15" },
+                            { input: "a", expected: "15" },
+                            { input: "a += 3 * 2", expected: "21" },
+                            { input: "a -= 5 / 2", expected: "18.5" },
+                            { input: "a *= 2 + 1", expected: "55.5" },
+                            { input: "a /= 3 - 1", expected: "27.75" }
+                        ]
+                    },
+                    {
+                        name: "取模和整除赋值",
+                        steps: [
+                            { input: "b = 17 % 5", expected: "2" },
+                            { input: "b", expected: "2" },
+                            { input: "b += 10 % 3", expected: "3" },
+                            { input: "b *= 7 % 4", expected: "9" },
+                            { input: "c = 17 // 5", expected: "3" },
+                            { input: "c", expected: "3" },
+                            { input: "c += 10 // 3", expected: "6" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '位运算赋值',
+                tests: [
+                    {
+                        name: "位与或非赋值",
+                        steps: [
+                            { input: "a = 12 & 10", expected: "8" },
+                            { input: "a", expected: "8" },
+                            { input: "a |= 5", expected: "13" },
+                            { input: "a &= 14", expected: "12" },
+                            { input: "b = ~10", expected: "-11" },
+                            { input: "b", expected: "-11" },
+                            { input: "b ^= 5", expected: "-16" }
+                        ]
+                    },
+                    {
+                        name: "位移赋值",
+                        steps: [
+                            { input: "x = 8 << 2", expected: "32" },
+                            { input: "x", expected: "32" },
+                            { input: "x >>= 3", expected: "4" },
+                            { input: "x <<= 1", expected: "8" },
+                            { input: "y = -8 >>> 2", expected: "-2" },
+                            { input: "y *= -3", expected: "6" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '数学函数赋值',
+                tests: [
+                    {
+                        name: "绝对值和取整赋值",
+                        steps: [
+                            { input: "a = abs(-5)", expected: "5" },
+                            { input: "a", expected: "5" },
+                            { input: "a += abs(-3)", expected: "8" },
+                            { input: "b = a - 5", expected: "3" },
+                            { input: "b", expected: "3" },
+                            { input: "b += 2", expected: "5" }
+                        ]
+                    },
+                    {
+                        name: "最大最小值赋值",
+                        steps: [
+                            { input: "x = max(2,5,3)", expected: "5" },
+                            { input: "x", expected: "5" },
+                            { input: "x += min(8,4,6)", expected: "9" },
+                            { input: "x *= max(2,3)", expected: "27" }
+                        ]
+                    }
+                ]
+            },
+            {
+                group: '进制转换赋值',
+                tests: [
+                    {
+                        name: "进制转换基本赋值",
+                        steps: [
+                            { input: "a = 0xFF", expected: "255" },
+                            { input: "a", expected: "255" },
+                            { input: "a += 0b1010", expected: "265" },
+                            { input: "b = 0o77", expected: "63" },
+                            { input: "b", expected: "63" },
+                            { input: "b *= 0b10", expected: "126" }
                         ]
                     }
                 ]
