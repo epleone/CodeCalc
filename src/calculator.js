@@ -45,6 +45,59 @@ const Calculator = (function() {
 
     // 1. 预处理模块 - 处理属性调用和运算符生成
     function preprocess(expr, operators, functions) {
+        // 添加全角符号替换函数
+        function normalizeSymbols(expr) {
+            // 定义替换映射
+            const symbolMap = {
+                '（': '(',
+                '）': ')',
+                '，': ',',
+                '”': '"',
+                '’': "'",
+                '【': '[',
+                '】': ']',
+                '《': '<',
+                '》': '>',
+                '＋': '+',
+                '－': '-',
+                '＝': '=',
+                '÷': '/',
+                '。': '.',
+                '［': '[',
+                '］': ']',
+                '｛': '{',
+                '｝': '}',
+                '１': '1',
+                '２': '2',
+                '３': '3',
+                '４': '4',
+                '５': '5',
+                '６': '6',
+                '７': '7',
+                '８': '8',
+                '９': '9',
+                '０': '0'
+            };
+
+            // 创建正则表达式匹配所有需要替换的符号
+            const pattern = new RegExp(Object.keys(symbolMap).join('|'), 'g');
+            
+            // 执行替换
+            const normalized = expr.replace(pattern, match => {
+                const replacement = symbolMap[match];
+                if (replacement) {
+                    return replacement;
+                }
+                return match;
+            });
+
+            if (normalized !== expr) {
+                addWarning(`格式化: "${normalized}"`);
+            }
+
+            return normalized;
+        }
+
         // 检查括号匹配
         function checkParentheses(expr) {
             // 移除字符串字面量，避免干扰括号匹配检查
@@ -175,6 +228,9 @@ const Calculator = (function() {
 
             return processed;
         }
+
+        // 替换可能输错的半角符号
+        expr = normalizeSymbols(expr);
 
         // 先处理字符串字面量
         expr = processStringLiterals(expr);

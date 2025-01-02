@@ -268,7 +268,12 @@
             { group: '负数函数', name: "负数最大值", input: "max(-1, -2, -3)", expected: "-1" },
             { group: '负数函数', name: "负数最小值", input: "min(-1, -2, -3)", expected: "-3" },
             { group: '负数函数', name: "负数幂函数", input: "pow(-2, 3)", expected: "-8" },
-            { group: '负数函数', name: "负指数", input: "pow(2, -2)", expected: "0.25" }
+            { group: '负数函数', name: "负指数", input: "pow(2, -2)", expected: "0.25" },
+
+            // 全角符号测试
+            { group: '不规则符号', name: "全角符号", input: "（１＋２）÷３", expected: "1" },
+            { group: '不规则符号', name: "全角符号", input: "max（1，5，3）", expected: "5" },
+            { group: '不规则符号', name: "全角符号", input: "max（1，5，3）。deg", expected: "0.08726646259971647" }
         ];
 
         function runTest(test) {
