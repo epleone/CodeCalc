@@ -18,31 +18,45 @@
     opacity: 1;
 }
 
-.result.has-value:not(.error):hover {
+/* 修改悬停样式 */
+.result.has-value:not(.error):hover:not(.copied) {
     font-weight: 600;
     background-color: transparent;
-    transform: scale(1.01);
-    transition: transform 0.2s ease;
+    transform: scale(1.03);
+    transition: all 0.2s ease;
     color: #1a1a1a;
 }
 
-.result.has-value:not(.error):hover::before {
+.result.has-value:not(.error):hover:not(.copied)::before {
     opacity: 0 !important;
 }
 
-.result.has-value:not(.error):hover::after {
-    content: "点击复制";
+/* 修改悬停时的复制提示 - 使用emoji替换文字 */
+.result.has-value:not(.error):hover:not(.copied)::after {
+    content: " ⎘ ";
     position: absolute;
-    left: 0.625rem;
+    left: 1rem;
     top: 50%;
-    transform: translateY(-50%);
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
+    transform: translate(-50%, -50%);
+    color: #16580c;
     padding: 4px 8px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 18px;
     opacity: 0.9;
     pointer-events: none;
     z-index: 1000;
-    white-space: nowrap;
+}
+
+/* 添加复制后的样式 */
+.result.copied {
+    transition: all 0.3s ease;
+    font-weight: normal;
+    transform: scale(1);
+    cursor: default;
+}
+
+/* 移除动画相关的样式 */
+.result.has-value:not(.error):not(:hover):not(.copied)::after {
+    opacity: 0;
+    transition: opacity 0.2s;
 } 

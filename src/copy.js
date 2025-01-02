@@ -31,12 +31,27 @@ window.addResultClickHandler = function(resultElement) {
     resultElement.addEventListener('click', function() {
         // 检查是否有错误状态
         if (this.classList.contains('error')) {
-            return; // 如果是错误状态，直接返回不执行复制
+            return;
         }
         
         const resultValue = this.querySelector('.result-value').textContent;
         if (resultValue.trim()) {
             copyToClipboard(resultValue);
+            
+            // 添加已复制状态
+            this.classList.add('copied');
+            
+            // 添加鼠标移出事件监听器
+            const mouseLeaveHandler = () => {
+                setTimeout(() => {
+                    this.classList.remove('copied');
+                }, 100); // 添加短暂延迟使过渡更流畅
+                
+                // 移除事件监听器，确保只执行一次
+                this.removeEventListener('mouseleave', mouseLeaveHandler);
+            };
+            
+            this.addEventListener('mouseleave', mouseLeaveHandler);
         }
     });
 }
