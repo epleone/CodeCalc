@@ -144,7 +144,8 @@ function addNewLine() {
     newLine.innerHTML = `
         <input type="text" class="input" placeholder="输入表达式" 
                oninput="handleInput(event)"
-               onkeydown="handleKeyDown(event, this)">
+               onkeydown="handleKeyDown(event, this)"
+               onclick="removeCompletionHint(this)">
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>
@@ -563,6 +564,11 @@ function handleInput(event) {
     
     // 恢复补全状态
     isCompletionEnabled = originalCompletionState;
+    
+    // 添加点击事件监听器来处理光标移动
+    input.addEventListener('click', () => {
+        removeCompletionHint(input);
+    }, { once: true }); // 使用 once 选项确保事件处理器在触发后被移除
 }
 
 // 1. 创建一个统一的事件处理函数
@@ -841,7 +847,8 @@ function insertNewLine(currentLine) {
     newLine.innerHTML = `
         <input type="text" class="input" placeholder="输入表达式" 
                oninput="handleInput(event)"
-               onkeydown="handleKeyDown(event, this)">
+               onkeydown="handleKeyDown(event, this)"
+               onclick="removeCompletionHint(this)">
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>

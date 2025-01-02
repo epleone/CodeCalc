@@ -1,3 +1,6 @@
+@import 'copy-styles.css';
+@import 'completion.css';
+
 body {
     margin: 0;
     padding: 0;
@@ -66,8 +69,6 @@ body {
     white-space: nowrap;
     padding-right: 0.5rem;
     position: relative;
-    transition: all 0.2s ease;
-    cursor: pointer;
 }
 
 .result::before {
@@ -355,224 +356,6 @@ body {
     opacity: 1;
 }
 
-/* 确保消息框在其他内容之上 */
-.expression-line {
-    position: relative;
-    z-index: 1;
-}
-
-.expression-line:hover {
-    z-index: 10;
-}
-
-.completion-hint {
-    position: fixed;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05),
-                0 1px 3px rgba(0, 0, 0, 0.02);
-    min-width: 120px;
-    max-width: 240px;
-    max-height: 160px;
-    overflow-y: auto;
-    z-index: 1000;
-    opacity: 0;
-    transform: translateY(-2px);
-    animation: fadeIn 0.15s ease forwards;
-    padding: 4px 0;
-}
-
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.completion-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.completion-item {
-    padding: 6px 16px;
-    cursor: pointer;
-    color: #555;
-    font-family: "Consolas", "Monaco", "Menlo", monospace;
-    font-size: 14px;
-    line-height: 1.4;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.completion-item:hover {
-    background: rgba(0, 0, 0, 0.04);
-}
-
-.completion-item.selected {
-    background: rgba(0, 0, 0, 0.05);
-    border-left: 3px solid #4CAF50;
-    padding-left: 13px;
-    color: #000;
-    font-weight: 500;
-}
-
-/* 滚动条样式 */
-.completion-hint::-webkit-scrollbar {
-    width: 6px;
-}
-
-.completion-hint::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 4px 0;
-}
-
-.completion-hint::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 3px;
-}
-
-.completion-hint::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.15);
-}
-
-/* 函数补全特殊样式 */
-.completion-item[data-type="function"] {
-    color: #000;
-}
-
-/* 函数补全选中状态 */
-.completion-item[data-type="function"].selected {
-    color: #000;
-    font-weight: bold;
-}
-
-/* 保持属性补全的原有样式 */
-.completion-item[data-type="property"] {
-    color: #607d8b;
-}
-
-.completion-item[data-type="property"].selected {
-    color: #455a64;
-}
-
-/* 常量补全样式保持不变 */
-.completion-item[data-type="constant"] {
-    color: #795548;
-}
-
-.completion-item[data-type="constant"].selected {
-    color: #5d4037;
-}
-
-/* 补全提示的描述信息 */
-.completion-item .description {
-    font-size: 12px;
-    color: #999;
-    margin-left: 12px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    flex-shrink: 0;
-}
-
-.completion-item:hover .description,
-.completion-item.selected .description {
-    opacity: 1;
-}
-
-.message-icon.warning:hover .message-text,
-.message-icon.info:hover .message-text {
-    visibility: visible;
-    opacity: 1;
-}
-
-/* 复制提示的基础样式 */
-.copy-notification {
-    position: fixed;
-    left: 50%;
-    bottom: 32px;
-    transform: translate(-50%, 100%);
-    background: rgba(33, 150, 243, 0.95);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    opacity: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 成功图标 */
-.copy-notification::before {
-    content: "✓";
-    font-weight: bold;
-    font-size: 16px;
-}
-
-/* 显示动画 */
-.copy-notification.show {
-    transform: translate(-50%, 0);
-    opacity: 1;
-}
-
-/* 结果hover效果优化 */
-.result.has-value:not(.error) {
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.result.has-value:not(.error):hover {
-    background: rgba(33, 150, 243, 0.05);
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-/* 复制提示工具提示 */
-.result.has-value:not(.error)::after {
-    content: "点击复制";
-    position: absolute;
-    left: 50%;
-    top: -24px;
-    transform: translateX(-50%) translateY(10px);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-    pointer-events: none;
-    white-space: nowrap;
-}
-
-.result.has-value:not(.error):hover::after {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
-}
-
-.left-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.completion-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
 .toggle-label {
     font-size: 0.875rem;
     color: #6c757d;
@@ -648,13 +431,6 @@ input:checked + .slider:before {
 
 .history-toggle input:checked + .slider:before {
     transform: translateX(-1.25rem);
-}
-
-/* 开关容器样式 */
-.completion-toggle, .history-toggle {
-    display: flex;
-    align-items: center;
-    gap: 5px;
 }
 
 .history-toggle {
@@ -771,11 +547,6 @@ input:checked + .slider:before {
     transition-delay: 0.1s;
 }
 
-.completion-item.selected {
-    color: #ffffff;
-    font-weight: 500;
-}
-
 .message-container {
     position: relative;
     display: flex;
@@ -805,28 +576,15 @@ input:checked + .slider:before {
     opacity: 1;
 }
 
-/* 添加文本样式 */
-.completion-item .text {
-    flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* 开关容器样式 */
+.completion-toggle, .history-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
-/* 函数补全特殊样式 - 选中状态覆盖 */
-.completion-item[data-type="function"].selected {
-    color: #1565C0;
-}
-
-.completion-item[data-type="property"].selected {
-    color: #455a64;
-}
-
-.completion-item[data-type="constant"].selected {
-    color: #5d4037;
-}
-
-/* 选中状态下描述文本的颜色也稍微加深 */
-.completion-item.selected .description {
-    color: #666;
+.left-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
