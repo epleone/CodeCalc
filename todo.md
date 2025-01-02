@@ -39,6 +39,9 @@
 3. 零矩阵（Zero Matrix）：
 所有元素均为零的矩阵
 
+使用 [ml-matrix](https://www.npmjs.com/package/ml-matrix) 库
+使用 Rollup 打包 ml-matrix
+
 
 ## 改进方案
 
