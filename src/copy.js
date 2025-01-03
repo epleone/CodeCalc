@@ -29,8 +29,8 @@ window.showCopyNotification = function() {
 // 为结果添加点击事件处理
 window.addResultClickHandler = function(resultElement) {
     resultElement.addEventListener('click', function() {
-        // 检查是否有错误状态
-        if (this.classList.contains('error')) {
+        // 如果已经在复制状态，直接返回
+        if (this.classList.contains('copied') || this.classList.contains('error')) {
             return;
         }
         
@@ -41,17 +41,10 @@ window.addResultClickHandler = function(resultElement) {
             // 添加已复制状态
             this.classList.add('copied');
             
-            // 添加鼠标移出事件监听器
-            const mouseLeaveHandler = () => {
-                setTimeout(() => {
-                    this.classList.remove('copied');
-                }, 100); // 添加短暂延迟使过渡更流畅
-                
-                // 移除事件监听器，确保只执行一次
-                this.removeEventListener('mouseleave', mouseLeaveHandler);
-            };
-            
-            this.addEventListener('mouseleave', mouseLeaveHandler);
+            // 1.5秒后自动移除复制状态
+            setTimeout(() => {
+                this.classList.remove('copied');
+            }, 1500);
         }
     });
 }
