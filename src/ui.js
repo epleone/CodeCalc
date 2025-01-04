@@ -1,5 +1,6 @@
 import Calculator from './calculator.js';
 import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
+import * as Tag from './tag.js';
 
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {
@@ -145,6 +146,7 @@ function addNewLine() {
     const newLine = document.createElement('div');
     newLine.className = 'expression-line';
     newLine.innerHTML = `
+        ${Tag.createTagContainerHTML()}
         <input type="text" class="input" placeholder="输入表达式" 
                oninput="handleInput(event)"
                onkeydown="handleKeyDown(event, this)"
@@ -159,6 +161,9 @@ function addNewLine() {
         </div>
     `;
     container.appendChild(newLine);
+    
+    // 初始化标签功能
+    Tag.initializeTagButton(newLine);
     
     // 为新行的结果添加点击处理
     const result = newLine.querySelector('.result');
@@ -695,26 +700,36 @@ function removeCompletionHint(input) {
     hasUsedArrowKeys = false;
 }
 
+
+
 // 修改 clearAll 函数
 function clearAll() {
     const container = document.getElementById('expression-container');
+    // 保留第一行，删除其他行
     const firstLine = container.querySelector('.expression-line');
     container.innerHTML = '';
     container.appendChild(firstLine);
-    
+
+    // 清空第一行的内容
     const input = firstLine.querySelector('.input');
     const result = firstLine.querySelector('.result');
-    const messageIcon = firstLine.querySelector('.message-icon');
-    
     input.value = '';
     result.innerHTML = '';
     result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
-    messageIcon.style.display = 'none';
-    
-    // 直接使用全局的 Calculator 对象
+
+    // 重置标签状态
+    const tagContainer = firstLine.querySelector('.tag-container');
+    const existingTag = tagContainer.querySelector('.tag');
+    if (existingTag) {
+        existingTag.remove();
+        tagContainer.querySelector('.tag-button').style.display = 'flex';
+    }
+
+    // 清除计算缓存
     Calculator.clearAllCache();
     
-    input.focus();
+    // 聚焦到输入框
+    firstLine.querySelector('.input').focus();
 }
 
 function handleContainerClick(event) {
@@ -836,6 +851,7 @@ function insertNewLine(currentLine) {
     const newLine = document.createElement('div');
     newLine.className = 'expression-line';
     newLine.innerHTML = `
+        ${Tag.createTagContainerHTML()}
         <input type="text" class="input" placeholder="输入表达式" 
                oninput="handleInput(event)"
                onkeydown="handleKeyDown(event, this)"
@@ -936,7 +952,21 @@ function isLastExpression(line) {
     return true;
 }
 
-// 在文件末尾添加导出语句
+// 添加初始化函数
+function initializeUI() {
+    // 初始化所有行的标签功能
+    document.querySelectorAll('.expression-line').forEach(line => {
+        Tag.initializeTagButton(line);
+    });
+
+    // 将标签相关函数添加到全局作用域
+    Object.assign(window, Tag);
+}
+
+// 在文档加载完成后初始化UI
+document.addEventListener('DOMContentLoaded', initializeUI);
+
+// 导出函数
 export {
     calculateLine,
     addNewLine,
@@ -949,5 +979,6 @@ export {
     removeCompletionHint,
     clearAll,
     handleContainerClick,
-    handleMessageIconClick
+    handleMessageIconClick,
+    initializeUI
 };
