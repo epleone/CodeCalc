@@ -294,15 +294,15 @@ function handleKeyDown(event, input) {
                     const hasExpression = expression !== '';
                     
                     if (hasExpression) {
-                                if (currentIndex === lines.length - 1) {
-                                    addNewLine();
-                                } else {
-                                    const nextLine = currentLine.nextElementSibling;
-                                    if (nextLine) {
-                                        nextLine.querySelector('.input').focus();
-                                    }
-                                }
+                        if (currentIndex === lines.length - 1) {
+                            addNewLine();
+                        } else {
+                            const nextLine = currentLine.nextElementSibling;
+                            if (nextLine) {
+                                nextLine.querySelector('.input').focus();
                             }
+                        }
+                    }
                     return;
                 }
                 
