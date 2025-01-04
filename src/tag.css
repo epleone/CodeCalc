@@ -4,6 +4,7 @@
     left: 3px;
     top: 1px;
     z-index: 2;
+    overflow: visible;
 }
 
 .tag-button {
@@ -117,4 +118,42 @@
 
 .tag-input:focus {
     background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* 添加提示框样式 */
+.tag-tooltip {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s ease;
+    max-width: 200px;
+    white-space: nowrap;
+    /* 防止出现滚动条 */
+    overflow: hidden;
+}
+
+.tag-tooltip.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 标签图标样式 */
+.tag-icon {
+    transition: all 0.2s ease;
+    display: inline-block;
+    font-weight: normal;
+    transform: scale(1);
+}
+
+/* 悬停时的放大加粗效果 */
+.tag-button:hover .tag-icon {
+    transform: scale(1.2);
+    font-weight: bold;
 } 
