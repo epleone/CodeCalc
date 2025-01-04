@@ -5,7 +5,7 @@
 
 
 // 类型转换工具
-const Types = {
+const Utils = {
     // 类型检查
     isNumber(value) {
         return (typeof value === 'number' && !isNaN(value)) || typeof value === 'bigint';
@@ -154,4 +154,4 @@ const Types = {
 
 };
 
-window.Types = Types; 
+window.Utils = Utils; 

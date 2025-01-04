@@ -15,20 +15,6 @@ const SEPARATORS = {
     ',': { description: '参数分隔符' }
 };
 
-// 在 OPERATORS 定义之前添加辅助函数
-function createAssignmentOperator(baseOp) {
-    return {
-        precedence: 1,
-        args: 2,
-        func: (a, b) => b,  // 赋值运算符的基本行为
-        position: 'infix',
-        types: [TYPE.ANY, TYPE.NUMBER],
-        description: `${baseOp}赋值`,
-        isAssignment: true,
-        baseOp: baseOp
-    };
-}
-
 // 操作符定义
 const OPERATORS = {
     // 基本算术运算符
@@ -201,7 +187,7 @@ const OPERATORS = {
     '+=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => Types.toNumber(oldValue) + Types.toNumber(rightValue),
+        func: (oldValue, rightValue) => Utils.toNumber(oldValue) + Utils.toNumber(rightValue),
         position: 'infix',
         description: '加法赋值',
         isCompoundAssignment: true
@@ -209,7 +195,7 @@ const OPERATORS = {
     '-=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => Types.toNumber(oldValue) - Types.toNumber(rightValue),
+        func: (oldValue, rightValue) => Utils.toNumber(oldValue) - Utils.toNumber(rightValue),
         position: 'infix',
         description: '减法赋值',
         isCompoundAssignment: true
@@ -217,7 +203,7 @@ const OPERATORS = {
     '*=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => Types.toNumber(oldValue) * Types.toNumber(rightValue),
+        func: (oldValue, rightValue) => Utils.toNumber(oldValue) * Utils.toNumber(rightValue),
         position: 'infix',
         description: '乘法赋值',
         isCompoundAssignment: true
@@ -226,11 +212,11 @@ const OPERATORS = {
         precedence: 0,
         args: 2,
         func: (oldValue, rightValue) => {
-            const divisor = Types.toNumber(rightValue);
+            const divisor = Utils.toNumber(rightValue);
             if (divisor === 0) {
                 throw new Error('除数不能为零');
             }
-            return Types.toNumber(oldValue) / divisor;
+            return Utils.toNumber(oldValue) / divisor;
         },
         position: 'infix',
         description: '除法赋值',
@@ -347,19 +333,19 @@ const FUNCTIONS = {
     'asin': {
         func: Math.asin,
         args: 1,
-        repr: x => '弧度: ' + Types.radianToPi(x) + " | 角度: " + Types.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
+        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反正弦函数'
     },
     'acos': {
         func: Math.acos,
         args: 1,
-        repr: x => '弧度: ' + Types.radianToPi(x) + " | 角度: " + Types.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
+        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反余弦函数'
     },
     'atan': {
         func: Math.atan,
         args: 1,
-        repr: x => '弧度: ' + Types.radianToPi(x) + " | 角度: " + Types.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
+        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反正切函数'
     },
 
@@ -400,12 +386,12 @@ const FUNCTIONS = {
         func: x => x * CONSTANTS.PI / 180,
         asProperty: true,
         preventSelfReference: true,       // 禁止自引用
-        repr: x => '弧度: ' + Types.radianToPi(x) + " | 角度: " + Types.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
+        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '度数转换为弧度'
     },
     'rad': {
         args: 1,
-        func: Types.radianToDeg,
+        func: Utils.radianToDeg,
         asProperty: true,
         preventSelfReference: true,
         repr: x => '角度: ' + x.toFixed(3) + '°',  // 格式化输出函数

@@ -15,8 +15,7 @@ const Calculator = (function() {
     const CONSTANTS = window.CONSTANTS;
     const DELIMITERS = window.DELIMITERS;
     const SEPARATORS = window.SEPARATORS;
-    const TYPE = window.TYPE;
-    const Types = window.Types;
+    const Utils = window.Utils;
 
     // 添加变量字典
     const variables = new Map();
@@ -662,7 +661,7 @@ const Calculator = (function() {
     function convertArguments(args, acceptAny, nodeArgs, context) {
         const { name, type } = context;
         if (!acceptAny) {
-            return args.map(arg => Types.toNumber(arg));
+            return args.map(arg => Utils.toNumber(arg));
         }
         return args;
     }
@@ -681,7 +680,7 @@ const Calculator = (function() {
                 return variables.get(node.value);
             }
             // 如果不是变量，则转换为数字
-            return Types.toNumber(node.value);
+            return Utils.toNumber(node.value);
 
             // return node.value;
         }
