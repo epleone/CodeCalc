@@ -32,7 +32,7 @@
     display: inline-flex;
     align-items: center;
     padding: 0 12px;
-    background-color: #8E8E93;  /* Apple 系统灰色 */
+    background-color: #9BA4B4;  /* 柔和的蓝灰色 */
     border-radius: 16px;
     font-size: 13px;
     color: white;
@@ -44,17 +44,17 @@
     white-space: nowrap;
     height: 24px;
     box-shadow: 
-        0 1px 2px rgba(0, 0, 0, 0.06),
-        0 2px 4px rgba(0, 0, 0, 0.06);
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.04);
     position: relative;
     padding-right: 24px;  /* 为删除按钮留出空间 */
 }
 
 .tag:hover {
-    background-color: #636366;  /* 稍深的灰色 */
+    background-color: #7D8597;  /* 稍深的蓝灰色 */
     box-shadow: 
-        0 2px 4px rgba(0, 0, 0, 0.08),
-        0 4px 8px rgba(0, 0, 0, 0.06);
+        0 2px 4px rgba(0, 0, 0, 0.06),
+        0 4px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* 删除按钮 */
