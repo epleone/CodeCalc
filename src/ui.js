@@ -205,9 +205,7 @@ function handleLineDelete(input) {
         previousInput.selectionEnd = previousInput.value.length;
     }
     
-    // 清除缓存并重新计算所有行
-    Calculator.clearAllCache();  // 清除缓存
-    recalculateAllLines();      // 重新计算所有行
+    recalculateAllLines();      // 清除缓存并重新计算所有行
     
     // 恢复补全状态
     isCompletionEnabled = originalCompletionState;
@@ -296,15 +294,15 @@ function handleKeyDown(event, input) {
                     const hasExpression = expression !== '';
                     
                     if (hasExpression) {
-                        if (currentIndex === lines.length - 1) {
-                            addNewLine();
-                        } else {
-                            const nextLine = currentLine.nextElementSibling;
-                            if (nextLine) {
-                                nextLine.querySelector('.input').focus();
+                                if (currentIndex === lines.length - 1) {
+                                    addNewLine();
+                                } else {
+                                    const nextLine = currentLine.nextElementSibling;
+                                    if (nextLine) {
+                                        nextLine.querySelector('.input').focus();
+                                    }
+                                }
                             }
-                        }
-                    }
                     return;
                 }
                 
@@ -546,24 +544,14 @@ function handleInput(event) {
         }
     }
     
-    // 计算当前行
-    calculateLine(input);
-    
-    // 临时保存补全状态
-    const originalCompletionState = isCompletionEnabled;
-    // 临时禁用补全
-    isCompletionEnabled = false;
-    
-    // 依次计算后面所有有输入的行
-    for (let i = currentIndex + 1; i < lines.length; i++) {
-        const nextInput = lines[i].querySelector('.input');
-        if (nextInput.value.trim()) {  // 只计算有输入内容的行
-            calculateLine(nextInput);
-        }
+    // 如果时最后一个表达式，则计算当前行
+    if (isLastExpression()) {
+        // 计算当前行
+        calculateLine(input);
+    }else{
+        // 清空状态并重新计算所有行
+        recalculateAllLines();
     }
-    
-    // 恢复补全状态
-    isCompletionEnabled = originalCompletionState;
     
     // 添加点击事件监听器来处理光标移动
     input.addEventListener('click', () => {
@@ -903,13 +891,17 @@ function insertNewLine(currentLine) {
     });
 } 
 
-// 添加重新计算所有行的辅助函数
+// 添加辅助函数，清除缓存并重新计算所有行
 function recalculateAllLines() {
     // 临时保存补全状态
     const originalCompletionState = isCompletionEnabled;
     // 临时禁用补全
     isCompletionEnabled = false;
     
+    // 清除缓存
+    Calculator.clearAllCache();
+
+    // 重新计算所有行
     const lines = document.querySelectorAll('.expression-line');
     lines.forEach(line => {
         const input = line.querySelector('.input');
@@ -921,3 +913,22 @@ function recalculateAllLines() {
     // 恢复补全状态
     isCompletionEnabled = originalCompletionState;
 } 
+
+// 添加辅助函数，判断当前行是否是最后一个表达式
+function isLastExpression(line) {
+    const container = document.getElementById('expression-container');
+    const lines = container.querySelectorAll('.expression-line');
+    
+    // 获取当前行的索引
+    const currentIndex = Array.from(lines).indexOf(line);
+    
+    // 检查后面的行是否都没有输入内容
+    for (let i = currentIndex + 1; i < lines.length; i++) {
+        const input = lines[i].querySelector('.input');
+        if (input.value.trim()) {
+            return false;
+        }
+    }
+    
+    return true;
+}
