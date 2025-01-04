@@ -162,12 +162,21 @@ const Calculator = (function() {
 
         // 检查变量名是否合法
         function checkVariableName(expr) {
-            // 匹配可能的赋值表达式
-            const assignmentRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*=/g;
+            // 修改正则表达式，只匹配单个等号的赋值
+            // 使用负向前瞻确保等号前面不是其它赋值运算符
+            const assignmentRegex = /([^=+\-*/%&|^<>!~]+?)(?<![\+\-\*\/%&\|\^<>!~])\s*=/g;
             let match;
             
             while ((match = assignmentRegex.exec(expr)) !== null) {
-                const varName = match[1];
+                const varName = match[1].trim();  // 去除前后空格
+                
+                // 检查是否是合法的变量名格式
+                if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
+                    if (/\s/.test(varName)) {
+                        throw new Error(`变量名 "${varName}" 不能包含空格`);
+                    }
+                    throw new Error(`变量名 "${varName}" 格式不正确，只能包含字母、数字和下划线，且不以数字开头`);
+                }
                 
                 // 修改检查的前缀
                 if (varName.startsWith('_ccstr_i')) {
@@ -711,11 +720,6 @@ const Calculator = (function() {
                 if (left.type !== 'identifier' && left.type !== 'string') {
                     throw new Error('赋值运算符左侧必须是变量名');
                 }
-
-                // 检查左侧是否是合法的变量名
-                if (!isValidVariableName(left.value)) {
-                    throw new Error(`"${left.value}" 不是合法的变量名`);
-                }
                 
                 // 计算右侧表达式
                 const rightValue = evaluate(right, operators, functions, depth + 1);
@@ -844,17 +848,7 @@ const Calculator = (function() {
         }
     }
 
-    // 6. 辅助函数
-    function isValidVariableName(name) {
-        // 检查是否是合法的变量名（字母或下划线开头，后面可以是字母、数字或下划线）
-        return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name) && 
-               !OPERATORS.hasOwnProperty(name) &&
-               !FUNCTIONS.hasOwnProperty(name) &&
-               !CONSTANTS.hasOwnProperty(name) &&
-               !/^_ccstr_i/.test(name);  // 修改检查的前缀
-    }
-
-    // 7. 返回公共API
+    // 6. 返回公共API
     return {
         calculate(expr) {
             // TODO: 添加超时处理
