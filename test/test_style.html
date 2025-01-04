@@ -4,197 +4,16 @@
     <meta charset="UTF-8">
     <title>样式测试页面</title>
     <link rel="stylesheet" href="../src/styles.css">
-    <style>
-        /* 测试页面特定样式 */
-        body {
-            background-color: #fff;
-        }
-        
-        .container {
-            background-color: #fff;
-        }
-        
-        .test-section {
-            margin: 20px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #fff;
-        }
-        
-        .test-section h2 {
-            margin-top: 0;
-            color: #333;
-        }
-        
-        .test-description {
-            margin: 10px 0;
-            color: #666;
-        }
-        
-        .copy-tip {
-            margin-top: 10px;
-            padding: 8px 12px;
-            background-color: #f8f9fa;
-            border-left: 4px solid #6c757d;
-            color: #666;
-            font-size: 14px;
-            border-radius: 0 4px 4px 0;
-            font-weight: bold;
-        }
-        
-        .copy-tip i {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background-color: #6c757d;
-            border-radius: 50%;
-            vertical-align: middle;
-            margin-right: 6px;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="test-section">
-            <h2>基本输入行测试</h2>
-            <div class="test-description">测试表达式输入行的基本样式和布局</div>
+    <div class="container" onclick="handleContainerClick(event)">
+        <div id="expression-container">
             <div class="expression-line">
-                <input type="text" class="input" value="1 + 2" placeholder="输入表达式">
+                <input type="text" class="input" placeholder="输入表达式，例如: a = 1 + 2 * 3" 
+                       oninput="handleInput(event)"
+                       onkeydown="handleKeyDown(event, this)">
                 <div class="result-container">
-                    <div class="result has-input has-value">
-                        <span class="result-value">3</span>
-                    </div>
-                </div>
-            </div>
-            <div class="copy-tip">
-                <i></i>点击结果可以复制到剪贴板
-            </div>
-        </div>
-
-        <div class="test-section">
-            <h2>消息图标测试</h2>
-            <div class="test-description">测试不同类型的消息图标和提示</div>
-            
-            <div class="expression-line">
-                <input type="text" class="input" value="sqrt(-1)" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input error">
-                        <span class="result-value">sqrt函数不支持负数</span>
-                    </div>
-                    <div class="message-icon error" style="display: inline;">
-                        <div class="message-text">sqrt函数不支持负数</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expression-line">
-                <input type="text" class="input" value="1/0" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input error">
-                        <span class="result-value">错误</span>
-                    </div>
-                    <div class="message-icon error" style="display: inline;">
-                        <div class="message-text">除数不能为零</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expression-line">
-                <input type="text" class="input" value="1 + +" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input error">
-                        <span class="result-value">错误</span>
-                    </div>
-                    <div class="message-icon error" style="display: inline;">
-                        <div class="message-text">表达式无效</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expression-line">
-                <input type="text" class="input" value="a + 1" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input error">
-                        <span class="result-value">错误</span>
-                    </div>
-                    <div class="message-icon error" style="display: inline;">
-                        <div class="message-text">未定义的变量 a</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expression-line">
-                <input type="text" class="input" value="asin(0.5)" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input has-value info">
-                        <span class="result-value">0.523599</span>
-                    </div>
-                    <div class="message-icon info" style="display: inline;">
-                        <div class="message-text">30.000000°</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expression-line">
-                <input type="text" class="input" value="150°" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input has-value info">
-                        <span class="result-value">2.617994</span>
-                    </div>
-                    <div class="message-icon info" style="display: inline;">
-                        <div class="message-text">2.617994 弧度</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expression-line">
-                <input type="text" class="input" value="a = 100" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input has-value info">
-                        <span class="result-value">100</span>
-                    </div>
-                    <div class="message-icon info" style="display: inline;">
-                        <div class="message-text">变量 a：100</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expression-line">
-                <input type="text" class="input" value="b += 50" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input error">
-                        <span class="result-value">错误</span>
-                    </div>
-                    <div class="message-icon error" style="display: inline;">
-                        <div class="message-text">赋值表达式计算错误: 未定义的变量 b</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expression-line">
-                <input type="text" class="input" value="ob101" placeholder="输入表达式">
-                <div class="result-container">
-                    <div class="result has-input has-value warning">
-                        <span class="result-value">5</span>
-                    </div>
-                    <div class="message-icon warning" style="display: inline;">
-                        <div class="message-text">已显示二进制0b</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="test-section">
-            <h2>自动补全测试</h2>
-            <div class="test-description">测试输入提示和自动补全效果</div>
-            <div class="expression-line">
-                <input type="text" class="input" 
-                       placeholder="输入表达式，试试输入 's' 然后按 Tab"
-                       oninput="window.handleInput(event)"
-                       onkeydown="window.handleKeyDown(event, this)">
-                <div class="result-container">
-                    <div class="result has-input">
+                    <div class="result">
                         <span class="result-value"></span>
                     </div>
                     <div class="message-icon" style="display: none;">
@@ -202,61 +21,103 @@
                     </div>
                 </div>
             </div>
-            <div class="test-description" style="margin-top: 10px;">
-                提示：<br>
-                1. 输入 's' 然后按 Tab 键，将自动补全为 'sin('<br>
-                2. 输入 'co' 然后按 Tab 键，将自动补全为 'cos('<br>
-                3. 输入 'sq' 然后按 Tab 键，将自动补全为 'sqrt('<br>
-                4. 更多补全：log(, ln(, exp(, pow(, max(, min( 等
-            </div>
         </div>
-        <div class="copy-notification">已复制到剪贴板</div>
     </div>
 
-    <!-- 先加载依赖 -->
+    <div class="copy-notification">已复制到剪贴板</div>
+
+    <div class="footer">
+        <div class="left-section">
+            <div class="tooltip">
+                <div class="tooltip-icon">?</div>
+                <div class="tooltip-text">
+                    • Shift + Enter: 下方插入行<br>
+                    • Delete: 删除当前行<br>
+                    <br>
+                    变量：<br>
+                    • 基本赋值：a = 5<br>
+                    • 复合赋值：+=, -=, *=, &=, |= 等<br>
+                    <br>
+                    基本运算：<br>
+                    • 算术运算：+, -, *, /, //, %, **<br>
+                    • 位运算：&, |, ^, ~, <<, >>, >>><br>
+                    <br>
+                    数学函数：<br>
+                    • 三角函数：sin, cos, tan, asin, acos, atan, sinh, cosh, tanh<br>
+                    • 对数指数：log, ln, exp, pow, sqrt<br>
+                    • 其他：abs, max, min<br>
+                    <br>
+                    其它：<br>
+                    • 字符串操作：+, .length, .upper, .lower <br>
+                    • base64 编解码：base64(s) 或 .base64, unbase64(s) 或 .unbase64<br>
+                    • 角度转换 度数： 45° 或 .deg 弧度：rad(PI) <br>
+                    • 进制转换：0b123, 0o567, 0xffd, bin, oct, hex<br>
+                    • 常量：PI: 3.14159... e: 2.71828...<br>
+                    <!-- <br> -->
+                    <!-- <div class="github-link">
+                        <svg height="16" viewBox="0 0 16 16" width="16" style="vertical-align: text-bottom; margin-right: 4px;"><path fill="#fff" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                        <a href="https://github.com/epleone/CodeCalc" target="_blank" style="color: #fff; text-decoration: none; font-size: 14px;">CodeCalc</a>
+                    </div> -->
+                </div>
+            </div>
+            <div class="completion-toggle">
+                <label class="switch">
+                    <input type="checkbox" id="completionToggle" checked>
+                    <span class="slider round"></span>
+                </label>
+                <span class="toggle-label">函数补全</span>
+            </div>
+        </div>
+        
+        <div class="right-section">
+            <div class="history-toggle">
+                <label class="switch">
+                    <input type="checkbox" id="historyToggle" checked>
+                    <span class="slider round"></span>
+                </label>
+                <span class="toggle-label">保留历史</span>
+            </div>
+            <button class="clear-button" onclick="clearAll()">清空</button>
+        </div>
+    </div>
+
     <script type="module">
         import Calculator from '../src/calculator.js';
-        
-        // 添加到全局作用域
-        // window.Calculator = Calculator;
-        
-        // 将 calculate 函数添加到全局作用域
-        window.calculate = Calculator.calculate;
+        import * as UI from '../src/ui.js';
+        import * as Copy from '../src/copy.js';
 
-        // 导入所有函数
-        import * as UI from './ui.js';
-        import * as Copy from './copy.js';
+        // 等待 DOM 加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化计算器
+            window.calculate = Calculator.calculate;
+            
+            // 将函数添加到全局作用域
+            Object.assign(window, UI);
+            Object.assign(window, Copy);
 
-        // 将函数添加到全局作用域(window对象)
-        Object.assign(window, UI);
-        Object.assign(window, Copy);
+            // 执行测试用例
+            const testCases = [
+                "a = 1 + 2 x 3",
+                "x = asin(0.5)",
+                "a 1 = 0",
+                "0b1010",
+                "s = 'hello' + ' world'",
+                "base64(s)",
+                "unbase64('aGVsbG8=')",
+                "PI.rad",
+                "0x3d9",
+                "bin(1010)",
+            ];
 
-    </script>
-
-    <script>
-
-        // 初始化所有表达式的计算结果
-        document.querySelectorAll('.expression-line').forEach(line => {
-            const input = line.querySelector('.input');
-            if (input.value && !input.hasAttribute('oninput')) {
-                // 直接使用 ui.js 中的函数
-                window.calculateLine(input);
-            }
-        });
-
-        // 为所有结果添加复制功能
-        document.querySelectorAll('.result').forEach(result => {
-            result.addEventListener('click', () => {
-                const resultValue = result.querySelector('.result-value').textContent;
-                if (resultValue.trim()) {
-                    navigator.clipboard.writeText(resultValue).then(() => {
-                        const notification = document.querySelector('.copy-notification');
-                        notification.classList.add('show');
-                        setTimeout(() => {
-                            notification.classList.remove('show');
-                        }, 1000);
-                    });
+            // 添加必要的行
+            testCases.forEach((testCase, index) => {
+                if (index > 0) {
+                    addNewLine();
                 }
+                const inputs = document.querySelectorAll('.input');
+                const input = inputs[index];
+                input.value = testCase;
+                input.dispatchEvent(new Event('input'));
             });
         });
     </script>

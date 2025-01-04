@@ -808,8 +808,9 @@ const Calculator = (function() {
             // 直接使用 ast 节点
             let targetNode = ast;
 
-            // 如果是赋值运算符，获取右侧表达式节点
-            if (targetNode.isCompoundAssignment) {
+            // 如果是赋值运算符(只支持等号)，获取右侧表达式节点
+            //if (targetNode.type === 'operator' && OPERATORS[targetNode.value]?.isCompoundAssignment) {
+            if (targetNode.type === 'operator' && targetNode.value === '=') {
                 targetNode = targetNode.args[1];
             }
 
