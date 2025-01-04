@@ -1,25 +1,27 @@
 // 只导入 Matrix 类
 import { Matrix } from 'ml-matrix';
 
-// 创建一个简单的矩阵
-const matrix = new Matrix([[1, 2], [3, 4]]);
-// console.log(typeof matrix);
-
-if (matrix instanceof Matrix) {
-    console.log('matrix 是 Matrix 类型的实例');
-} else {
-    console.log('matrix 不是 Matrix 类型的实例');
-}
-
-// console.log('矩阵内容：');
-// console.log(matrix); 
-
-const a = [1, 2]
-const b = [3, 4]
-const m = new Matrix([a, b]);
-// console.log(m);
 
 export function test() {
+
+    // 创建一个简单的矩阵
+    const matrix = new Matrix([[1, 2], [3, 4]]);
+    // console.log(typeof matrix);
+
+    if (matrix instanceof Matrix) {
+        console.log('matrix 是 Matrix 类型的实例');
+    } else {
+        console.log('matrix 不是 Matrix 类型的实例');
+    }
+
+    // console.log('矩阵内容：');
+    // console.log(matrix); 
+
+    const a = [1, 2]
+    const b = [3, 4]
+    const m = new Matrix([a, b]);
+    // console.log(m);
+
     var a1 = Matrix.columnVector([1, 2, 3]);
     var a2 = Matrix.columnVector([4, 5, 6]);
     var a3 = Matrix.columnVector([7, 8, 9]);
@@ -46,3 +48,242 @@ export function test() {
     var m3 = Matrix.eye(3);
     console.log(m3);
 }
+
+// 判断是否是matrix
+export function isMatrix(obj) {
+    return obj instanceof Matrix;
+}
+
+// 判断是否是数字
+function isNumber(obj) {
+    return typeof obj === 'number' || typeof obj === 'bigint';
+}
+
+// 检查参数数量和类型，保证至少有一个是 Matrix
+function checkArgs(args0, args1) {
+    if (!isNumber(args0) || !isMatrix(args1)) {
+        throw new Error('参数类型错误');
+    }
+
+    // 如果 都是数字，则返回错误
+    if (isNumber(args0) && isNumber(args1)) {
+        throw new Error('args0, args1都不是 Matrix');
+    }
+}
+
+
+
+export function str2vec(str) {
+    // 传入字符串 `[1, 2, 3]` 或者 `[1 2 3]`,将其转换成 columnVector 返回
+    str = str.trim();
+    if (str[0] !== '[' || str[str.length-1] !== ']') {
+        throw new Error('vector格式错误，请使用方括号[]');
+    }
+    
+    // 去掉首尾的 [ ]
+    str = str.substring(1, str.length-1);
+    // 将逗号前后的空格去掉
+    str = str.replace(/\s*,\s*/g, ',');
+
+    // 既有逗号分隔，又有空格分隔，抛出错误
+    if (str.includes(',') && str.includes(' ')) {
+        throw new Error('vector格式错误, 不要混用逗号和空格');
+    }
+
+    // 处理逗号分隔和空格分隔两种情况
+    let numbers;
+    if (str.includes(',')) {
+        numbers = str.split(',').map(s => parseFloat(s.trim()));
+    } else {
+        numbers = str.split(/\s+/).map(s => parseFloat(s.trim()));
+    }
+
+    if (numbers.length === 0) {
+        throw new Error('vector 长度为0');
+    }
+    
+    // 如果有非法数字，则抛出错误
+    for (let i = 0; i < numbers.length; i++) {
+        if (isNaN(numbers[i])) {
+            throw new Error(`vector${i+1}: ${numbers[i]} 不是数字`);
+        }
+    }  
+    return Matrix.columnVector(numbers);
+}
+
+export function vec2list(vec) {
+    return vec.to1DArray();    // 返回一维数组
+    // return vec.to2DArray(); // 返回二维数组
+}
+
+export function str2Matrix(str) {
+    //  传入字符串 `{1, 2, 3;4,5,6; 7, 8, 9}` 或者 `{1 2 3;4 5 6; 7 8 9}`,将其转换成Matrix返回
+    str = str.trim();
+    if (str[0] !== '{' || str[str.length-1] !== '}') {
+        throw new Error('matrix格式错误，请使用大括号{}');
+    }
+
+    // 去掉首尾的大括号
+    str = str.substring(1, str.length-1);
+    // 将逗号前后的空格去掉
+    str = str.replace(/\s*,\s*/g, ',');
+    // 将分号前后的空格去掉
+    str = str.replace(/\s*;\s*/g, ';');
+
+    console.log(str);
+    // 既有逗号分隔，又有空格分隔，抛出错误
+    if (str.includes(',') && str.includes(' ')) {
+        throw new Error('matrix格式错误, 不要混用逗号和空格');
+    }
+
+    // 将逗号替换为空格
+    str = str.replace(/,/g, ' ');
+  
+    // 按分号分隔成行
+    let rows = str.split(';');
+    // 每行按空格分隔成数字数组
+    let numbers = rows.map(row => {
+        // 去掉首尾空格后按空格分隔
+        return row.trim().split(/\s+/).map(Number);
+    });
+
+    // 打印二维数组
+    console.log('numbers:', numbers);
+    
+    // 判断二维数组是否为空
+    if (numbers.length === 0) {
+        throw new Error('matrix 长度为0');
+    }
+
+    // 判断二维数组每行长度是否一致,并检查是否有非法数字
+    let rowLength = numbers[0].length;
+    for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i].length !== rowLength) {
+            throw new Error('matrix 每行长度不一致');
+        }
+        for (let j = 0; j < numbers[i].length; j++) {
+            if (isNaN(numbers[i][j])) {
+                throw new Error(`matrix${i+1},${j+1}: ${numbers[i][j]} 不是数字`);
+            }
+        }
+    }
+
+    return new Matrix(numbers);
+}
+
+
+export function mat_add(args0, args1) {
+    checkArgs(args0, args1);
+
+    if (isMatrix(args0)){
+        return Matrix.add(args0, args1);
+    }
+    else{
+        return Matrix.add(args1, args0);
+    }
+}
+
+
+export function mat_sub(args0, args1) {
+    checkArgs(args0, args1);
+
+    if (isMatrix(args0)){
+        return Matrix.subtract(args0, args0);
+    }
+    else{
+        // 如果 args1 是 Matrix，则 args0 是数字
+        let mat1 = Matrix.mul(Matrix.ones(args1.rows, args1.columns), args0);
+        return Matrix.subtract(mat1, args1);
+    }
+}
+
+
+// 矩阵乘法
+export function mat_matmul(args0, args1) {
+    // 矩阵乘法, 必须都是 Matrix
+    if (!isMatrix(args0) || !isMatrix(args1)) {
+        throw new Error('args0, args1 必须都是 Matrix');
+    }
+
+    // 判断矩阵是否可以相乘
+    if (args0.columns !== args1.rows) {
+        throw new Error('args0 的列数与 args1 的行数不匹配');
+    }
+
+    return args0.mmul(args1);
+}
+
+// 矩阵点乘
+export function mat_dotmul(args0, args1) {
+    checkArgs(args0, args1);
+
+    // 如果都是 Matrix，则返回矩阵点乘
+    if (isMatrix(args0) && isMatrix(args1)){
+        // 判断矩阵是否可以点乘
+        if (args0.columns !== args1.columns || args0.rows !== args1.rows) {
+            throw new Error('args0 和 args1 的行数和列数不匹配');
+        }
+        return args0.mul(args1);
+    }
+    else if (isMatrix(args0)){
+        // 如果 args0 是 Matrix，则 args1 是数字
+        return Matrix.mul(args0, args1);
+    }
+    else{
+        // 如果 args1 是 Matrix，则 args0 是数字
+        return Matrix.mul(args1, args0);
+    }
+}
+
+
+export function mat_div(args0, args1) {
+    checkArgs(args0, args1);
+
+    if (isMatrix(args0)){
+        return Matrix.div(args0, args1);
+    }
+    else{
+        // 如果 args1 是 Matrix，则 args0 是数字
+        let mat1 = Matrix.mul(Matrix.ones(args1.rows, args1.columns), args0);
+        return Matrix.div(mat1, args1);
+    }
+}
+
+
+let vec1 = str2vec('[1, 2, 3]');
+let vec2 = str2vec('[4, 5, 6, 7]');
+// console.log(vec1.to1DArray());
+
+// let vec2 = mat_add(vec1, 1);
+// console.log(vec2);
+
+// let vec3 = mat_add(1, vec1);
+// console.log(vec3);
+
+// let sv1 = mat_sub(vec1, 1);
+// console.log(sv1);
+
+// let sv2 = mat_sub(1, vec1);
+// console.log(sv2);
+
+// let sv3 = mat_div(1, vec1);
+// console.log(sv3);
+
+let sv4 = mat_mul(vec1, vec1);
+console.log(sv4);
+
+
+// let vec2 = str2vec('[1 2 3]');
+// console.log(vec2); 
+
+// let vec3 = str2vec('[1 2, 3]');
+// console.log(vec3); 
+
+// let mat1 = str2Matrix('{1, 2, 3;4, 5, 6; 7, 8, 9}');
+// console.log(mat1);
+// console.log(mat1.to1DArray());
+// console.log(mat1.to2DArray());
+
+
+// let mat2 = str2Matrix('{1 2 3;4 5 6; 7 8 9}');
+// console.log(mat2);
