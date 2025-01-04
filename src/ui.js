@@ -1,3 +1,6 @@
+import Calculator from './calculator.js';
+import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
+
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {
     const completions = [];
@@ -932,3 +935,19 @@ function isLastExpression(line) {
     
     return true;
 }
+
+// 在文件末尾添加导出语句
+export {
+    calculateLine,
+    addNewLine,
+    handleLineDelete,
+    handleKeyDown,
+    handleInput,
+    handleTabCompletion,
+    handleAsteriskInput,
+    showCompletionHint,
+    removeCompletionHint,
+    clearAll,
+    handleContainerClick,
+    handleMessageIconClick
+};

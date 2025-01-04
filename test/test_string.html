@@ -42,12 +42,18 @@
     <div id="results"></div>
 
     <!-- 先加载依赖 -->
-    <script src="../src/utils.js"></script>
-    <script src="../src/operators.js"></script>
-    <script src="../src/calculator.js"></script>
+    <script type="module">
+        import Calculator from '../src/calculator.js';
+        
+        // 添加到全局作用域
+        // window.Calculator = Calculator;
+        
+        // 将 calculate 函数添加到全局作用域
+        window.calculate = Calculator.calculate;
+
+    </script>
 
     <script>
-        const calculate = Calculator.calculate;
 
         const tests = [
             // 基本字符串字面量测试

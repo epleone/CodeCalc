@@ -1,3 +1,12 @@
+import Utils from './utils.js';
+import { 
+    OPERATORS,
+    FUNCTIONS,
+    CONSTANTS,
+    DELIMITERS,
+    SEPARATORS 
+} from './operators.js';
+
 /**
  * 代码标准：
  * 1. 所有配置都必须在配置文件中定义和读取，包括运算符、函数、常量、分隔符、定界符
@@ -10,13 +19,7 @@
 const Calculator = (function() {
     // 定义常量和类型
     const MAX_DEPTH = 100;  // 添加全局最大深度常量
-    const OPERATORS = window.OPERATORS;
-    const FUNCTIONS = window.FUNCTIONS;
-    const CONSTANTS = window.CONSTANTS;
-    const DELIMITERS = window.DELIMITERS;
-    const SEPARATORS = window.SEPARATORS;
-    const Utils = window.Utils;
-
+    
     // 添加变量字典
     const variables = new Map();
     
@@ -898,7 +901,6 @@ const Calculator = (function() {
     };
 })();
 
-// 如果在 Node.js 环境中，导出模块
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = Calculator;
-} 
+
+// 添加 ES6 导出
+export default Calculator; 

@@ -1,5 +1,5 @@
 // 复制到剪贴板的功能
-window.copyToClipboard = function(text) {
+function copyToClipboard(text) {
     // 创建临时文本区域
     const textarea = document.createElement('textarea');
     textarea.value = text;
@@ -16,7 +16,7 @@ window.copyToClipboard = function(text) {
     document.body.removeChild(textarea);
 }
 
-window.showCopyNotification = function() {
+function showCopyNotification() {
     const notification = document.querySelector('.copy-notification');
     notification.classList.add('show');
     
@@ -27,7 +27,7 @@ window.showCopyNotification = function() {
 }
 
 // 为结果添加点击事件处理
-window.addResultClickHandler = function(resultElement) {
+function addResultClickHandler(resultElement) {
     resultElement.addEventListener('click', function() {
         // 如果已经在复制状态，直接返回
         if (this.classList.contains('copied') || this.classList.contains('error')) {
@@ -54,3 +54,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const results = document.querySelectorAll('.result');
     results.forEach(addResultClickHandler);
 }); 
+
+// 导出函数
+export {
+    copyToClipboard,
+    showCopyNotification,
+    addResultClickHandler
+}; 

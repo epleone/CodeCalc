@@ -1,22 +1,24 @@
+import Utils from './utils.js';
+
 // 常数定义
-const CONSTANTS = {
+export const CONSTANTS = {
     'PI': Math.PI,
     'e': Math.E,
 };
 
 // 定界符定义
-const DELIMITERS = {
+export const DELIMITERS = {
     '(': { description: '左括号' },
     ')': { description: '右括号' }
 };
 
 // 分隔符定义
-const SEPARATORS = {
+export const SEPARATORS = {
     ',': { description: '参数分隔符' }
 };
 
 // 操作符定义
-const OPERATORS = {
+export const OPERATORS = {
     // 基本算术运算符
     '+': {
         precedence: 2,
@@ -273,7 +275,7 @@ const OPERATORS = {
 };
 
 // 函数定义
-const FUNCTIONS = {
+export const FUNCTIONS = {
     // 类型转换函数
     'str': {
         func: x => x.toString(),
@@ -477,11 +479,4 @@ const FUNCTIONS = {
         acceptAny: true,
         asProperty: true
     }
-};
-
-// 暴露到全局作用域
-window.OPERATORS = OPERATORS;
-window.FUNCTIONS = FUNCTIONS;
-window.CONSTANTS = CONSTANTS;
-window.DELIMITERS = DELIMITERS;
-window.SEPARATORS = SEPARATORS; 
+}; 

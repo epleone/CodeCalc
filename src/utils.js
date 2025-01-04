@@ -154,4 +154,8 @@ const Utils = {
 
 };
 
-window.Utils = Utils; 
+// 删除全局导出
+// window.Utils = Utils; 
+
+// 添加ES6模块导出
+export default Utils;
