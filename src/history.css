@@ -1,0 +1,194 @@
+/* 历史快照面板样式 */
+.history-panel {
+    position: fixed;
+    right: -300px; /* 初始隐藏 */
+    top: 0;
+    width: 300px;
+    height: 100vh;
+    background: #ffffff;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+    transition: right 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.history-panel.show {
+    right: 0;
+}
+
+.history-header {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+.history-header h3 {
+    margin: 0;
+    color: #212121;
+    font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    opacity: 0.85;
+}
+
+.history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.history-item {
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fafafa;
+}
+
+.history-item:hover {
+    background-color: #f0f0f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.history-expression {
+    color: #212121;
+    font-family: monospace;
+    margin-bottom: 5px;
+}
+
+.history-result {
+    color: #4CAF50;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.history-toggle-btn {
+    position: fixed;
+    right: 0.3rem;
+    top: 0.3rem;
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    z-index: 1001;
+    width: 25px;
+    height: 25px;
+}
+
+.clear-history-btn {
+    background: transparent;
+    border: none;
+    color: #f44336;  /* 使用红色表示删除 */
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.clear-history-btn:hover {
+    background: rgba(244, 67, 54, 0.1);
+}
+
+/* 基本图标样式 */
+.history-icon {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 21px;
+    height: 21px;
+    transform-origin: center;
+    color: #aaa;
+}
+
+/* 普通状态下的图标悬停效果（面板关闭时） */
+.history-toggle-btn:hover .history-icon {
+    color: #4CAF50;
+    transform: rotate(-360deg) scale(1.15);
+}
+
+/* 当历史面板打开时的图标基本样式 */
+body #history-panel.show ~ .history-toggle-btn .history-icon {
+    color: #4CAF50;
+    transform: rotate(-360deg);
+}
+
+/* 当历史面板打开时的图标悬停效果 */
+body #history-panel.show ~ .history-toggle-btn:hover .history-icon {
+    color: #f44336 !important;
+    transform: rotate(-720deg) scale(1.15);
+}
+
+.history-footer {
+    padding: 0 16px;
+    background: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 2.5rem;
+}
+
+/* 添加快照按钮样式 */
+.add-snapshot-btn {
+    background: transparent;
+    border: none;
+    color: #4CAF50;  /* 使用绿色表示添加 */
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.add-snapshot-btn:hover {
+    background: rgba(76, 175, 80, 0.1);
+}
+
+/* 按钮图标样式 */
+.add-icon, .delete-icon {
+    opacity: 0.9;
+    transition: opacity 0.2s;
+}
+
+.add-snapshot-btn:hover .add-icon,
+.clear-history-btn:hover .delete-icon {
+    opacity: 1;
+}
+
+/* 调整按钮样式以适应新的高度 */
+.add-snapshot-btn,
+.clear-history-btn {
+    background: transparent;
+    border: none;
+    padding: 0 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 2rem;
+} 

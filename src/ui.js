@@ -1,6 +1,7 @@
 import Calculator from './calculator.js';
 import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
 import * as Tag from './tag.js';
+import { history } from './history.js';
 
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {
@@ -713,9 +714,17 @@ function clearAll() {
     // 清空第一行的内容
     const input = firstLine.querySelector('.input');
     const result = firstLine.querySelector('.result');
+    const messageIcon = firstLine.querySelector('.message-icon');
+    
+    // 清空输入和结果
     input.value = '';
-    result.innerHTML = '';
-    result.classList.remove('has-input', 'has-value', 'warning', 'error', 'success');
+    result.innerHTML = '<span class="result-value"></span>';
+    result.classList.remove('has-input', 'has-value', 'warning', 'error', 'info');
+    
+    // 隐藏消息图标并重置其状态
+    messageIcon.style.display = 'none';
+    messageIcon.className = 'message-icon';
+    messageIcon.querySelector('.message-text').innerHTML = '';
 
     // 重置标签状态
     const tagContainer = firstLine.querySelector('.tag-container');
@@ -724,6 +733,9 @@ function clearAll() {
         existingTag.remove();
         tagContainer.querySelector('.tag-button').style.display = 'flex';
     }
+
+    // 移除补全提示框
+    removeCompletionHint(input);
 
     // 清除计算缓存
     Calculator.clearAllCache();
@@ -982,3 +994,25 @@ export {
     handleMessageIconClick,
     initializeUI
 };
+
+// 导出历史面板切换函数到全局作用域
+window.toggleHistoryPanel = function() {
+    history.togglePanel();
+};
+
+// 在 DOMContentLoaded 事件监听器中添加
+document.addEventListener('DOMContentLoaded', function() {
+    // ... 其他代码 ...
+    
+    // 添加历史记录开关事件监听
+    const historyToggle = document.getElementById('historyToggle');
+    historyToggle.addEventListener('change', function() {
+        if (this.checked) {
+            // 当开关打开时，保存当前页面状态到历史记录
+            history.saveCurrentState();
+        } else {
+            // 当开关关闭时，清空历史记录
+            history.clearHistory();
+        }
+    });
+});
