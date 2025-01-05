@@ -51,6 +51,9 @@ let isCompletionEnabled = true;
 // 添加一个标记来跟踪是否使用过方向键
 let hasUsedArrowKeys = false;
 
+// 添加一个计时器变量
+let completionHideTimer;
+
 function calculateLine(input) {
     const resultContainer = input.parentElement.querySelector('.result-container');
     const result = resultContainer.querySelector('.result');
@@ -228,6 +231,9 @@ function handleKeyDown(event, input) {
         if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             event.preventDefault();
             hasUsedArrowKeys = true;
+            
+            // 重置隐藏计时器
+            startHideTimer(hint);
             
             const items = Array.from(hint.querySelectorAll('.completion-item'));
             const selectedItem = hint.querySelector('.completion-item.selected');
@@ -695,12 +701,30 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
     hint.style.position = 'fixed';
     hint.style.left = `${left}px`;
     hint.style.top = `${top}px`;
+    
+    // 启动隐藏计时器
+    startHideTimer(hint);
+}
+
+// 添加启动计时器的函数
+function startHideTimer(hint) {
+    if (completionHideTimer) {
+        clearTimeout(completionHideTimer);
+    }
+    completionHideTimer = setTimeout(() => {
+        if (hint && hint.parentElement) {
+            hint.remove();
+        }
+    }, 3000);
 }
 
 // 3. 修改 removeCompletionHint 函数
 function removeCompletionHint(input) {
+    if (completionHideTimer) {
+        clearTimeout(completionHideTimer);
+        completionHideTimer = null;
+    }
     document.querySelectorAll('.completion-hint').forEach(hint => {
-        // 触发清理事件
         hint.dispatchEvent(new Event('remove'));
         hint.remove();
     });
