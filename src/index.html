@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Code Calc</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="settings.css">
 </head>
 <body>
     <div id="snapshot-panel" class="snapshot-panel">
@@ -59,57 +60,70 @@
 
     <div class="copy-notification">已复制到剪贴板</div>
 
+    <!-- 设置面板 -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-header">
+            <h3>设置</h3>
+        </div>
+        <div class="settings-content">
+            <div class="settings-section">
+                <h4>功能设置</h4>
+                <div class="setting-item">
+                    <span class="setting-label">函数补全</span>
+                    <label class="switch">
+                        <input type="checkbox" id="completionToggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">保留历史</span>
+                    <label class="switch">
+                        <input type="checkbox" id="historyToggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="footer">
         <div class="left-section">
             <div class="tooltip">
-                <div class="tooltip-icon">?</div>
+                <div class="tooltip-icon" onclick="toggleSettingsPanel()">
+                    <span class="help-icon">?</span>
+                    <svg class="settings-icon" viewBox="0 0 24 24" width="16" height="16" style="pointer-events: none;">
+                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/>
+                    </svg>
+                </div>
                 <div class="tooltip-text">
-                    • Shift + Enter: 下方插入行<br>
-                    • Delete: 删除当前行<br>
-                    <br>
-                    变量：<br>
-                    • 基本赋值：a = 5<br>
-                    • 复合赋值：+=, -=, *=, &=, |= 等<br>
+                    • Shift + Enter: 下方插入行 <br>
+                    • Delete: 删除当前行 <br>
+                    • Ctrl + H: 历史快照 <br>
                     <br>
                     基本运算：<br>
                     • 算术运算：+, -, *, /, //, %, **<br>
+                    • 赋值：=, +=, -=, *=, &=, |= 等<br>
                     • 位运算：&, |, ^, ~, <<, >>, >>><br>
                     <br>
-                    数学函数：<br>
+                    函数：<br>
+                    • 常用：log, ln, exp, pow, sqrt, abs, max, min<br>
                     • 三角函数：sin, cos, tan, asin, acos, atan, sinh, cosh, tanh<br>
-                    • 对数指数：log, ln, exp, pow, sqrt<br>
-                    • 其他：abs, max, min<br>
+                    • 角度转换: 45°或45.deg, rad(PI) <br>
                     <br>
                     其它：<br>
-                    • 字符串操作：+, .length, .upper, .lower <br>
-                    • base64 编解码：base64(s) 或 .base64, unbase64(s) 或 .unbase64<br>
-                    • 角度转换 度数： 45° 或 .deg 弧度：rad(PI) <br>
+                    • 字符串：+, .length, .upper, .lower, .base64, .unbase64<br>
                     • 进制转换：0b123, 0o567, 0xffd, bin, oct, hex<br>
                     • 常量：PI: 3.14159... e: 2.71828...<br>
-                    <!-- <br> -->
-                    <!-- <div class="github-link">
+                    <!-- <br>
+                    <div class="github-link">
                         <svg height="16" viewBox="0 0 16 16" width="16" style="vertical-align: text-bottom; margin-right: 4px;"><path fill="#fff" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
                         <a href="https://github.com/epleone/CodeCalc" target="_blank" style="color: #fff; text-decoration: none; font-size: 14px;">CodeCalc</a>
                     </div> -->
                 </div>
             </div>
-            <div class="completion-toggle">
-                <label class="switch">
-                    <input type="checkbox" id="completionToggle" checked>
-                    <span class="slider round"></span>
-                </label>
-                <span class="toggle-label">函数补全</span>
-            </div>
         </div>
         
         <div class="right-section">
-            <div class="history-toggle">
-                <label class="switch">
-                    <input type="checkbox" id="historyToggle" checked>
-                    <span class="slider round"></span>
-                </label>
-                <span class="toggle-label">保留历史</span>
-            </div>
             <button class="clear-button" onclick="clearAll()">清空</button>
         </div>
     </div>
@@ -118,6 +132,7 @@
         // 导入所有函数
         import * as UI from './ui.js';
         import * as Copy from './copy.js';
+        import { settings } from './settings.js';
 
         // 将函数添加到全局作用域(window对象)
         Object.assign(window, UI);
