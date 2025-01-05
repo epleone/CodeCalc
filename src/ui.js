@@ -223,7 +223,7 @@ function handleLineDelete(input) {
 }
 
 function handleKeyDown(event, input) {
-    const hint = input.parentElement.querySelector('.completion-hint');
+    const hint = document.querySelector('.completion-hint');
     if (hint) {
         if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             event.preventDefault();
@@ -645,47 +645,51 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
     hint.addEventListener('remove', cleanup, { once: true });
     
     hint.appendChild(list);
-    document.body.appendChild(hint);
+    // 将补全框添加到输入框所在的行
+    input.parentElement.appendChild(hint);
     
     // 计算光标位置
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
     
-    // 创建临时元素来测量文本宽度
-    const measureEl = document.createElement('span');
-    measureEl.style.font = window.getComputedStyle(input).font;
-    measureEl.style.visibility = 'hidden';
-    measureEl.style.position = 'absolute';
-    measureEl.textContent = textBeforeCursor;
-    document.body.appendChild(measureEl);
-    
-    // 获取光标位置
-    const textWidth = measureEl.offsetWidth;
-    document.body.removeChild(measureEl);
-    
     // 获取输入框的位置信息
     const inputRect = input.getBoundingClientRect();
-    const scrollLeft = input.scrollLeft;
     
-    // 设置提示框位置
-    const cursorX = inputRect.left + textWidth - scrollLeft;
-    const cursorY = inputRect.top + inputRect.height;
+    // 创建一个临时的 span 元素用于计算光标位置
+    const span = document.createElement('span');
+    span.style.cssText = `
+        position: fixed;
+        top: -9999px;
+        left: -9999px;
+        font: ${window.getComputedStyle(input).font};
+        letter-spacing: ${window.getComputedStyle(input).letterSpacing};
+        white-space: pre;
+    `;
+    span.textContent = textBeforeCursor;
+    document.body.appendChild(span);
     
-    // 调整提示框位置，确保不超出视窗
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
+    // 计算光标的实际位置
+    const paddingLeft = parseFloat(window.getComputedStyle(input).paddingLeft);
+    const cursorX = inputRect.left + span.offsetWidth + paddingLeft - input.scrollLeft;
+    const cursorY = inputRect.bottom + 2; // 添加小偏移
     
+    document.body.removeChild(span);
+    
+    // 获取提示框的尺寸
+    const hintRect = hint.getBoundingClientRect();
+    
+    // 设置初始位置在光标右下方
     let left = cursorX;
     let top = cursorY;
     
     // 如果提示框会超出右边界，向左偏移
-    if (left + hint.offsetWidth > viewportWidth) {
-        left = viewportWidth - hint.offsetWidth - 10;
+    if (left + hintRect.width > window.innerWidth) {
+        left = cursorX - hintRect.width;
     }
     
     // 如果提示框会超出底部，显示在输入框上方
-    if (top + hint.offsetHeight > viewportHeight) {
-        top = inputRect.top - hint.offsetHeight;
+    if (top + hintRect.height > window.innerHeight) {
+        top = inputRect.top - hintRect.height - 2;
     }
     
     hint.style.position = 'fixed';
