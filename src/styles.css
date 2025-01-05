@@ -1,7 +1,7 @@
 @import 'copy-styles.css';
 @import 'completion.css';
 @import 'tag.css';
-@import 'history.css';
+@import 'snapshot.css';
 
 body {
     margin: 0;

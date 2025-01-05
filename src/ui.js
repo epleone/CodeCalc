@@ -1,7 +1,8 @@
 import Calculator from './calculator.js';
 import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
 import * as Tag from './tag.js';
-import { history } from './history.js';
+import * as Snapshot from './snapshot.js';
+
 
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {
@@ -971,14 +972,12 @@ function initializeUI() {
         Tag.initializeTagButton(line);
     });
 
-    // 将标签相关函数添加到全局作用域
+    // 将标签和快照相关函数添加到全局作用域
     Object.assign(window, Tag);
+    Object.assign(window, Snapshot);
 }
 
-// 在文档加载完成后初始化UI
-document.addEventListener('DOMContentLoaded', initializeUI);
-
-// 导出函数
+// 导出所有需要的函数
 export {
     calculateLine,
     addNewLine,
@@ -995,24 +994,38 @@ export {
     initializeUI
 };
 
-// 导出历史面板切换函数到全局作用域
-window.toggleHistoryPanel = function() {
-    history.togglePanel();
+// 导出快照面板切换函数到全局作用域
+window.toggleSnapshotPanel = function() {
+    Snapshot.snapshot.togglePanel();
 };
 
-// 在 DOMContentLoaded 事件监听器中添加
+// 在文档加载完成后初始化UI
 document.addEventListener('DOMContentLoaded', function() {
-    // ... 其他代码 ...
-    
-    // 添加历史记录开关事件监听
-    const historyToggle = document.getElementById('historyToggle');
-    historyToggle.addEventListener('change', function() {
+    initializeUI();  // 确保先初始化
+
+    const snapshotToggle = document.getElementById('snapshotToggle');
+    snapshotToggle.addEventListener('change', function() {
         if (this.checked) {
-            // 当开关打开时，保存当前页面状态到历史记录
-            history.saveCurrentState();
+            Snapshot.snapshot.takeSnapshot();
         } else {
-            // 当开关关闭时，清空历史记录
-            history.clearHistory();
+            Snapshot.snapshot.clearSnapshots();
         }
     });
+});
+
+// 将所有需要的函数添加到全局作用域
+Object.assign(window, {
+    calculateLine,
+    addNewLine,
+    handleLineDelete,
+    handleKeyDown,
+    handleInput,
+    handleTabCompletion,
+    handleAsteriskInput,
+    showCompletionHint,
+    removeCompletionHint,
+    clearAll,
+    handleContainerClick,
+    handleMessageIconClick,
+    toggleSnapshotPanel
 });

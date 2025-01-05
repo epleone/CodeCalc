@@ -1,7 +1,7 @@
-class History {
+class Snapshot {
     constructor() {
-        this.panel = document.getElementById('history-panel');
-        this.list = this.panel.querySelector('.history-list');
+        this.panel = document.getElementById('snapshot-panel');
+        this.list = this.panel.querySelector('.snapshot-list');
         this.isPanelVisible = false;
 
         // 添加 ESC 键监听
@@ -13,7 +13,7 @@ class History {
     }
     
     // 保存当前页面所有表达式的状态
-    saveCurrentState() {
+    takeSnapshot() {
         const lines = document.querySelectorAll('.expression-line');
         const state = Array.from(lines).map(line => {
             const input = line.querySelector('.input');
@@ -22,48 +22,49 @@ class History {
                 expression: input.value,
                 result: result.textContent
             };
-        }).filter(item => item.expression.trim() !== ''); // 过滤掉空行
+        }).filter(item => item.expression.trim() !== '');
         
         this.renderList(state);
     }
     
-    // 清空历史面板
-    clearHistory() {
+    // 清空快照面板
+    clearSnapshots() {
         this.list.innerHTML = '';
     }
     
-    // 切换历史面板显示状态
+    // 切换快照面板显示状态
     togglePanel() {
         this.isPanelVisible = !this.isPanelVisible;
         if (this.isPanelVisible) {
-            this.panel.classList.add('show');  // 添加 show 类
+            this.panel.classList.add('show');
         } else {
-            this.panel.classList.remove('show');  // 移除 show 类
+            this.panel.classList.remove('show');
         }
         this.panel.style.right = this.isPanelVisible ? '0' : '-300px';
     }
     
-    // 渲染历史记录列表
+    // 渲染快照列表
     renderList(state) {
         this.list.innerHTML = '';
         state.forEach(item => {
             const itemElement = document.createElement('div');
-            itemElement.className = 'history-item';
+            itemElement.className = 'snapshot-item';
             itemElement.innerHTML = `
-                <div class="history-expression">${item.expression}</div>
-                <div class="history-result">${item.result}</div>
+                <div class="snapshot-expression">${item.expression}</div>
+                <div class="snapshot-result">${item.result}</div>
             `;
             this.list.appendChild(itemElement);
         });
     }
 }
 
-export const history = new History();
+export const snapshot = new Snapshot();
+export { Snapshot }; 
 
 // 添加快捷键支持
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'h') {
         e.preventDefault();
-        history.togglePanel();
+        snapshot.togglePanel();
     }
 }); 
