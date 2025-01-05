@@ -62,13 +62,14 @@ class Snapshot {
         // 只有当有计算记录时才创建快照
         if (state.length > 0) {
             const snapshot = {
-                timestamp: new Date().toISOString(), // 使用 ISO 格式便于存储和解析
+                timestamp: new Date().toISOString(),
                 records: state,
-                json: JSON.stringify(state) // 添加 JSON 格式的记录
+                json: JSON.stringify(state),
+                title: this.formatTime(new Date()) // 默认使用时间作为标题
             };
             
             this.snapshots.unshift(snapshot);
-            this.saveSnapshots(); // 保存到 localStorage
+            this.saveSnapshots();
             this.renderList();
         }
     }
@@ -114,7 +115,44 @@ class Snapshot {
             // 添加时间标题
             const timeHeader = document.createElement('div');
             timeHeader.className = 'snapshot-time';
-            timeHeader.textContent = this.formatTime(new Date(snapshot.timestamp));
+            timeHeader.innerHTML = `
+                <span class="snapshot-title">${snapshot.title || this.formatTime(new Date(snapshot.timestamp))}</span>
+                <input type="text" class="snapshot-title-input" value="${snapshot.title || ''}" placeholder="${this.formatTime(new Date(snapshot.timestamp))}">
+            `;
+            
+            // 添加标题编辑功能
+            const titleSpan = timeHeader.querySelector('.snapshot-title');
+            const titleInput = timeHeader.querySelector('.snapshot-title-input');
+            
+            titleSpan.onclick = (e) => {
+                e.stopPropagation();
+                timeHeader.classList.add('editing');
+                titleInput.value = snapshot.title || '';
+                titleInput.focus();
+            };
+            
+            titleInput.onblur = () => {
+                timeHeader.classList.remove('editing');
+                const newTitle = titleInput.value.trim();
+                if (newTitle) {
+                    snapshot.title = newTitle;
+                    titleSpan.textContent = newTitle;
+                } else {
+                    titleSpan.textContent = this.formatTime(new Date(snapshot.timestamp));
+                    delete snapshot.title;
+                }
+                this.saveSnapshots();
+            };
+            
+            titleInput.onkeydown = (e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                    titleInput.blur();
+                } else if (e.key === 'Escape') {
+                    timeHeader.classList.remove('editing');
+                    titleInput.value = snapshot.title || '';
+                }
+            };
             
             // 添加应用按钮
             const applyButton = document.createElement('button');
@@ -152,7 +190,12 @@ class Snapshot {
             });
             
             // 添加点击展开/折叠功能
-            headerContainer.addEventListener('click', () => {
+            headerContainer.addEventListener('click', (e) => {
+                // 如果点击的是标题输入框或标题文本，不触发折叠/展开
+                if (e.target.classList.contains('snapshot-title') || 
+                    e.target.classList.contains('snapshot-title-input')) {
+                    return;
+                }
                 snapshotElement.classList.toggle('collapsed');
             });
             
