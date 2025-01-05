@@ -253,6 +253,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .snapshot-result {
@@ -421,4 +424,13 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
 .add-snapshot-btn:hover .add-icon,
 .clear-snapshot-btn:hover .delete-icon {
     opacity: 1;
+}
+
+.snapshot-tag {
+    color: #666;
+    font-size: 12px;
+    padding: 2px 6px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    flex-shrink: 0;
 }

@@ -156,6 +156,16 @@ export function setTag(line, tagText) {
     const tagContainer = line.querySelector('.tag-container');
     const tagButton = tagContainer.querySelector('.tag-button');
     
+    // 如果传入空值，则清除标签
+    if (!tagText) {
+        const existingTag = tagContainer.querySelector('.tag');
+        if (existingTag) {
+            existingTag.remove();
+        }
+        tagButton.style.display = 'flex';
+        return;
+    }
+    
     // 移除现有标签
     const existingTag = tagContainer.querySelector('.tag');
     if (existingTag) {
@@ -208,6 +218,27 @@ export function setTag(line, tagText) {
     });
 }
 
+// 添加恢复标签的接口
+export function restoreTag(line, tagText) {
+    if (!tagText) return;
+    
+    const tagContainer = line.querySelector('.tag-container');
+    if (!tagContainer) return;
+    
+    // 清除现有标签和输入框
+    const existingTag = tagContainer.querySelector('.tag');
+    const existingInput = tagContainer.querySelector('.tag-input-container');
+    if (existingTag) existingTag.remove();
+    if (existingInput) existingInput.remove();
+    
+    // 显示标签按钮（因为 setTag 需要它可见）
+    const tagButton = tagContainer.querySelector('.tag-button');
+    tagButton.style.display = 'flex';
+    
+    // 使用 setTag 设置新标签
+    setTag(line, tagText);
+}
+
 // 导出创建标签容器的HTML
 export function createTagContainerHTML() {
     return `
@@ -217,4 +248,4 @@ export function createTagContainerHTML() {
             </button>
         </div>
     `;
-} 
+}

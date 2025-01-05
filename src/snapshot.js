@@ -1,3 +1,5 @@
+import { setTag, restoreTag } from './tag.js';
+
 class Snapshot {
     constructor() {
         this.panel = document.getElementById('snapshot-panel');
@@ -53,9 +55,21 @@ class Snapshot {
         const state = Array.from(lines).map(line => {
             const input = line.querySelector('.input');
             const result = line.querySelector('.result-value');
-            return {
+            // 获取标签文本，如果存在标签则获取其文本内容
+            const tagElement = line.querySelector('.tag');
+            const tag = tagElement ? tagElement.textContent : '';
+
+            // 打印每条记录的完整信息
+            // console.log('Processing record:', {
+            //     expression: input.value,
+            //     result: result.textContent,
+            //     tag: tag
+            // });
+
+            return {    
                 expression: input.value,
-                result: result.textContent
+                result: result.textContent,
+                tag: tag
             };
         }).filter(item => item.expression.trim() !== '');
         
@@ -183,7 +197,10 @@ class Snapshot {
                 const itemElement = document.createElement('div');
                 itemElement.className = 'snapshot-item';
                 itemElement.innerHTML = `
-                    <div class="snapshot-expression">${record.expression}</div>
+                    <div class="snapshot-expression">
+                        ${record.tag ? `<span class="snapshot-tag">${record.tag}</span>` : ''}
+                        ${record.expression}
+                    </div>
                     <div class="snapshot-result">${record.result}</div>
                 `;
                 contentContainer.appendChild(itemElement);
@@ -308,6 +325,9 @@ class Snapshot {
     
     // 应用快照
     applySnapshot(records) {
+        // 打印整个 records 数组
+        // console.log('Applying snapshot records:', records);
+        
         // 清除所有现有输入
         const lines = document.querySelectorAll('.expression-line');
         lines.forEach(line => {
@@ -315,17 +335,33 @@ class Snapshot {
             if (input) {
                 input.value = '';
             }
+            // 清除标签
+            setTag(line, '');
         });
 
         // 依次填入快照中的记录
         records.forEach((record, index) => {
             if (index >= lines.length) {
-                // 如果现有行数不够，添加新行
                 window.addNewLine();
             }
-            const input = document.querySelectorAll('.expression-line')[index].querySelector('.input');
-            input.value = record.expression + ' '; // 在表达式末尾添加空格，以防弹出语法补全
-            input.dispatchEvent(new Event('input')); // 触发输入事件以更新计算结果
+            const line = document.querySelectorAll('.expression-line')[index];
+            const input = line.querySelector('.input');
+            
+            // 打印每条记录的完整信息
+            // console.log('Processing record:', {
+            //     index,
+            //     expression: record.expression,
+            //     tag: record.tag,
+            //     result: record.result
+            // });
+            
+            // 先设置 tag
+            if (record.tag) {
+                restoreTag(line, record.tag);
+            }
+            
+            input.value = record.expression + ' ';
+            input.dispatchEvent(new Event('input'));
         });
 
         // 关闭快照面板
