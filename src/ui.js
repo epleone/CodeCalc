@@ -1002,30 +1002,4 @@ window.toggleSnapshotPanel = function() {
 // 在文档加载完成后初始化UI
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();  // 确保先初始化
-
-    const snapshotToggle = document.getElementById('snapshotToggle');
-    snapshotToggle.addEventListener('change', function() {
-        if (this.checked) {
-            Snapshot.snapshot.takeSnapshot();
-        } else {
-            Snapshot.snapshot.clearSnapshots();
-        }
-    });
-});
-
-// 将所有需要的函数添加到全局作用域
-Object.assign(window, {
-    calculateLine,
-    addNewLine,
-    handleLineDelete,
-    handleKeyDown,
-    handleInput,
-    handleTabCompletion,
-    handleAsteriskInput,
-    showCompletionHint,
-    removeCompletionHint,
-    clearAll,
-    handleContainerClick,
-    handleMessageIconClick,
-    toggleSnapshotPanel
 });
