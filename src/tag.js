@@ -183,15 +183,23 @@ export function setTag(line, tagText) {
     
     // 点击标签事件处理
     tag.addEventListener('click', (e) => {
-        // 检查点击位置是否在删除按钮区域
         const rect = tag.getBoundingClientRect();
-        const isClickOnDelete = e.clientX > rect.right - 24;  // 24px 是删除按钮的区域宽度
+        const isClickOnDelete = e.clientX > rect.right - 24;
         
         if (isClickOnDelete) {
             // 点击删除按钮
             e.stopPropagation();
             tag.remove();
             tagButton.style.display = 'flex';
+            
+            // 清除提示框
+            if (tooltipTimer) {
+                clearTimeout(tooltipTimer);
+            }
+            if (currentTooltip) {
+                currentTooltip.remove();
+                currentTooltip = null;
+            }
         } else {
             // 点击标签其他区域进行编辑
             showTagInput(line);
