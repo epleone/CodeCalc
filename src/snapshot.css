@@ -243,24 +243,35 @@
     background-color: rgba(244, 67, 54, 0.1);
 }
 
-/* 复制按钮 */
-.copy-json-btn {
+/* 应用按钮 */
+.apply-snapshot-btn {
     background: none;
     border: none;
     cursor: pointer;
     padding: 4px;
-    color: #666;
+    color: #4CAF50;
     border-radius: 4px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.7;
-    transition: opacity 0.2s, background-color 0.2s;
+    opacity: 0.6;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    margin-left: 4px;
 }
 
-.copy-json-btn:hover {
+.apply-snapshot-btn:hover {
     opacity: 1;
-    background-color: rgba(0, 0, 0, 0.1);
+    transform: rotate(-180deg) scale(1.15);
+    color: #2E7D32;
+}
+
+.apply-snapshot-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: inherit;
 }
 
 /* 切换按钮样式 */

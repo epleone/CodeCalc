@@ -116,25 +116,25 @@ class Snapshot {
             timeHeader.className = 'snapshot-time';
             timeHeader.textContent = this.formatTime(new Date(snapshot.timestamp));
             
-            // 添加复制按钮
-            const copyButton = document.createElement('button');
-            copyButton.className = 'copy-json-btn';
-            copyButton.innerHTML = `
+            // 添加应用按钮
+            const applyButton = document.createElement('button');
+            applyButton.className = 'apply-snapshot-btn';
+            applyButton.innerHTML = `
                 <svg viewBox="0 0 24 24" width="14" height="14">
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/>
+                    <path d="M13 3c-4.97 0-9 4.03-9 9H1l4 3.99L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9" fill="currentColor"/>
                 </svg>
             `;
-            copyButton.title = '复制 JSON';
-            copyButton.onclick = (e) => {
+            applyButton.title = '恢复此快照';
+            applyButton.onclick = (e) => {
                 e.stopPropagation();
-                this.copyToClipboard(snapshot.json);
+                this.applySnapshot(snapshot.records);
             };
             
             // 更新头部组装顺序
             headerContainer.appendChild(checkbox);
             headerContainer.appendChild(toggleIcon);
             headerContainer.appendChild(timeHeader);
-            headerContainer.appendChild(copyButton);
+            headerContainer.appendChild(applyButton);
             
             // 添加内容容器
             const contentContainer = document.createElement('div');
@@ -163,18 +163,6 @@ class Snapshot {
         
         // 更新删除按钮显示状态
         this.updateDeleteButton();
-    }
-    
-    // 复制到剪贴板
-    copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            // 显示复制成功提示
-            const notification = document.querySelector('.copy-notification');
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 2000);
-        });
     }
     
     // 保存快照到 localStorage
@@ -273,6 +261,32 @@ class Snapshot {
         this.selectedSnapshots.clear();
         this.saveSnapshots();
         this.renderList();
+    }
+    
+    // 应用快照
+    applySnapshot(records) {
+        // 清除所有现有输入
+        const lines = document.querySelectorAll('.expression-line');
+        lines.forEach(line => {
+            const input = line.querySelector('.input');
+            if (input) {
+                input.value = '';
+            }
+        });
+
+        // 依次填入快照中的记录
+        records.forEach((record, index) => {
+            if (index >= lines.length) {
+                // 如果现有行数不够，添加新行
+                window.addNewLine();
+            }
+            const input = document.querySelectorAll('.expression-line')[index].querySelector('.input');
+            input.value = record.expression + ' '; // 在表达式末尾添加空格，以防弹出语法补全
+            input.dispatchEvent(new Event('input')); // 触发输入事件以更新计算结果
+        });
+
+        // 关闭快照面板
+        this.togglePanel();
     }
 }
 
