@@ -1,14 +1,14 @@
 export class Settings {
     constructor() {
         this.panel = document.getElementById('settings-panel');
-        console.log('Settings panel element:', this.panel);
+        // console.log('Settings panel element:', this.panel);
         this.overlay = document.createElement('div');
         this.overlay.className = 'settings-overlay';
         document.body.appendChild(this.overlay);
         
         // 添加图标点击效果
         this.tooltipIcon = document.querySelector('.tooltip-icon');
-        console.log('Tooltip icon element:', this.tooltipIcon);
+        // console.log('Tooltip icon element:', this.tooltipIcon);
         
         // 直接在图标上添加点击事件
         this.tooltipIcon.onclick = (e) => {
