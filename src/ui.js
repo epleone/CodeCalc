@@ -2,6 +2,7 @@ import Calculator from './calculator.js';
 import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
 import * as Tag from './tag.js';
 import * as Snapshot from './snapshot.js';
+import * as Settings from './settings.js';
 
 
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
