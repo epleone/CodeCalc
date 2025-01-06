@@ -60,8 +60,14 @@ const Utils = {
                 throw new Error(`无效的数字格式: ${value}`);
             }
             
+            // 处理高精度小数
+            if (value.includes('.')) {
+                // 使用 Number 构造函数直接转换，这样会保持原始精度
+                return Number(value);
+            }
+
             // 处理普通数字字符串
-            const num = parseFloat(value);
+            const num = Number(value);
             if (!isNaN(num)) {
                 // 检查是否为整数
                 if (Number.isInteger(num) && Math.abs(num) <= Number.MAX_SAFE_INTEGER) {

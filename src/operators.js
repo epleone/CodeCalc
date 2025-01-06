@@ -66,7 +66,19 @@ export const OPERATORS = {
     '/': {
         precedence: 4,
         args: 2,
-        func: (x, y) => y !== 0 ? x / y : (() => { throw new Error('除数不能为零'); })(),
+        func: (x, y) => {
+            if (y === 0 || y === 0n) {
+                throw new Error('除数不能为零');
+            }
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                let mod = BigInt(x) % BigInt(y);
+                if (mod !== 0n) {
+                    throw new Error('大数除法暂不支持, 请使用整除(//)运算符');
+                }
+                return BigInt(x) / BigInt(y);
+            }
+            return x / y;
+        },
         position: 'infix',
         description: '除法'
     },
@@ -75,21 +87,31 @@ export const OPERATORS = {
     '//': {
         precedence: 4,
         args: 2,
-        func: (x, y) => Math.floor(x / y),
+        func: (x, y) => {
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                return BigInt(x) / BigInt(y);
+            }
+            return Math.floor(x / y);
+        },
         position: 'infix',
         description: '整除'
     },
     '%': {
         precedence: 4,
         args: 2,
-        func: (x, y) => x % y,
+        func: (x, y) => {
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                return BigInt(x) % BigInt(y);
+            }
+            return x % y;
+        },
         position: 'infix',
         description: '取模'
     },
     '**': {
         precedence: 5,
         args: 2,
-        func: (x, y) => Math.pow(x, y),
+        func: (x, y) => Math.pow(x.toString(), y.toString()),
         position: 'infix',
         description: '幂运算'
     },
@@ -157,21 +179,36 @@ export const OPERATORS = {
     '<<': {
         precedence: 3,
         args: 2,
-        func: (x, y) => x << y,
+        func: (x, y) => {
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                return BigInt(x) << BigInt(y);
+            }
+            return x << y;
+        },
         position: 'infix',
         description: '左移'
     },
     '>>': {
         precedence: 3,
         args: 2,
-        func: (x, y) => x >> y,
+        func: (x, y) => {
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                return BigInt(x) >> BigInt(y);
+            }
+            return x >> y;
+        },
         position: 'infix',
         description: '右移'
     },
     '>>>': {
         precedence: 3,
         args: 2,
-        func: (x, y) => x >>> y,
+        func: (x, y) => {
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                return BigInt(x) >>> BigInt(y);
+            }
+            return x >>> y;
+        },
         position: 'infix',
         description: '无符号右移'
     },
@@ -300,13 +337,52 @@ export const FUNCTIONS = {
         args: -1,
         description: '求最小值'
     },
-    'log': {
-        func: Math.log10,
+    'lg': {
+        func: x => {
+            if (typeof x === 'bigint') {
+                // 对于 BigInt,先转换为字符串,再转换为数字计算对数
+                return Math.log10(Number(x.toString()));
+            }
+            return Math.log10(x);
+        },
         args: 1,
         description: '以10为底的对数'
     },
+    'lb': {
+        func: x => {
+            if (typeof x === 'bigint') {
+                // 对于 BigInt,先转换为字符串,再转换为数字计算对数
+                return Math.log2(Number(x.toString()));
+            }
+            return Math.log2(x);
+        },
+        args: 1,
+        description: '以2为底的对数'
+    },
+    'log': {
+        func: (x, y) => {
+            if (x <= 0 || y <= 0) {
+                throw new Error('对数底数和真数必须为正数');
+            }
+
+            if (typeof x === 'bigint' || typeof y === 'bigint') {
+                // 对于 BigInt,先转换为字符串,再转换为数字计算对数
+                return Math.log(Number(y.toString())) / Math.log(Number(x.toString()));
+            }
+
+            return Math.log(y) / Math.log(x);
+        },
+        args: 2,
+        description: '以x为底的y对数'
+    },
     'ln': {
-        func: Math.log,
+        func: x => {
+            if (typeof x === 'bigint') {
+                // 对于 BigInt,先转换为字符串,再转换为数字计算对数
+                return Math.log(Number(x.toString()));
+            }
+            return Math.log(x);
+        },
         args: 1,
         description: '自然对数'
     },
@@ -318,34 +394,34 @@ export const FUNCTIONS = {
 
     // 三角函数
     'sin': {
-        func: Math.sin,
+        func: x => Math.sin(x.toString()),
         args: 1,
         description: '正弦函数'
     },
     'cos': {
-        func: Math.cos,
+        func: x => Math.cos(x.toString()),
         args: 1,
         description: '余弦函数'
     },
     'tan': {
-        func: Math.tan,
+        func: x => Math.tan(x.toString()),
         args: 1,
         description: '正切函数'
     },
     'asin': {
-        func: Math.asin,
+        func: x => Math.asin(x.toString()),
         args: 1,
         repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反正弦函数'
     },
     'acos': {
-        func: Math.acos,
+        func: x => Math.acos(x.toString()),
         args: 1,
         repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反余弦函数'
     },
     'atan': {
-        func: Math.atan,
+        func: x => Math.atan(x.toString()),
         args: 1,
         repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反正切函数'
@@ -353,33 +429,33 @@ export const FUNCTIONS = {
 
     // 双曲函数
     'sinh': {
-        func: Math.sinh,
+        func: x => Math.sinh(x.toString()),
         args: 1,
         description: '双曲正弦'
     },
     'cosh': {
-        func: Math.cosh,
+        func: x => Math.cosh(x.toString()),
         args: 1,
         description: '双曲余弦'
     },
     'tanh': {
-        func: Math.tanh,
+        func: x => Math.tanh(x.toString()),
         args: 1,
         description: '双曲正切'
     },
     'sqrt': {
-        func: x => Math.sqrt(x),
+        func: x => Math.sqrt(x.toString()),
         args: 1,
         description: '平方根'
     },
     'pow': {
-        func: (x, y) => Math.pow(x, y),
+        func: (x, y) => Math.pow(x.toString(), y.toString()),
         args: 2,
         description: '幂函数'
     },
     'abs': {
         args: 1,
-        func: x => Math.abs(x),
+        func: x => Math.abs(x.toString()),
         asProperty: true,
         description: '绝对值'
     },

@@ -76,6 +76,40 @@
         .test-stats .failed {
             color: #dc3545;
         }
+
+        .next-error-btn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+
+        .next-error-btn:hover {
+            background-color: #c82333;
+        }
+
+        .next-error-btn.show {
+            display: block;
+        }
+
+        .test-case.highlight {
+            border: 2px solid #dc3545;
+            animation: highlight 1s ease-in-out;
+        }
+
+        @keyframes highlight {
+            0% { background-color: #fff; }
+            50% { background-color: #ffe6e6; }
+            100% { background-color: #fff; }
+        }
     </style>
 </head>
 
@@ -94,6 +128,11 @@
     </div>
 
     <div id="results"></div>
+
+    <button id="nextErrorBtn" class="next-error-btn">
+        下一个错误
+        <span id="errorCount"></span>
+    </button>
 
     <!-- 先加载依赖 -->
     <script type="module">
@@ -149,9 +188,14 @@
             { group: '双曲函数', name: "双曲正切", input: "tanh(1)", expected: "0.761594" },
 
             // 对数函数测试
-            { group: '对数函数', name: "常用对数", input: "log(100)", expected: "2" },
+            { group: '对数函数', name: "常用对数", input: "lg(100)", expected: "2" },
             { group: '对数函数', name: "自然对数", input: "ln(e)", expected: "1" },
             { group: '对数函数', name: "指数函数", input: "exp(2)", expected: "7.389056" },
+            { group: '对数函数', name: "二进制对数", input: "lb(8)", expected: "3" },
+            { group: '对数函数', name: "lg(1000)", input: "lg(1000)", expected: "3" },
+            { group: '对数函数', name: "lb(1024)", input: "lb(1024)", expected: "10" },
+            { group: '对数函数', name: "lg(0.1)", input: "lg(0.1)", expected: "-1" },
+            { group: '对数函数', name: "lb(0.125)", input: "lb(0.125)", expected: "-3" },
 
             // 进制转换测试
             { group: '进制转换', name: "二进制转十进制", input: "0b1010", expected: "10" },
@@ -190,7 +234,7 @@
             { group: '复杂表达式', name: "混合运算1", input: "2 * 3 + 4 * 5", expected: "26" },
             { group: '复杂表达式', name: "混合运算2", input: "(2 + 3) * (4 + 5)", expected: "45" },
             { group: '复杂表达式', name: "多层括号", input: "((2 + 3) * 4) + (5 * (6 + 7))", expected: "85" },
-            { group: '复杂表达式', name: "函数嵌套", input: "sin(cos(PI/4)) + log(exp(2))", expected: "1.518226" },
+            { group: '复杂表达式', name: "函数嵌套", input: "sin(cos(PI/4)) + lg(exp(2))", expected: "1.518226" },
             { group: '复杂表达式', name: "混合函数", input: "sqrt(pow(2,3)) + abs(-5)", expected: "7.828427" },
 
             // 特殊数值测试
@@ -266,7 +310,8 @@
             // 负数函数测试
             { group: '负数函数', name: "负数绝对值", input: "(-5).abs", expected: "5" },
             { group: '负数函数', name: "负数开方", input: "sqrt(-4)", expected: "error" },
-            { group: '负数函数', name: "负数对数", input: "log(-2)", expected: "error" },
+            { group: '负数函数', name: "负数对数", input: "lg(-2)", expected: "error" },
+            { group: '负数函数', name: "负数对数", input: "log(10)", expected: "error" },
             { group: '负数函数', name: "负数正弦", input: "sin(-PI/2)", expected: "-1" },
             { group: '负数函数', name: "负数余弦", input: "cos(-PI)", expected: "-1" },
             { group: '负数函数', name: "负数正切", input: "tan(-PI/4)", expected: "-1" },
@@ -278,7 +323,65 @@
             // 全角符号测试
             { group: '不规则符号', name: "全角符号", input: "（１＋２）÷３", expected: "1" },
             { group: '不规则符号', name: "全角符号", input: "max（1，5，3）", expected: "5" },
-            { group: '不规则符号', name: "全角符号", input: "max（1，5，3）。deg", expected: "0.08726646259971647" }
+            { group: '不规则符号', name: "全角符号", input: "max（1，5，3）。deg", expected: "0.08726646259971647" },
+
+            // 大数运算测试
+            { group: '大数运算', name: "大整数加法", input: "12345678901234567890 + 98765432109876543210", expected: "111111111011111111100" },
+            { group: '大数运算', name: "大整数减法", input: "98765432109876543210 - 12345678901234567890", expected: "86419753208641975320" },
+            { group: '大数运算', name: "大整数乘法", input: "12345678901234567890 * 2", expected: "24691357802469135780" },
+            { group: '大数运算', name: "大整数除法", input: "98765432109876543210 / 2", expected: "49382716054938271605" },
+            { group: '大数运算', name: "大整数幂运算", input: "123456789 ** 3", expected: "1881676371789154860897069" },
+            { group: '大数运算', name: "大整数求余", input: "98765432109876543210 % 3", expected: "0" },
+            { group: '大数运算', name: "大整数整除", input: "98765432109876543210 // 3", expected: "32921810703292181070" },
+
+            { group: '大浮点数运算', name: "大浮点数加法", input: "1234567890.123456789 + 9876543210.987654321", expected: "11111111101.111111110" },
+            { group: '大浮点数运算', name: "大浮点数减法", input: "9876543210.987654321 - 1234567890.123456789", expected: "8641975320.864197532" },
+            { group: '大浮点数运算', name: "大浮点数乘法", input: "1234567890.123456789 * 2", expected: "2469135780.246913578" },
+            { group: '大浮点数运算', name: "大浮点数除法", input: "9876543210.987654321 / 2", expected: "4938271605.493827161" },
+            { group: '大浮点数运算', name: "大浮点数幂运算", input: "123.456789 ** 3", expected: "1881676.371789154860897069" },
+
+            { group: '大数函数运算', name: "大数sin", input: "sin(123456789123456789)", expected: "-0.06236190646523525" },
+            { group: '大数函数运算', name: "大数cos", input: "cos(123456789123456789)", expected: "-0.9980536020785764" },
+            { group: '大数函数运算', name: "大数tan", input: "tan(123456789123456789)", expected: "0.062483524266991754" },
+            { group: '大数函数运算', name: "大数lg", input: "lg(123456789123456789)", expected: "17.091514977603566" },
+            { group: '大数函数运算', name: "大数ln", input: "ln(123456789123456789)", expected: "39.35466760411443" },
+            { group: '大数函数运算', name: "大数sqrt", input: "sqrt(123456789123456789)", expected: "351364183.0401283" },
+            { group: '大数函数运算', name: "大数abs", input: "(-123456789123456789).abs", expected: "123456789123456789" },
+
+            { group: '大数进制转换', name: "大数二进制", input: "12499985930813552338.bin", expected: "0b1010110101111000110111101111100111101111100001011011011011010010" },
+            { group: '大数进制转换', name: "大数八进制", input: "12499485111628240594.oct", expected: "0o1265670567574170513322" },
+            { group: '大数进制转换', name: "大数十六进制", input: "98765432109876543210.hex", expected: "0x55aa54d38e5268000" },
+            { group: '大数进制转换', name: "大二进制转十进制", input: "0b1010110101111000110111101111100111101111100001011011011011010010", expected: "12499985930813552338" },
+            { group: '大数进制转换', name: "大八进制转十进制", input: "0o1265670567574170513322", expected: "12499485111628240594" },
+            { group: '大数进制转换', name: "大十六进制转十进制", input: "0x55aa54d38e5268000", expected: "98765432109876543210" },
+
+            { group: '大数位运算', name: "大数按位与", input: "123456789123456789 & 9876543210987634521", expected: "76705266742075153" },
+            { group: '大数位运算', name: "大数按位或", input: "9876543210987654312 | 123456789123456798", expected: "9923294733369040830" },
+            { group: '大数位运算', name: "大数按位异或", input: "123456789123456789 ^ 9876543210987653412", expected: "9846589466626971185" },
+            { group: '大数位运算', name: "大数左移", input: "123456789123456789 << 4", expected: "1975308625975308624" },
+            { group: '大数位运算', name: "大数右移", input: "123456789123456897 >> 4", expected: "7716049320216056" },
+
+            { group: '大数混合运算', name: "大数复合运算1", input: "(123456789012345 + 987654321098765) * 2", expected: "2222222220222220" },
+            { group: '大数混合运算', name: "大数复合运算2", input: "sqrt(123456789123459876 ** 2)", expected: "123456789123459876" },
+            { group: '大数混合运算', name: "大数复合运算3", input: "lg(123456789012345) + ln(987654321098765)", expected: "48.61786885223732" },
+            { group: '大数混合运算', name: "大数复合运算4", input: "(1234567890123457689).bin.hex", expected: "0x112210f47de98499" },
+            { group: '大数混合运算', name: "大数复合运算5", input: "max(123456789012345, 987654321098765, 555555555555555)", expected: "987654321098765" },
+            { group: '大数混合运算', name: "大数复合运算6", input: "lg(1234567890123457689) + lb(9876543210987653214)", expected: "81.19022687223763" },
+
+            { group: '大数边界测试', name: "超大整数", input: "999999999999999999999999999999", expected: "1e+30" },
+            { group: '大数边界测试', name: "超大浮点数", input: "1.23456789e+30", expected: "1.234568e+30" },
+            { group: '大数边界测试', name: "超小浮点数", input: "1.23456789e-30", expected: "1.234568e-30" },
+            { group: '大数边界测试', name: "大数精度", input: "0.123456789012345678901234567890", expected: "0.123456789012345678901234567890" },
+            { group: '大数边界测试', name: "大数舍入", input: "9.999999999999999999999999", expected: "10" },
+
+            // 错误处理测试
+            { group: '错误处理', name: "log负数", input: "log(-1, 10)", expected: "error" },
+            { group: '错误处理', name: "lg负数", input: "lg(-1)", expected: "error" },
+            { group: '错误处理', name: "lb负数", input: "lb(-1)", expected: "error" },
+            { group: '错误处理', name: "lg零", input: "lg(0)", expected: "error" },
+            { group: '错误处理', name: "log以零为底", input: "log(0, 1)", expected: "error" },
+            { group: '错误处理', name: "log零", input: "log(100, 0)", expected: "error" },
+            { group: '错误处理', name: "lb零", input: "lb(0)", expected: "error" }
         ];
 
         function runTest(test) {
@@ -287,12 +390,12 @@
                 
                 // 如果期望值是 "error"，检查结果是否为 NaN 或抛出错误
                 if (test.expected === "error") {
-                    if (isNaN(result.value)) {
+                    if (isNaN(result.value) || !isFinite(result.value)) {
                         return {
                             name: test.name,
                             input: test.input,
                             expected: "error",
-                            actual: "NaN",
+                            actual: isNaN(result.value) ? "NaN" : "Infinity",
                             success: true
                         };
                     }
@@ -313,7 +416,7 @@
                 const expectedNum = Number(expectedStr);
                 const EPSILON = 0.00001;
 
-                const success = !isNaN(resultNum) && !isNaN(expectedNum) ?
+                const success = !isNaN(resultNum) && !isNaN(expectedNum) && isFinite(resultNum) ?
                     Math.abs(resultNum - expectedNum) < EPSILON :
                     resultStr === expectedStr;
 
@@ -348,64 +451,77 @@
             }
         }
 
+        let currentErrorIndex = -1;
+        let errorCases = [];
+
+        function updateErrorButton() {
+            const btn = document.getElementById('nextErrorBtn');
+            const countSpan = document.getElementById('errorCount');
+            
+            if (errorCases.length > 0) {
+                btn.classList.add('show');
+                countSpan.textContent = ` (${currentErrorIndex + 1}/${errorCases.length})`;
+            } else {
+                btn.classList.remove('show');
+            }
+        }
+
+        function scrollToNextError() {
+            if (errorCases.length === 0) return;
+            
+            // 移除之前的高亮
+            document.querySelectorAll('.test-case.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+
+            // 更新索引
+            currentErrorIndex = (currentErrorIndex + 1) % errorCases.length;
+            
+            // 高亮并滚动到下一个错误
+            const errorCase = errorCases[currentErrorIndex];
+            errorCase.classList.add('highlight');
+            errorCase.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 更新按钮文本
+            updateErrorButton();
+        }
+
         function runAllTests() {
             const results = document.getElementById('results');
             const statsDiv = document.getElementById('test-stats');
             results.innerHTML = '';
             let successCount = 0;
             let totalTests = 0;
+            errorCases = [];
+            currentErrorIndex = -1;
 
-            // 按组运行测试
             let currentGroup = '';
             let groupDiv = null;
 
             tests.forEach(test => {
-                // 如果是变量测试组
-                if (test.tests) {
-                    if (currentGroup !== test.group) {
-                        currentGroup = test.group;
-                        groupDiv = document.createElement('div');
-                        groupDiv.innerHTML = `<h3>${test.group}</h3>`;
-                        results.appendChild(groupDiv);
-                    }
+                if (currentGroup !== test.group) {
+                    currentGroup = test.group;
+                    groupDiv = document.createElement('div');
+                    groupDiv.innerHTML = `<h3>${test.group}</h3>`;
+                    results.appendChild(groupDiv);
+                }
 
-                    // 初始化变量
-                    clearTempConstants();
-                    if (Array.isArray(test.init)) {
-                        test.init.forEach(init => calculate(init));
-                    } else {
-                        calculate(test.init);
-                    }
-
-                    // 运行组内测试
-                    test.tests.forEach(subTest => {
-                        totalTests++;
-                        const result = runTest(subTest);
-                        appendTestResult(groupDiv, result);
-                        if (result.success) successCount++;
-                    });
+                totalTests++;
+                const result = runTest(test);
+                const testCaseElement = appendTestResult(groupDiv, result);
+                if (result.success) {
+                    successCount++;
                 } else {
-                    // 普通测试
-                    if (currentGroup !== test.group) {
-                        currentGroup = test.group;
-                        groupDiv = document.createElement('div');
-                        groupDiv.innerHTML = `<h3>${test.group}</h3>`;
-                        results.appendChild(groupDiv);
-                    }
-
-                    totalTests++;
-                    const result = runTest(test);
-                    appendTestResult(groupDiv, result);
-                    if (result.success) successCount++;
+                    errorCases.push(testCaseElement);
                 }
             });
 
-            // 更新统计信息
             statsDiv.innerHTML = `
                 <span class="total">总测试数: ${totalTests}</span>
                 <span class="passed">通过: ${successCount}</span>
                 <span class="failed">失败: ${totalTests - successCount}</span>
             `;
+            updateErrorButton();
         }
 
         function clearResults() {
@@ -418,10 +534,9 @@
             clearTempConstants();
         }
 
-        // 添加辅助函数来显示测试结果
         function appendTestResult(container, result) {
             const div = document.createElement('div');
-            div.className = 'test-case';
+            div.className = 'test-case' + (result.success ? '' : ' error');
             div.innerHTML = `
                 <div class="test-input">
                     <strong>${result.name}</strong> (${result.input})
@@ -433,6 +548,7 @@
                 </div>
             `;
             container.appendChild(div);
+            return div;
         }
 
         function clearTempConstants() {
@@ -441,10 +557,10 @@
             }
         }
 
-        // 添加事件监听器
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('runAllTests').addEventListener('click', runAllTests);
             document.getElementById('clearResults').addEventListener('click', clearResults);
+            document.getElementById('nextErrorBtn').addEventListener('click', scrollToNextError);
         });
     </script>
 </body>
