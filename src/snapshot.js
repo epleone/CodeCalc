@@ -325,37 +325,18 @@ class Snapshot {
     
     // 应用快照
     applySnapshot(records) {
-        // 打印整个 records 数组
-        // console.log('Applying snapshot records:', records);
+        // 清空所有变量和行
+        window.clearAll();
         
-        // 清除所有现有输入
-        const lines = document.querySelectorAll('.expression-line');
-        lines.forEach(line => {
-            const input = line.querySelector('.input');
-            if (input) {
-                input.value = '';
-            }
-            // 清除标签
-            setTag(line, '');
-        });
-
         // 依次填入快照中的记录
         records.forEach((record, index) => {
-            if (index >= lines.length) {
+            if (index > 0) { // 因为第一行已经存在,所以从第二条记录开始才需要新增行
                 window.addNewLine();
             }
             const line = document.querySelectorAll('.expression-line')[index];
             const input = line.querySelector('.input');
             
-            // 打印每条记录的完整信息
-            // console.log('Processing record:', {
-            //     index,
-            //     expression: record.expression,
-            //     tag: record.tag,
-            //     result: record.result
-            // });
-            
-            // 先设置 tag
+            // 设置 tag
             if (record.tag) {
                 restoreTag(line, record.tag);
             }
@@ -363,6 +344,8 @@ class Snapshot {
             input.value = record.expression + ' ';
             input.dispatchEvent(new Event('input'));
         });
+
+        window.addNewLine();
 
         // 关闭快照面板
         this.togglePanel();
