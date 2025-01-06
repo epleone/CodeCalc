@@ -27,6 +27,35 @@
         }
         .success { color: #28a745; }
         .error { color: #dc3545; }
+        .next-error-btn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+        .next-error-btn:hover {
+            background-color: #c82333;
+        }
+        .next-error-btn.show {
+            display: block;
+        }
+        .test-case.highlight {
+            border: 2px solid #dc3545;
+            animation: highlight 1s ease-in-out;
+        }
+        @keyframes highlight {
+            0% { background-color: #fff; }
+            50% { background-color: #ffe6e6; }
+            100% { background-color: #fff; }
+        }
     </style>
 </head>
 <body>
@@ -66,34 +95,41 @@
 
             // 对数函数复合测试
             { group: '对数函数复合', name: "ln嵌套", input: "ln(ln(e*e))", expected: "0.693147" },
-            { group: '对数函数复合', name: "log嵌套", input: "log(log(1000))", expected: "0.477121" },
-            { group: '对数函数复合', name: "混合对数", input: "ln(log(100))", expected: "0.693147" },
-            { group: '对数函数复合', name: "exp嵌套", input: "log(exp(2))", expected: "0.868589" },
+            { group: '对数函数复合', name: "lg嵌套", input: "lg(lg(1000))", expected: "0.477121" },
+            { group: '对数函数复合', name: "lb嵌套", input: "lb(lb(1024))", expected: "3.321928" },
+            { group: '对数函数复合', name: "log嵌套", input: "log(2, log(2, 16))", expected: "2" },
+            { group: '对数函数复合', name: "混合对数1", input: "ln(lg(100))", expected: "0.693147" },
+            { group: '对数函数复合', name: "混合对数2", input: "lb(lg(1000))", expected: "1.584963" },
+            { group: '对数函数复合', name: "混合对数3", input: "lg(lb(1024))", expected: "1" },
+            { group: '对数函数复合', name: "log与lb混合", input: "log(2, lb(1024))", expected: "3.3219280948873626" },
+            { group: '对数函数复合', name: "log与lg混合", input: "log(10, lg(1000))", expected: "0.477121" },
+            { group: '对数函数复合', name: "log与ln混合", input: "log(e, ln(e*e))", expected: "0.6931471805599453" },
+            { group: '对数函数复合', name: "exp对数", input: "lg(exp(2))", expected: "0.868589" },
+            { group: '对数函数复合', name: "exp与log", input: "log(2, exp(3))", expected: "4.328085122666891" },
 
             // 幂函数和根式复合测试
             { group: '幂根复合', name: "幂函数嵌套", input: "pow(pow(2,2),2)", expected: "16" },
             { group: '幂根复合', name: "根式嵌套", input: "sqrt(sqrt(16))", expected: "2" },
+            { group: '幂根复合', name: "log幂混合", input: "log(2, pow(2, 5))", expected: "5" },
+            { group: '幂根复合', name: "lb幂混合", input: "lb(pow(2, 4))", expected: "4" },
             { group: '幂根复合', name: "root嵌套", input: "pow(pow(27,1/3),1/3)", expected: "1.44225" },
             { group: '幂根复合', name: "混合幂根", input: "sqrt(pow(2,4))", expected: "4" },
             { group: '幂根复合', name: "root幂混合", input: "pow(pow(8,2),1/3)", expected: "4" },
 
             // 混合函数复合测试
             { group: '混合函数复合', name: "三角对数", input: "sin(ln(e))", expected: "0.841471" },
-            { group: '混合函数复合', name: "对数三角", input: "log(sin(PI/2))", expected: "0" },
+            { group: '混合函数复合', name: "对数三角", input: "lg(sin(PI/2))", expected: "0" },
+            { group: '混合函数复合', name: "log三角", input: "log(2, sin(PI/2))", expected: "0" },
+            { group: '混合函数复合', name: "lb三角", input: "lb(sin(PI/2))", expected: "0" },
             { group: '混合函数复合', name: "幂三角", input: "pow(sin(PI/2),2)", expected: "1" },
             { group: '混合函数复合', name: "根三角", input: "sqrt(sin(PI/2))", expected: "1" },
             { group: '混合函数复合', name: "复杂混合1", input: "sin(sqrt(pow(2,2)))", expected: "0.909297" },
-            { group: '混合函数复合', name: "复杂混合2", input: "log(pow(e,2))", expected: "0.868589" },
-
-            // 角度值复合测试
-            { group: '角度复合', name: "角度正弦", input: "sin(45°)", expected: "0.707107" },
-            { group: '角度复合', name: "角度余弦", input: "cos(60°)", expected: "0.5" },
-            { group: '角度复合', name: "角度正切", input: "tan(30°)", expected: "0.577351" },
-            { group: '角度复合', name: "角度复合", input: "sin(cos(45°))", expected: "0.649637" },
+            { group: '混合函数复合', name: "复杂混合3", input: "log(2, lb(pow(2, 8)))", expected: "3" },
+            { group: '混合函数复合', name: "复杂混合4", input: "lb(log(2, pow(2, 16)))", expected: "4" },
 
             // 最值函数复合测试
             { group: '最值复合', name: "最大三角", input: "max(sin(PI/2),cos(0),tan(PI/4))", expected: "1" },
-            { group: '最值复合', name: "最小对数", input: "min(log(100),ln(e*e),sqrt(4))", expected: "2" },
+            { group: '最值复合', name: "最小对数", input: "min(log(10,100),lb(16),ln(e*e))", expected: "2" },
             { group: '最值复合', name: "复杂最值", input: "max(sin(30°),cos(60°),tan(45°))", expected: "1" },
 
             // 添加更多最值函数测试用例
@@ -102,11 +138,11 @@
             { group: '最值复合', name: "混合嵌套", input: "max(min(1,2,3),min(4,5,6),7)", expected: "7" },
             { group: '最值复合', name: "三角最大值", input: "max(sin(0),sin(PI/6),sin(PI/4),sin(PI/3),sin(PI/2))", expected: "1" },
             { group: '最值复合', name: "三角最小值", input: "min(cos(0),cos(PI/3),cos(PI/2),cos(2*PI/3),cos(PI))", expected: "-1" },
-            { group: '最值复合', name: "对数最大值", input: "max(log(10),ln(e),log(1000)/2)", expected: "1.5" },
+            { group: '最值复合', name: "对数最大值", input: "max(lg(10),ln(e),lg(1000)/2)", expected: "1.5" },
             { group: '最值复合', name: "根式最小值", input: "min(sqrt(1),sqrt(2),sqrt(3),sqrt(4))", expected: "1" },
             { group: '最值复合', name: "幂函数最大值", input: "max(pow(2,1),pow(2,2),pow(2,3))", expected: "8" },
             { group: '最值复合', name: "复杂表达式", input: "max(sin(45°),cos(60°),tan(30°),sqrt(2)/2)", expected: "0.707107" },
-            { group: '最值复合', name: "混合函数1", input: "min(log(pow(10,2)),sqrt(16),sin(PI/2))", expected: "1" },
+            { group: '最值复合', name: "混合函数1", input: "min(lg(pow(10,2)),sqrt(16),sin(PI/2))", expected: "1" },
             { group: '最值复合', name: "混合函数2", input: "max(ln(e*e),pow(sqrt(4),2),sin(PI/2))", expected: "4" },
 
             // 属性函数链式调用测试
@@ -133,13 +169,13 @@
             // 数学函数复合测试
             { group: '数学函数复合', name: "绝对值嵌套", input: "(-(-5).abs).abs", expected: "5" },
             { group: '数学函数复合', name: "幂函数组合", input: "sqrt(pow(2, pow(2, 2)))", expected: "4" },
-            { group: '数学函数复合', name: "对数幂组合", input: "pow(2, log(16))", expected: "2.303967" },
-            { group: '数学函数复合', name: "复杂数学", input: "sqrt(pow(log(100), 2) + pow(sin(PI/2), 2))", expected: "2.236068" },
+            { group: '数学函数复合', name: "对数幂组合", input: "pow(2, lg(16))", expected: "2.303967" },
+            { group: '数学函数复合', name: "复杂数学", input: "sqrt(pow(lg(100), 2) + pow(sin(PI/2), 2))", expected: "2.236068" },
 
             // 混合运算复合测试
             { group: '混合运算复合', name: "数学位运算", input: "sqrt((16 & 12) << 2)", expected: "0" },
             { group: '混合运算复合', name: "三角位运算", input: "(sin(PI/2) * 8).bin", expected: "0b1000" },
-            { group: '混合运算复合', name: "对数进制", input: "(pow(2, log(16))).hex", expected: "error" },
+            { group: '混合运算复合', name: "对数进制", input: "(pow(2, lg(16))).hex", expected: "error" },
             { group: '混合运算复合', name: "复杂混合", input: "((0xFF & 0xF0) >> 4).abs + sin(PI/2)", expected: "16" },
 
             // 错误处理复合测试
@@ -154,12 +190,12 @@
 
             // 最值函数与其他函数复合
             { group: '最值复合函数', name: "最值三角函数", input: "max(sin(PI/6),sin(PI/4),sin(PI/3),sin(PI/2))", expected: "1" },
-            { group: '最值复合函数', name: "最值对数函数", input: "min(log(10),ln(e),log(100)/2)", expected: "1" },
+            { group: '最值复合函数', name: "最值对数函数", input: "min(lg(10),ln(e),lg(100)/2)", expected: "1" },
             { group: '最值复合函数', name: "最值幂函数", input: "max(pow(2,1),pow(2,2),pow(2,3))", expected: "8" },
             { group: '最值复合函数', name: "最值根函数", input: "min(sqrt(1),sqrt(4),sqrt(9),sqrt(16))", expected: "1" },
-            { group: '最值复合函数', name: "混合函数最值", input: "min(sin(max(PI/2,PI/3)),log(max(10,100)))", expected: "1" },
+            { group: '最值复合函数', name: "混合函数最值", input: "min(sin(max(PI/2,PI/3)),lg(max(10,100)))", expected: "1" },
             { group: '最值复合函数', name: "复杂函数最值1", input: "max(pow(min(2,3),2),sqrt(max(16,25)))", expected: "5" },
-            { group: '最值复合函数', name: "复杂函数最值2", input: "min(log(max(e,e*e)),pow(max(2,3),min(2,3)))", expected: "0.8685889638065036" },
+            { group: '最值复合函数', name: "复杂函数最值2", input: "min(lg(max(e,e*e)),pow(max(2,3),min(2,3)))", expected: "0.8685889638065036" },
 
             // 最值函数与运算符复合
             { group: '最值运算复合', name: "最值加法", input: "max(1+2,3+4,5+6)", expected: "11" },
@@ -261,6 +297,8 @@
             results.innerHTML = '';
             let successCount = 0;
             let totalTests = 0;
+            errorCases = [];
+            currentErrorIndex = -1;
 
             let currentGroup = '';
             let groupDiv = null;
@@ -275,8 +313,12 @@
 
                 totalTests++;
                 const result = runTest(test);
-                appendTestResult(groupDiv, result);
-                if (result.success) successCount++;
+                const testCaseElement = appendTestResult(groupDiv, result);
+                if (result.success) {
+                    successCount++;
+                } else {
+                    errorCases.push(testCaseElement);
+                }
             });
 
             statsDiv.innerHTML = `
@@ -284,11 +326,12 @@
                 <span class="passed">通过: ${successCount}</span>
                 <span class="failed">失败: ${totalTests - successCount}</span>
             `;
+            updateErrorButton();
         }
 
         function appendTestResult(container, result) {
             const div = document.createElement('div');
-            div.className = 'test-case';
+            div.className = 'test-case' + (result.success ? '' : ' error');
             div.innerHTML = `
                 <div class="test-input">
                     <strong>${result.name}</strong> (${result.input})
@@ -300,6 +343,7 @@
                 </div>
             `;
             container.appendChild(div);
+            return div;
         }
 
         function clearResults() {
@@ -318,10 +362,50 @@
             }
         }
 
+        let currentErrorIndex = -1;
+        let errorCases = [];
+
+        function updateErrorButton() {
+            const btn = document.getElementById('nextErrorBtn');
+            const countSpan = document.getElementById('errorCount');
+            
+            if (errorCases.length > 0) {
+                btn.classList.add('show');
+                countSpan.textContent = ` (${currentErrorIndex + 1}/${errorCases.length})`;
+            } else {
+                btn.classList.remove('show');
+            }
+        }
+
+        function scrollToNextError() {
+            if (errorCases.length === 0) return;
+            
+            // 移除之前的高亮
+            document.querySelectorAll('.test-case.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+
+            // 更新索引
+            currentErrorIndex = (currentErrorIndex + 1) % errorCases.length;
+            
+            // 高亮并滚动到下一个错误
+            const errorCase = errorCases[currentErrorIndex];
+            errorCase.classList.add('highlight');
+            errorCase.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 更新按钮文本
+            updateErrorButton();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('runAllTests').addEventListener('click', runAllTests);
             document.getElementById('clearResults').addEventListener('click', clearResults);
+            document.getElementById('nextErrorBtn').addEventListener('click', scrollToNextError);
         });
     </script>
+    <button id="nextErrorBtn" class="next-error-btn">
+        下一个错误
+        <span id="errorCount"></span>
+    </button>
 </body>
 </html> 

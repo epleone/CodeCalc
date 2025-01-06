@@ -26,6 +26,39 @@
         }
         .success { color: #28a745; }
         .error { color: #dc3545; }
+        .next-error-btn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+
+        .next-error-btn:hover {
+            background-color: #c82333;
+        }
+
+        .next-error-btn.show {
+            display: block;
+        }
+
+        .test-case.highlight {
+            border: 2px solid #dc3545;
+            animation: highlight 1s ease-in-out;
+        }
+
+        @keyframes highlight {
+            0% { background-color: #fff; }
+            50% { background-color: #ffe6e6; }
+            100% { background-color: #fff; }
+        }
     </style>
 </head>
 <body>
@@ -172,7 +205,7 @@
                     {
                         name: "对数函数链",
                         steps: [
-                            { input: "a = log(100)", expected: "2" },
+                            { input: "a = lg(100)", expected: "2" },
                             { input: "a = ln(a)", expected: "0.693147" },
                             { input: "a = exp(a)", expected: "2" },
                             { input: "a", expected: "2" }
@@ -198,7 +231,7 @@
                             { input: "a = 2", expected: "2" },
                             { input: "a = pow(a,3)", expected: "8" },
                             { input: "a = sqrt(a)", expected: "2.828427" },
-                            { input: "a = log(a*10)", expected: "1.451545" },
+                            { input: "a = lg(a*10)", expected: "1.451545" },
                             { input: "a", expected: "1.451545" }
                         ]
                     },
@@ -472,13 +505,37 @@
                     {
                         name: "log基本赋值",
                         steps: [
-                            { input: "log(100)", expected: "2" },
-                            { input: "x = log(100)", expected: "2" },
+                            { input: "log(10, 100)", expected: "2" },
+                            { input: "x = log(10, 100)", expected: "2" },
                             { input: "x", expected: "2" },
-                            { input: "x += log(1000)", expected: "5" },
-                            { input: "x -= log(10)", expected: "4" },
-                            { input: "x *= log(100)", expected: "8" },
-                            { input: "x /= log(10)", expected: "8" }
+                            { input: "x += log(10, 1000)", expected: "5" },
+                            { input: "x -= log(10, 10)", expected: "4" },
+                            { input: "x *= log(10, 100)", expected: "8" },
+                            { input: "x /= log(10, 10)", expected: "8" }
+                        ]
+                    },
+                    {
+                        name: "lb基本赋值",
+                        steps: [
+                            { input: "lb(8)", expected: "3" },
+                            { input: "x = lb(8)", expected: "3" },
+                            { input: "x", expected: "3" },
+                            { input: "x += lb(1024)", expected: "13" },
+                            { input: "x -= lb(2)", expected: "12" },
+                            { input: "x *= lb(8)", expected: "36" },
+                            { input: "x /= lb(2)", expected: "36" }
+                        ]
+                    },
+                    {
+                        name: "lg基本赋值",
+                        steps: [
+                            { input: "lg(100)", expected: "2" },
+                            { input: "x = lg(100)", expected: "2" },
+                            { input: "x", expected: "2" },
+                            { input: "x += lg(1000)", expected: "5" },
+                            { input: "x -= lg(10)", expected: "4" },
+                            { input: "x *= lg(100)", expected: "8" },
+                            { input: "x /= lg(10)", expected: "8" }
                         ]
                     },
                     {
@@ -492,7 +549,32 @@
                             { input: "y *= ln(e)", expected: "2" },
                             { input: "y /= ln(e)", expected: "2" }
                         ]
+                    }
+                ]
+            },
+            {
+                group: '对数函数混合',
+                tests: [
+                    {
+                        name: "对数函数混合运算",
+                        steps: [
+                            { input: "x = log(10, 1000)", expected: "3" },
+                            { input: "y = lb(x)", expected: "1.584962500721156" },
+                            { input: "z = lg(y * 100)", expected: "2.200018991523782" },
+                            { input: "w = ln(z + 10)", expected: "2.5014375084202767" },
+                            { input: "x * y * z * w", expected: "26.167144567915486" }
+                        ]
                     },
+                    {
+                        name: "对数函数嵌套",
+                        steps: [
+                            { input: "a = log(10, lb(1024))", expected: "1" },
+                            { input: "b = lb(log(10, 1000))", expected: "1.584962500721156" },
+                            { input: "c = lg(log(10, 100) * lb(8))", expected: "0.7781512503836436" },
+                            { input: "d = ln(lb(16) * log(10, 100))", expected: "2.0794415416798357" },
+                            { input: "a + b + c + d", expected: "5.442555292784636" }
+                        ]
+                    }
                 ]
             },
             {
@@ -727,12 +809,49 @@
             };
         }
 
+        let currentErrorIndex = -1;
+        let errorCases = [];
+
+        function updateErrorButton() {
+            const btn = document.getElementById('nextErrorBtn');
+            const countSpan = document.getElementById('errorCount');
+            
+            if (errorCases.length > 0) {
+                btn.classList.add('show');
+                countSpan.textContent = ` (${currentErrorIndex + 1}/${errorCases.length})`;
+            } else {
+                btn.classList.remove('show');
+            }
+        }
+
+        function scrollToNextError() {
+            if (errorCases.length === 0) return;
+            
+            // 移除之前的高亮
+            document.querySelectorAll('.test-case.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+
+            // 更新索引
+            currentErrorIndex = (currentErrorIndex + 1) % errorCases.length;
+            
+            // 高亮并滚动到下一个错误
+            const errorCase = errorCases[currentErrorIndex];
+            errorCase.classList.add('highlight');
+            errorCase.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 更新按钮文本
+            updateErrorButton();
+        }
+
         function runAllTests() {
             const results = document.getElementById('results');
             const statsDiv = document.getElementById('test-stats');
             results.innerHTML = '';
             let successCount = 0;
             let totalTests = 0;
+            errorCases = [];
+            currentErrorIndex = -1;
 
             tests.forEach(group => {
                 const groupDiv = document.createElement('div');
@@ -742,8 +861,12 @@
                 group.tests.forEach(test => {
                     totalTests++;
                     const result = runTest(test);
-                    appendTestResult(groupDiv, result);
-                    if (result.success) successCount++;
+                    const testCaseElement = appendTestResult(groupDiv, result);
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        errorCases.push(testCaseElement);
+                    }
                 });
             });
 
@@ -752,11 +875,12 @@
                 <span class="passed">通过: ${successCount}</span>
                 <span class="failed">失败: ${totalTests - successCount}</span>
             `;
+            updateErrorButton();
         }
 
         function appendTestResult(container, result) {
             const div = document.createElement('div');
-            div.className = 'test-case';
+            div.className = 'test-case' + (result.success ? '' : ' error');
             let html = `<strong>${result.name}</strong><br>`;
             
             result.steps.forEach((step, index) => {
@@ -771,6 +895,7 @@
             
             div.innerHTML = html;
             container.appendChild(div);
+            return div;
         }
 
         function clearResults() {
@@ -785,7 +910,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('runAllTests').addEventListener('click', runAllTests);
             document.getElementById('clearResults').addEventListener('click', clearResults);
+            document.getElementById('nextErrorBtn').addEventListener('click', scrollToNextError);
         });
     </script>
+    <button id="nextErrorBtn" class="next-error-btn">
+        下一个错误
+        <span id="errorCount"></span>
+    </button>
 </body>
 </html> 

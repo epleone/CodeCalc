@@ -26,6 +26,35 @@
         }
         .success { color: #28a745; }
         .error { color: #dc3545; }
+        .next-error-btn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+        .next-error-btn:hover {
+            background-color: #c82333;
+        }
+        .next-error-btn.show {
+            display: block;
+        }
+        .test-case.highlight {
+            border: 2px solid #dc3545;
+            animation: highlight 1s ease-in-out;
+        }
+        @keyframes highlight {
+            0% { background-color: #fff; }
+            50% { background-color: #ffe6e6; }
+            100% { background-color: #fff; }
+        }
     </style>
 </head>
 <body>
@@ -202,6 +231,8 @@
             results.innerHTML = '';
             let successCount = 0;
             let totalTests = 0;
+            errorCases = [];
+            currentErrorIndex = -1;
 
             tests.forEach(group => {
                 const groupDiv = document.createElement('div');
@@ -211,8 +242,12 @@
                 group.tests.forEach(test => {
                     totalTests++;
                     const result = runTest(test);
-                    appendTestResult(groupDiv, result);
-                    if (result.success) successCount++;
+                    const testCaseElement = appendTestResult(groupDiv, result);
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        errorCases.push(testCaseElement);
+                    }
                 });
             });
 
@@ -221,11 +256,12 @@
                 <span class="passed">通过: ${successCount}</span>
                 <span class="failed">失败: ${totalTests - successCount}</span>
             `;
+            updateErrorButton();
         }
 
         function appendTestResult(container, result) {
             const div = document.createElement('div');
-            div.className = 'test-case';
+            div.className = 'test-case' + (result.success ? '' : ' error');
             div.innerHTML = `
                 <div class="test-input">
                     <strong>${result.name}</strong> (${result.input})
@@ -237,6 +273,7 @@
                 </div>
             `;
             container.appendChild(div);
+            return div;
         }
 
         function clearResults() {
@@ -254,10 +291,50 @@
             }
         }
 
+        let currentErrorIndex = -1;
+        let errorCases = [];
+
+        function updateErrorButton() {
+            const btn = document.getElementById('nextErrorBtn');
+            const countSpan = document.getElementById('errorCount');
+            
+            if (errorCases.length > 0) {
+                btn.classList.add('show');
+                countSpan.textContent = ` (${currentErrorIndex + 1}/${errorCases.length})`;
+            } else {
+                btn.classList.remove('show');
+            }
+        }
+
+        function scrollToNextError() {
+            if (errorCases.length === 0) return;
+            
+            // 移除之前的高亮
+            document.querySelectorAll('.test-case.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+
+            // 更新索引
+            currentErrorIndex = (currentErrorIndex + 1) % errorCases.length;
+            
+            // 高亮并滚动到下一个错误
+            const errorCase = errorCases[currentErrorIndex];
+            errorCase.classList.add('highlight');
+            errorCase.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 更新按钮文本
+            updateErrorButton();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('runAllTests').addEventListener('click', runAllTests);
             document.getElementById('clearResults').addEventListener('click', clearResults);
+            document.getElementById('nextErrorBtn').addEventListener('click', scrollToNextError);
         });
     </script>
+    <button id="nextErrorBtn" class="next-error-btn">
+        下一个错误
+        <span id="errorCount"></span>
+    </button>
 </body>
 </html> 

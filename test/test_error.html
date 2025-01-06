@@ -181,7 +181,13 @@
             { group: '字符串错误', name: "字符串移位", input: "'abc' << 2", expected: "error" },
             { group: '字符串错误', name: "字符串取反", input: "~'abc'", expected: "error" },
             { group: '字符串错误', name: "字符串幂运算", input: "'abc' ** 2", expected: "error" },
-            { group: '字符串错误', name: "字符串模运算", input: "'abc' % 2", expected: "error" }
+            { group: '字符串错误', name: "字符串模运算", input: "'abc' % 2", expected: "error" },
+
+            // 对数函数错误
+            { group: '函数错误', name: "lg负数", input: "lg(-1)", expected: "error" },
+            { group: '函数错误', name: "lb负数", input: "lb(-1)", expected: "error" },
+            { group: '函数错误', name: "lg零", input: "lg(0)", expected: "error" },
+            { group: '函数错误', name: "lb零", input: "lb(0)", expected: "error" }
         ];
 
         function runTest(test) {
