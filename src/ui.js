@@ -5,6 +5,38 @@ import * as Snapshot from './snapshot.js';
 import * as Settings from './settings.js';
 
 
+// 生成触发补全的字符集
+function generateTriggerChars() {
+    const triggerChars = new Set();
+    
+    // 添加点号(属性函数补全)
+    triggerChars.add('.');
+    
+    // 添加左括号(函数补全)
+    triggerChars.add('(');
+    
+    // 从 FUNCTIONS 中获取所有函数名的首字母
+    Object.keys(FUNCTIONS).forEach(funcName => {
+        if (funcName[0].match(/[a-zA-Z]/)) {
+            triggerChars.add(funcName[0].toLowerCase());
+            triggerChars.add(funcName[0].toUpperCase());
+        }
+    });
+    
+    // 从 CONSTANTS 中获取所有常量名的首字母
+    Object.keys(CONSTANTS).forEach(constName => {
+        if (constName[0].match(/[a-zA-Z]/)) {
+            triggerChars.add(constName[0].toLowerCase());
+            triggerChars.add(constName[0].toUpperCase());
+        }
+    });
+    
+    return triggerChars;
+}
+
+// 生成触发字符集
+const triggerChars = generateTriggerChars();
+
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {
     const completions = [];
@@ -180,10 +212,6 @@ function addNewLine() {
 
 // 添加一个统一的删除行处理函数
 function handleLineDelete(input) {
-    // 临时禁用补全
-    const originalCompletionState = isCompletionEnabled;
-    isCompletionEnabled = false;
-    
     const lines = document.querySelectorAll('.expression-line');
     const currentLine = input.closest('.expression-line');
     const currentIndex = Array.from(lines).indexOf(currentLine);
@@ -193,7 +221,6 @@ function handleLineDelete(input) {
         input.value = '';
         input.dispatchEvent(new Event('input'));
         Calculator.clearAllCache();  // 清除缓存
-        isCompletionEnabled = originalCompletionState; // 恢复补全状态
         return;
     }
     
@@ -219,116 +246,156 @@ function handleLineDelete(input) {
         previousInput.selectionEnd = previousInput.value.length;
     }
     
-    recalculateAllLines();      // 清除缓存并重新计算所有行
-    
-    // 恢复补全状态
-    isCompletionEnabled = originalCompletionState;
+    recalculateAllLines();  // 清除缓存并重新计算所有行
 }
 
 function handleKeyDown(event, input) {
+    const cursorPos = input.selectionStart;
+    const textBeforeCursor = input.value.substring(0, cursorPos);
     const hint = document.querySelector('.completion-hint');
+
+    // 处理补全相关的按键
     if (hint) {
-        if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-            event.preventDefault();
-            hasUsedArrowKeys = true;
-            
-            // 重置隐藏计时器
-            startHideTimer(hint);
-            
-            const items = Array.from(hint.querySelectorAll('.completion-item'));
-            const selectedItem = hint.querySelector('.completion-item.selected');
-            let nextIndex = 0;
-            
-            if (selectedItem) {
-                // 隐藏当前选中项的描述
-                const currentDesc = selectedItem.querySelector('.description');
-                if (currentDesc) {
-                    currentDesc.style.display = 'none';
+        switch (event.key) {
+            case 'ArrowUp':
+            case 'ArrowDown':
+                if (isCompletionEnabled) {
+                    event.preventDefault();
+                    hasUsedArrowKeys = true;
+                    navigateCompletion(event.key === 'ArrowUp' ? 'prev' : 'next');
+                    startHideTimer(hint);
+                    return;
                 }
-                
-                const currentIndex = items.indexOf(selectedItem);
-                if (event.key === 'ArrowUp') {
-                    nextIndex = (currentIndex - 1 + items.length) % items.length;
-                } else {
-                    nextIndex = (currentIndex + 1) % items.length;
+                break;
+
+            case 'Enter':
+                if (isCompletionEnabled && hasUsedArrowKeys) {
+                    event.preventDefault();
+                    applySelectedCompletion(input);
+                    return;
                 }
-                selectedItem.classList.remove('selected');
-            } else if (event.key === 'ArrowUp') {
-                nextIndex = items.length - 1;
-            }
-            
-            // 显示新选中项的描述
-            items[nextIndex].classList.add('selected');
-            const newDesc = items[nextIndex].querySelector('.description');
-            if (newDesc) {
-                newDesc.style.display = '';
-            }
-            return;
-        } else if (event.key === 'Enter') {
-            event.preventDefault();
-            if (hasUsedArrowKeys) {
-                // 如果使用过方向键，应用补全
-                const selectedItem = hint.querySelector('.completion-item.selected');
-                if (selectedItem) {
-                    const textElement = selectedItem.querySelector('.text');
-                    const match = textElement.textContent;
-                    const isPropertyCompletion = selectedItem.getAttribute('data-type') === 'property';
-                    applyCompletion(input, match, isPropertyCompletion);
+                break;
+
+            case 'Tab':
+                if (isCompletionEnabled) {
+                    event.preventDefault();
+                    applySelectedCompletion(input);
+                    return;
                 }
-            } else {
-                // 如果没有使用过方向键，移除补全提示
+                break;
+
+            case 'Escape':
                 removeCompletionHint(input);
-            }
-            return;
-        } else if (event.key === 'Tab') {
-            event.preventDefault();
-            const selectedItem = hint.querySelector('.completion-item.selected');
-            if (selectedItem) {
-                const textElement = selectedItem.querySelector('.text');
-                const match = textElement.textContent;
-                const isPropertyCompletion = selectedItem.getAttribute('data-type') === 'property';
-                applyCompletion(input, match, isPropertyCompletion);
-            }
-            return;
+                return;
         }
     }
-    
-    // 原有的键盘事件处理逻辑...
-    if (event.key === 'Enter') {
-        if (!hint) {  // 只在没有补全提示时处理换行
+
+    // 处理其他键盘事件
+    switch (event.key) {
+        case 'Enter':
+            handleEnterKey(event, input);
+            return;
+
+        case 'Backspace':
+            if (input.value === '') {
+                event.preventDefault();
+                handleLineDelete(input);
+                return;
+            }
+            // 如果光标在行首且不是第一行，移动到上一行末尾
+            if (input.selectionStart === 0 && input.selectionEnd === 0) {
+                const currentLine = input.closest('.expression-line');
+                const previousLine = currentLine.previousElementSibling;
+                if (previousLine) {
+                    event.preventDefault();
+                    const previousInput = previousLine.querySelector('.input');
+                    previousInput.focus();
+                    previousInput.selectionStart = previousInput.value.length;
+                    previousInput.selectionEnd = previousInput.value.length;
+                }
+            }
+            break;
+
+        case 'Delete':
             event.preventDefault();
-            
-            const currentLine = input.closest('.expression-line');
-            const lines = document.querySelectorAll('.expression-line');
-            const currentIndex = Array.from(lines).indexOf(currentLine);
-            const isLastTwoLines = currentIndex >= lines.length - 2;  // 判断是否在最后两行
-            
-            // 处理 Shift + Enter
-            if (event.shiftKey) {
-                // 在最后两行时，行为和普通 Enter 一致
-                if (isLastTwoLines) {
-                    const expression = input.value.trim();
-                    const hasExpression = expression !== '';
-                    
-                    if (hasExpression) {
-                        if (currentIndex === lines.length - 1) {
-                            addNewLine();
-                        } else {
-                            const nextLine = currentLine.nextElementSibling;
-                            if (nextLine) {
-                                nextLine.querySelector('.input').focus();
+            handleLineDelete(input);
+            return;
+
+        case 'ArrowUp':
+        case 'ArrowDown':
+            if (!hint) {  // 只在没有补全提示时处理上下行切换
+                event.preventDefault();
+                const currentLine = input.closest('.expression-line');
+                const targetLine = event.key === 'ArrowUp' ? 
+                    currentLine.previousElementSibling : 
+                    currentLine.nextElementSibling;
+                if (targetLine) {
+                    const targetInput = targetLine.querySelector('.input');
+                    targetInput.focus();
+                    const cursorPos = input.selectionStart;
+                    targetInput.selectionStart = Math.min(cursorPos, targetInput.value.length);
+                    targetInput.selectionEnd = Math.min(cursorPos, targetInput.value.length);
+                }
+            }
+            return;
+
+        case '*':
+            handleAsteriskInput(event, input);
+            return;
+
+        default:
+            // 检查是否是触发补全的字符
+            if (isCompletionEnabled && triggerChars.has(event.key)) {
+                // 等待当前按键输入完成后再检查补全
+                setTimeout(() => {
+                    const newText = input.value;
+                    const newCursorPos = input.selectionStart;
+                    const newTextBeforeCursor = newText.substring(0, newCursorPos);
+
+                    // 检查是否需要显示补全提示
+                    const dotMatch = newTextBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
+                    if (dotMatch) {
+                        // 属性函数补全
+                        const propertyMatches = Object.entries(FUNCTIONS)
+                            .filter(([name, func]) => 
+                                func.asProperty && 
+                                (!dotMatch[1] || name.toLowerCase().startsWith(dotMatch[1].toLowerCase()))
+                            )
+                            .map(([name]) => name);
+                        
+                        if (propertyMatches.length > 0) {
+                            showCompletionHint(input, propertyMatches, true);
+                        }
+                    } else {
+                        // 普通函数补全
+                        const lastWord = newTextBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0].toLowerCase();
+                        if (lastWord) {
+                            const matches = completions.filter(c => 
+                                c.toLowerCase().startsWith(lastWord)
+                            );
+                            
+                            if (matches.length > 0) {
+                                showCompletionHint(input, matches, false);
                             }
                         }
                     }
-                    return;
-                }
-                
-                // 其他行按 Shift + Enter，插入新行
-                insertNewLine(currentLine);
-                return;
+                }, 0);
             }
-            
-            // 普通 Enter 键的处理
+            break;
+    }
+}
+
+// 新增处理 Enter 键的辅助函数
+function handleEnterKey(event, input) {
+    const currentLine = input.closest('.expression-line');
+    const lines = document.querySelectorAll('.expression-line');
+    const currentIndex = Array.from(lines).indexOf(currentLine);
+    const isLastTwoLines = currentIndex >= lines.length - 2;
+
+    // 处理 Shift + Enter
+    if (event.shiftKey) {
+        // 在最后两行时，行为和普通 Enter 一致
+        if (isLastTwoLines) {
             const expression = input.value.trim();
             const hasExpression = expression !== '';
             
@@ -342,238 +409,88 @@ function handleKeyDown(event, input) {
                     }
                 }
             }
-        }
-    } else if (event.key === 'Backspace') {
-        // 如果输入框为空，删除当前行
-        if (input.value === '') {
-            event.preventDefault();
-            handleLineDelete(input);
             return;
         }
         
-        // 如果光标在行首且不是第一行，移动到上一行末尾
-        if (input.selectionStart === 0 && input.selectionEnd === 0) {
-            const currentLine = input.closest('.expression-line');
-            const previousLine = currentLine.previousElementSibling;
-            
-            if (previousLine) {
-                event.preventDefault();
-                const previousInput = previousLine.querySelector('.input');
-                
-                // 聚焦到上一行末尾
-                previousInput.focus();
-                previousInput.selectionStart = previousInput.value.length;
-                previousInput.selectionEnd = previousInput.value.length;
-            }
-        }
-    } else if (event.key === 'Delete') {
-        event.preventDefault();
-        handleLineDelete(input);
-    } else if (event.key === 'ArrowUp') {
-        // 只在没有补全提示时处理上下行切换
-        if (!hint) {
-            event.preventDefault();
-            const currentLine = input.closest('.expression-line'); // 获取当前行元素
-            const previousLine = currentLine.previousElementSibling;
-            if (previousLine) {
-                const previousInput = previousLine.querySelector('.input');
-                previousInput.focus();
-                const cursorPos = input.selectionStart;
-                previousInput.selectionStart = Math.min(cursorPos, previousInput.value.length);
-                previousInput.selectionEnd = Math.min(cursorPos, previousInput.value.length);
-            }
-        }
-    } else if (event.key === 'ArrowDown') {
-        // 只在没有补全提示时处理上下行切换
-        if (!hint) {
-            event.preventDefault();
-            const currentLine = input.closest('.expression-line'); // 获取当前行元素
+        // 其他行按 Shift + Enter，插入新行
+        insertNewLine(currentLine);
+        return;
+    }
+    
+    // 普通 Enter 键的处理
+    const expression = input.value.trim();
+    const hasExpression = expression !== '';
+    
+    if (hasExpression) {
+        if (currentIndex === lines.length - 1) {
+            addNewLine();
+        } else {
             const nextLine = currentLine.nextElementSibling;
             if (nextLine) {
-                const nextInput = nextLine.querySelector('.input');
-                nextInput.focus();
-                const cursorPos = input.selectionStart;
-                nextInput.selectionStart = Math.min(cursorPos, nextInput.value.length);
-                nextInput.selectionEnd = Math.min(cursorPos, nextInput.value.length);
+                nextLine.querySelector('.input').focus();
             }
         }
-    } else if (event.key === 'Tab') {
-        event.preventDefault();
-        handleTabCompletion(input);
-    } else if (event.key === '*') {
-        handleAsteriskInput(event, input);
-    }
-
-    if (!hint || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) {
-        removeCompletionHint(input);
-    }
-}
-
-function handleTabCompletion(input) {
-    if (!isCompletionEnabled) return;
-    
-    const cursorPos = input.selectionStart;
-    const textBeforeCursor = input.value.substring(0, cursorPos);
-    
-    // 检查是否是属性函数补全
-    const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
-    if (dotMatch) {
-        const propertyMatches = Object.entries(FUNCTIONS)
-            .filter(([name, func]) => 
-                func.asProperty && 
-                (!dotMatch[1] || name.toLowerCase().startsWith(dotMatch[1].toLowerCase()))
-            )
-            .map(([name]) => name);
-            
-        if (propertyMatches.length > 0) {
-            // 如果有补全提示显示，使用当前选中的项
-            const hint = input.parentElement.querySelector('.completion-hint');
-            if (hint) {
-                const selectedItem = hint.querySelector('.completion-item.selected') || 
-                                   hint.querySelector('.completion-item');
-                if (selectedItem) {
-                    const match = selectedItem.textContent;
-                    const beforeDot = textBeforeCursor.slice(0, -dotMatch[0].length);
-                    input.value = beforeDot + '.' + match + input.value.substring(cursorPos);
-                    const newCursorPos = beforeDot.length + match.length + 1;
-                    input.setSelectionRange(newCursorPos, newCursorPos);
-                    calculateLine(input);
-                    removeCompletionHint(input);
-                    return;
-                }
-            }
-            
-            // 如果没有提示显示，使用第一个匹配项
-            const match = propertyMatches[0];
-            const beforeDot = textBeforeCursor.slice(0, -dotMatch[0].length);
-            input.value = beforeDot + '.' + match + input.value.substring(cursorPos);
-            const newCursorPos = beforeDot.length + match.length + 1;
-            input.setSelectionRange(newCursorPos, newCursorPos);
-            calculateLine(input);
-            return;
-        }
-    }
-    
-    // 原有的普通补全逻辑保持不变
-    const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*{2})*$/)[0].toLowerCase();
-    if (lastWord) {
-        const matches = completions.filter(c => 
-            c.toLowerCase().startsWith(lastWord)
-        );
-        
-        if (matches.length > 0) {
-            const hint = input.parentElement.querySelector('.completion-hint');
-            if (hint) {
-                const selectedItem = hint.querySelector('.completion-item.selected') || 
-                                   hint.querySelector('.completion-item');
-                if (selectedItem) {
-                    const match = selectedItem.textContent;
-                    const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
-                    const afterCursor = input.value.substring(cursorPos);
-                    
-                    if (match.endsWith('(')) {
-                        input.value = beforeWord + match + ')' + afterCursor;
-                        const newCursorPos = beforeWord.length + match.length;
-                        input.setSelectionRange(newCursorPos, newCursorPos);
-                    } else {
-                        input.value = beforeWord + match + afterCursor;
-                        const newCursorPos = beforeWord.length + match.length;
-                        input.setSelectionRange(newCursorPos, newCursorPos);
-                    }
-                    
-                    calculateLine(input);
-                    removeCompletionHint(input);
-                    return;
-                }
-            }
-            
-            const match = matches[0];
-            const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
-            const afterCursor = input.value.substring(cursorPos);
-            
-            if (match.endsWith('(')) {
-                input.value = beforeWord + match + ')' + afterCursor;
-                const newCursorPos = beforeWord.length + match.length;
-                input.setSelectionRange(newCursorPos, newCursorPos);
-            } else {
-                input.value = beforeWord + match + afterCursor;
-                const newCursorPos = beforeWord.length + match.length;
-                input.setSelectionRange(newCursorPos, newCursorPos);
-            }
-            
-            calculateLine(input);
-        }
-    }
-}
-
-function handleAsteriskInput(event, input) {
-    const cursorPos = input.selectionStart;
-    const textBeforeCursor = input.value.substring(0, cursorPos);
-    
-    if (textBeforeCursor.endsWith('*')) {
-        event.preventDefault();
-        const newText = textBeforeCursor.slice(0, -1) + '**()' + input.value.substring(cursorPos);
-        input.value = newText;
-        input.setSelectionRange(cursorPos + 2, cursorPos + 2);
-        calculateLine(input);
     }
 }
 
 function handleInput(event) {
     const input = event.target;
-    const currentLine = input.closest('.expression-line');
-    const lines = document.querySelectorAll('.expression-line');
-    const currentIndex = Array.from(lines).indexOf(currentLine);
     
-    const cursorPos = input.selectionStart;
-    const textBeforeCursor = input.value.substring(0, cursorPos);
-    
+    // 移除补全提示
     removeCompletionHint(input);
     
-    // 只在启用补全时显示提示
-    if (isCompletionEnabled) {
-        // 检查是否是属性函数补全模式
-        const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
-        if (dotMatch) {
-            // 过滤出所有具有 asProperty 属性的函数
-            const propertyMatches = Object.entries(FUNCTIONS)
-                .filter(([name, func]) => 
-                    func.asProperty && 
-                    (!dotMatch[1] || name.toLowerCase().startsWith(dotMatch[1].toLowerCase()))
-                )
-                .map(([name]) => name);
-            
-            if (propertyMatches.length > 0) {
-                showCompletionHint(input, propertyMatches, true);
-            }
-        } else {
-            // 普通函数补全
-            const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0].toLowerCase();
-            if (lastWord) {
-                const matches = completions.filter(c => 
-                    c.toLowerCase().startsWith(lastWord)
-                );
-                
-                if (matches.length > 0) {
-                    showCompletionHint(input, matches, false);
-                }
-            }
-        }
-    }
-    
-    // 如果时最后一个表达式，则计算当前行
+    // 计算表达式
     if (isLastExpression()) {
-        // 计算当前行
         calculateLine(input);
-    }else{
-        // 清空状态并重新计算所有行
+    } else {
         recalculateAllLines();
     }
-    
-    // 添加点击事件监听器来处理光标移动
-    input.addEventListener('click', () => {
-        removeCompletionHint(input);
-    }, { once: true }); // 使用 once 选项确保事件处理器在触发后被移除
+}
+
+// 新增的辅助函数
+function navigateCompletion(direction) {
+    const hint = document.querySelector('.completion-hint');
+    if (!hint) return;
+
+    const items = Array.from(hint.querySelectorAll('.completion-item'));
+    const selectedItem = hint.querySelector('.completion-item.selected');
+    let nextIndex = 0;
+
+    if (selectedItem) {
+        const currentDesc = selectedItem.querySelector('.description');
+        if (currentDesc) {
+            currentDesc.style.display = 'none';
+        }
+
+        const currentIndex = items.indexOf(selectedItem);
+        if (direction === 'prev') {
+            nextIndex = (currentIndex - 1 + items.length) % items.length;
+        } else {
+            nextIndex = (currentIndex + 1) % items.length;
+        }
+        selectedItem.classList.remove('selected');
+    } else if (direction === 'prev') {
+        nextIndex = items.length - 1;
+    }
+
+    items[nextIndex].classList.add('selected');
+    const newDesc = items[nextIndex].querySelector('.description');
+    if (newDesc) {
+        newDesc.style.display = '';
+    }
+}
+
+function applySelectedCompletion(input) {
+    const hint = document.querySelector('.completion-hint');
+    if (!hint) return;
+
+    const selectedItem = hint.querySelector('.completion-item.selected');
+    if (selectedItem) {
+        const textElement = selectedItem.querySelector('.text');
+        const match = textElement.textContent;
+        const isPropertyCompletion = selectedItem.getAttribute('data-type') === 'property';
+        applyCompletion(input, match, isPropertyCompletion);
+    }
 }
 
 // 1. 创建一个统一的事件处理函数
@@ -597,6 +514,7 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
     const list = document.createElement('ul');
     list.className = 'completion-list';
     
+    // 只显示前5个匹配项
     const displayMatches = matches.slice(0, 5);
     
     displayMatches.forEach((match, index) => {
@@ -614,7 +532,7 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
         text.textContent = match;
         item.appendChild(text);
         
-        // 添加描述信息
+        // 添加函数描述信息
         if (FUNCTIONS[match.replace(/[(.]/g, '')]) {
             const desc = document.createElement('span');
             desc.className = 'description';
@@ -623,6 +541,7 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
             item.appendChild(desc);
         }
         
+        // 默认选中第一项
         if (index === 0) {
             item.classList.add('selected');
             const desc = item.querySelector('.description');
@@ -631,37 +550,32 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
             }
         }
         
-        // 使用新的事件处理方式
+        // 添加点击事件处理
         const handler = createCompletionItemHandler(input, match, isPropertyCompletion, item);
-        item.addEventListener('click', handler, { once: true });  // 使用 once 选项
+        item.addEventListener('click', handler, { once: true });
         
         list.appendChild(item);
     });
     
-    // 添加补全框的清理函数
-    const cleanup = () => {
-        // 移除所有事件监听器
-        hint.querySelectorAll('.completion-item').forEach(item => {
-            item.replaceWith(item.cloneNode(true));
-        });
-        hint.remove();
-    };
-    
-    // 在补全框被移除时清理
-    hint.addEventListener('remove', cleanup, { once: true });
-    
     hint.appendChild(list);
-    // 将补全框添加到输入框所在的行
     input.parentElement.appendChild(hint);
     
-    // 计算光标位置
+    // 计算提示框位置
+    positionCompletionHint(input, hint);
+    
+    // 启动隐藏计时器
+    startHideTimer(hint);
+}
+
+// 计算并设置补全提示框的位置
+function positionCompletionHint(input, hint) {
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
     
     // 获取输入框的位置信息
     const inputRect = input.getBoundingClientRect();
     
-    // 创建一个临时的 span 元素用于计算光标位置
+    // 创建临时span计算光标位置
     const span = document.createElement('span');
     span.style.cssText = `
         position: fixed;
@@ -674,36 +588,34 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
     span.textContent = textBeforeCursor;
     document.body.appendChild(span);
     
-    // 计算光标的实际位置
+    // 计算光标位置
     const paddingLeft = parseFloat(window.getComputedStyle(input).paddingLeft);
     const cursorX = inputRect.left + span.offsetWidth + paddingLeft - input.scrollLeft;
-    const cursorY = inputRect.bottom + 2; // 添加小偏移
+    const cursorY = inputRect.bottom + 2;
     
     document.body.removeChild(span);
     
-    // 获取提示框的尺寸
+    // 获取提示框尺寸
     const hintRect = hint.getBoundingClientRect();
     
-    // 设置初始位置在光标右下方
+    // 计算最终位置
     let left = cursorX;
     let top = cursorY;
     
-    // 如果提示框会超出右边界，向左偏移
+    // 处理右边界溢出
     if (left + hintRect.width > window.innerWidth) {
         left = cursorX - hintRect.width;
     }
     
-    // 如果提示框会超出底部，显示在输入框上方
+    // 处理底部溢出
     if (top + hintRect.height > window.innerHeight) {
         top = inputRect.top - hintRect.height - 2;
     }
     
+    // 设置位置
     hint.style.position = 'fixed';
     hint.style.left = `${left}px`;
     hint.style.top = `${top}px`;
-    
-    // 启动隐藏计时器
-    startHideTimer(hint);
 }
 
 // 添加启动计时器的函数
@@ -851,11 +763,11 @@ function applyCompletion(input, match, isPropertyCompletion) {
     const textBeforeCursor = input.value.substring(0, cursorPos);
     const afterCursor = input.value.substring(cursorPos);
     
-    // 确保只使用函数名部分，不包含描述
-    const completionText = match.split(/\s+/)[0];  // 只取第一部分（函数名）
+    // 只使用函数名部分
+    const completionText = match.split(/\s+/)[0];
     
     if (isPropertyCompletion) {
-        // 属性函数补全
+        // 处理属性函数补全
         const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
         if (dotMatch) {
             const beforeDot = textBeforeCursor.slice(0, -dotMatch[0].length);
@@ -864,7 +776,7 @@ function applyCompletion(input, match, isPropertyCompletion) {
             input.setSelectionRange(newCursorPos, newCursorPos);
         }
     } else {
-        // 普通函数补全
+        // 处理普通函数补全
         const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0];
         const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
         
@@ -954,11 +866,6 @@ function insertNewLine(currentLine) {
 
 // 添加辅助函数，清除缓存并重新计算所有行
 function recalculateAllLines() {
-    // 临时保存补全状态
-    const originalCompletionState = isCompletionEnabled;
-    // 临时禁用补全
-    isCompletionEnabled = false;
-    
     // 清除缓存
     Calculator.clearAllCache();
 
@@ -970,9 +877,6 @@ function recalculateAllLines() {
             calculateLine(input);
         }
     });
-    
-    // 恢复补全状态
-    isCompletionEnabled = originalCompletionState;
 } 
 
 // 添加辅助函数，判断当前行是否是最后一个表达式
@@ -1006,14 +910,35 @@ function initializeUI() {
     Object.assign(window, Snapshot);
 }
 
-// 导出所有需要的函数
+// 处理星号输入，检查是否需要转换为 ** 运算符
+function handleAsteriskInput(event, input) {
+    const cursorPos = input.selectionStart;
+    const textBeforeCursor = input.value.substring(0, cursorPos);
+    
+    // 检查光标前一个字符是否也是星号
+    if (textBeforeCursor.endsWith('*')) {
+        // 阻止默认的 * 输入
+        event.preventDefault();
+        
+        // 删除前一个 * 并插入 **
+        const newText = textBeforeCursor.slice(0, -1) + '**' + input.value.substring(cursorPos);
+        input.value = newText;
+        
+        // 将光标移动到 ** 后面
+        input.setSelectionRange(cursorPos + 1, cursorPos + 1);
+        
+        // 触发输入事件以更新计算结果
+        input.dispatchEvent(new Event('input'));
+    }
+}
+
+// 确保导出这个函数
 export {
     calculateLine,
     addNewLine,
     handleLineDelete,
     handleKeyDown,
     handleInput,
-    handleTabCompletion,
     handleAsteriskInput,
     showCompletionHint,
     removeCompletionHint,

@@ -341,7 +341,7 @@ class Snapshot {
                 restoreTag(line, record.tag);
             }
             
-            input.value = record.expression + ' ';
+            input.value = record.expression;
             input.dispatchEvent(new Event('input'));
         });
 
