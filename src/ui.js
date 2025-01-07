@@ -1,5 +1,6 @@
 import Calculator from './calculator.js';
 import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
+import * as Copy from './copy.js';
 import * as Tag from './tag.js';
 import * as Snapshot from './snapshot.js';
 import * as Settings from './settings.js';
@@ -13,6 +14,7 @@ import {
     applySelectedCompletion,
     checkCompletion
 } from './completion.js';
+
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
@@ -366,14 +368,23 @@ function initializeUI() {
     document.getElementById('expression-container')
         .addEventListener('click', handleContainerClick);
 
-    // 添加消息图标点击事件监听
-    document.querySelectorAll('.message-icon').forEach(icon => {
-        icon.addEventListener('click', handleMessageIconClick);
+    // 使用事件委托来处理所有消息图标的点击
+    document.getElementById('expression-container').addEventListener('click', function(event) {
+        const messageIcon = event.target.closest('.message-icon');
+        if (!messageIcon || !messageIcon.classList.contains('error')) return;
+        
+        const expressionLine = messageIcon.closest('.expression-line');
+        if (!expressionLine) return;
+        
+        // 直接调用 handleLineDelete 删除当前行
+        const input = expressionLine.querySelector('.input');
+        handleLineDelete(input);
     });
 
     // 将标签和快照相关函数添加到全局作用域
     Object.assign(window, Tag);
     Object.assign(window, Snapshot);
+    Object.assign(window, Copy);
 }
 
 function handleAsteriskInput(event, input) {
@@ -557,71 +568,12 @@ function handleContainerClick(event) {
     }
 }
 
-// 处理消息图标点击事件
-function handleMessageIconClick(event) {
-    const messageIcon = event.target.closest('.message-icon');
-    if (messageIcon) {
-        const messageText = messageIcon.querySelector('.message-text');
-        messageText.classList.toggle('show');
-    }
-}
-
-// 为结果添加点击处理
-function addResultClickHandler(result) {
-    result.addEventListener('click', function() {
-        const resultValue = result.querySelector('.result-value').textContent;
-        if (resultValue) {
-            const lines = document.querySelectorAll('.expression-line');
-            const lastLine = lines[lines.length - 1];
-            const lastInput = lastLine.querySelector('.input');
-            
-            if (lastInput.value.trim() === '') {
-                lastInput.value = resultValue;
-                lastInput.dispatchEvent(new Event('input'));
-            } else {
-                const newLine = document.createElement('div');
-                newLine.className = 'expression-line';
-                newLine.innerHTML = `
-                    ${Tag.createTagContainerHTML()}
-                    <input type="text" class="input" placeholder="输入表达式" 
-                           oninput="handleInput(event)"
-                           onkeydown="handleKeyDown(event, this)"
-                           onclick="removeCompletionHint(this)">
-                    <div class="result-container">
-                        <div class="result">
-                            <span class="result-value"></span>
-                        </div>
-                        <div class="message-icon" style="display: none;">
-                            <div class="message-text"></div>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('expression-container').appendChild(newLine);
-                
-                // 初始化标签功能
-                Tag.initializeTagButton(newLine);
-                
-                // 为新行的结果添加点击处理
-                const newResult = newLine.querySelector('.result');
-                addResultClickHandler(newResult);
-                
-                const input = newLine.querySelector('.input');
-                input.value = resultValue;
-                input.dispatchEvent(new Event('input'));
-                input.focus();
-            }
-        }
-    });
-}
-
 // 将所有需要的函数添加到全局作用域
 Object.assign(window, {
     // UI 事件处理函数
     handleInput,
     handleKeyDown,
     handleContainerClick,
-    handleMessageIconClick,
     removeCompletionHint,
     
     // 计算相关函数
@@ -650,6 +602,5 @@ export {
     handleAsteriskInput,
     clearAll,
     handleContainerClick,
-    handleMessageIconClick,
     initializeUI
 };
