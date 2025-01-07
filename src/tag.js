@@ -184,7 +184,7 @@ export function setTag(line, tagText) {
     // 点击标签事件处理
     tag.addEventListener('click', (e) => {
         const rect = tag.getBoundingClientRect();
-        const isClickOnDelete = e.clientX > rect.right - 24;
+        const isClickOnDelete = e.clientX > rect.right - 20 && e.clientX < rect.right + 4;
         
         if (isClickOnDelete) {
             // 点击删除按钮
@@ -211,7 +211,7 @@ export function setTag(line, tagText) {
         
         tooltipTimer = setTimeout(() => {
             const rect = tag.getBoundingClientRect();
-            createTooltip('点击编辑标签', rect.right + 5, rect.bottom + 5);
+            createTooltip('点击编辑', rect.right + 5, rect.bottom + 5);
         }, 300);
     });
     

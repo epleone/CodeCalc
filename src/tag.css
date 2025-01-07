@@ -33,29 +33,52 @@
     display: inline-flex;
     align-items: center;
     padding: 0 12px;
+    padding-right: 24px;
     background-color: rgba(60, 60, 67, 0.06);
     border-radius: 3px;
     font-size: 13px;
     color: #454545;
     cursor: pointer;
     transition: all 0.15s ease;
-    max-width: 120px;
+    max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     height: 18px;
     position: relative;
     padding-left: 12px;
-    padding-right: 20px;
     font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
     border-left: 2px solid #40c463;
     margin-left: 2px;
+}
+
+/* 添加内部缺三角 */
+.tag::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 9px 9px 9px 0;
+    border-color: transparent #f8f9fa transparent transparent;
+    z-index: 2;
+}
+
+/* 偶数行的三角形颜色 */
+.expression-line:nth-child(even) .tag::before {
+    border-color: transparent #e9ecef transparent transparent;
 }
 
 .tag:hover {
     background-color: rgba(60, 60, 67, 0.09);
     color: #2c2c2e;
     border-left-color: #2ea043;
+}
+
+.tag:hover::before {
+    border-color: transparent #f8f9fa transparent transparent;
 }
 
 .tag:hover::after {
@@ -146,22 +169,55 @@
 .tag::after {
     content: '×';
     position: absolute;
-    right: 6px;
+    right: 4px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 14px;
-    color: #8e8e93;
+    color: #ff3b30;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: all 0.15s ease;
     cursor: pointer;
-    pointer-events: none;
-}
-
-.tag:hover::after {
-    opacity: 0.7;
     pointer-events: auto;
+    z-index: 10;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 50%;
+    font-weight: bold;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
 }
 
-.tag:hover::after:hover {
+/* 偶数行删除按钮背景色 */
+.expression-line:nth-child(even) .tag::after {
+    background-color: #e9ecef;
+}
+
+/* 删除其他所有的 .tag::after 相关规则，只保留这一个 hover 规则 */
+.tag:hover::after {
     opacity: 1;
+    background-color: rgba(255, 59, 48, 0.1);
+}
+
+/* 偶数行的三角形颜色 */
+.expression-line:nth-child(even) .tag::before {
+    border-color: transparent #e9ecef transparent transparent;
+}
+
+/* hover状态保持相同的背景色 */
+.tag:hover::before {
+    border-color: transparent #f8f9fa transparent transparent;
+}
+
+.expression-line:nth-child(even) .tag:hover::before {
+    border-color: transparent #e9ecef transparent transparent;
+}
+
+/* 添加提示框样式，当文本被截断时显示完整内容 */
+.tag[title] {
+    cursor: help;
 } 
