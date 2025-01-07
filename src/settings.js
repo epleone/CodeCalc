@@ -48,7 +48,17 @@ export class Settings {
     }
 }
 
+
 export const settings = new Settings();
+
+// 添加快捷键支持，Ctrl + ` 打开设置页面
+document.addEventListener('keydown', (e) => {
+    // 使用 Backquote 键代码来检测 ` 键（波浪号键）
+    if (e.ctrlKey && e.code === 'Backquote') {
+        e.preventDefault();
+        settings.togglePanel();
+    }
+});
 
 // 导出切换面板的函数
 window.toggleSettingsPanel = () => settings.togglePanel(); 

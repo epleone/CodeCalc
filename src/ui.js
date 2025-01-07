@@ -215,34 +215,42 @@ function handleEnterKey(event, input) {
     const currentLine = input.closest('.expression-line');
     const lines = document.querySelectorAll('.expression-line');
     const currentIndex = Array.from(lines).indexOf(currentLine);
-    const isLastTwoLines = currentIndex >= lines.length - 2;
-
+    const isLastLine = currentIndex === lines.length - 1;
+    const isSecondLastLine = currentIndex === lines.length - 2;
+    
     // 处理 Shift + Enter
     if (event.shiftKey) {
-        // 在最后两行时，行为和普通 Enter 一致
-        if (isLastTwoLines) {
+        // 当在最后一行时
+        if (isLastLine) {
             const expression = input.value.trim();
-            const hasExpression = expression !== '';
-            
-            if (hasExpression) {
-                if (currentIndex === lines.length - 1) {
-                    addNewLine();
-                } else {
-                    const nextLine = currentLine.nextElementSibling;
-                    if (nextLine) {
-                        nextLine.querySelector('.input').focus();
-                    }
-                }
+            // 只有当本行不为空时才插入新行
+            if (expression !== '') {
+                addNewLine();
             }
             return;
         }
         
-        // 其他行按 Shift + Enter，插入新行
+        // 当在倒数第二行时
+        if (isSecondLastLine) {
+            const nextLine = currentLine.nextElementSibling;
+            const nextInput = nextLine.querySelector('.input');
+            
+            // 如果下一行不为空，插入新行
+            if (nextInput.value.trim() !== '') {
+                insertNewLine(currentLine);
+            } else {
+                // 下一行为空，光标跳到下一行
+                nextInput.focus();
+            }
+            return;
+        }
+        
+        // 不在最后两行时，直接在下方插入新行
         insertNewLine(currentLine);
         return;
     }
     
-    // 普通 Enter 键的处理
+    // 普通 Enter 键的处理保持不变
     const expression = input.value.trim();
     const hasExpression = expression !== '';
     
@@ -359,6 +367,12 @@ function isLastExpression(line) {
 }
 
 function initializeUI() {
+
+    // 将标签和快照相关函数添加到全局作用域
+    Object.assign(window, Tag);
+    Object.assign(window, Snapshot);
+    Object.assign(window, Copy);
+    
     // 初始化所有行的标签功能
     document.querySelectorAll('.expression-line').forEach(line => {
         Tag.initializeTagButton(line);
@@ -381,10 +395,15 @@ function initializeUI() {
         handleLineDelete(input);
     });
 
-    // 将标签和快照相关函数添加到全局作用域
-    Object.assign(window, Tag);
-    Object.assign(window, Snapshot);
-    Object.assign(window, Copy);
+    
+
+    // 添加清空快捷键
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.code === 'KeyQ') {
+            e.preventDefault();
+            clearAll();
+        }
+    });
 }
 
 function handleAsteriskInput(event, input) {
