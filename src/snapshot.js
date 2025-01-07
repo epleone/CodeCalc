@@ -2,6 +2,9 @@ import { setTag, restoreTag } from './tag.js';
 
 class Snapshot {
     constructor() {
+        this.storage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
+        // 打印使用的存储适配器
+        console.log('使用的存储适配器:', this.storage);
         this.panel = document.getElementById('snapshot-panel');
         this.list = this.panel.querySelector('.snapshot-list');
         this.isPanelVisible = false;
@@ -93,7 +96,8 @@ class Snapshot {
         this.snapshots = [];
         this.selectedSnapshots.clear();
         this.list.innerHTML = '';
-        localStorage.removeItem('calculatorSnapshots');
+        // 从存储中移除数据
+        this.storage.removeItem('calculatorSnapshots');
         this.updateDeleteButton();
     }
     
@@ -225,25 +229,25 @@ class Snapshot {
         this.updateDeleteButton();
     }
     
-    // 保存快照到 localStorage
+    // 保存快照到 dbStorage
     saveSnapshots() {
         try {
-            localStorage.setItem('calculatorSnapshots', JSON.stringify(this.snapshots));
+            this.storage.setItem('calculatorSnapshots', JSON.stringify(this.snapshots));
         } catch (e) {
-            console.warn('Failed to save snapshots to localStorage:', e);
+            console.warn('Failed to save snapshots:', e);
         }
     }
     
-    // 从 localStorage 加载快照
+    // 从 dbStorage 加载快照
     loadSnapshots() {
         try {
-            const saved = localStorage.getItem('calculatorSnapshots');
+            const saved = this.storage.getItem('calculatorSnapshots');
             if (saved) {
                 this.snapshots = JSON.parse(saved);
                 this.renderList();
             }
         } catch (e) {
-            console.warn('Failed to load snapshots from localStorage:', e);
+            console.warn('Failed to load snapshots:', e);
         }
     }
     
