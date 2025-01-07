@@ -14,7 +14,7 @@ mkdir release
 cp -a src/ release/
 
 # 复制指定文件到 release
-cp plugin.json preload.js logo.png logo-run.png release/
+cp plugin.json preload.js logo.png release/
 
 
 echo "Files and folders have been successfully copied to 'release'."

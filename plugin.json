@@ -12,7 +12,7 @@
     {
       "code": "calculator",
       "explain": "计算算式",
-      "icon": "logo-run.png",
+      "icon": "logo.png",
       "cmds": [
         {
           "type": "regex",
