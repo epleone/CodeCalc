@@ -73,7 +73,6 @@ const completions = generateCompletions();
 // 全局变量
 let isCompletionEnabled = true;
 let hasUsedArrowKeys = false;
-let completionHideTimer;
 
 // 显示补全提示
 function showCompletionHint(input, matches, isPropertyCompletion) {
@@ -133,9 +132,6 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
     
     // 计算提示框位置
     positionCompletionHint(input, hint);
-    
-    // 启动隐藏计时器
-    startHideTimer(hint);
 }
 
 // 计算并设置补全提示框的位置
@@ -191,10 +187,6 @@ function positionCompletionHint(input, hint) {
 
 // 移除补全提示
 function removeCompletionHint(input) {
-    if (completionHideTimer) {
-        clearTimeout(completionHideTimer);
-        completionHideTimer = null;
-    }
     document.querySelectorAll('.completion-hint').forEach(hint => {
         hint.dispatchEvent(new Event('remove'));
         hint.remove();
@@ -291,18 +283,6 @@ function applyCompletion(input, match, isPropertyCompletion) {
     
     input.dispatchEvent(new Event('input'));
     removeCompletionHint(input);
-}
-
-// 启动隐藏计时器
-function startHideTimer(hint) {
-    if (completionHideTimer) {
-        clearTimeout(completionHideTimer);
-    }
-    completionHideTimer = setTimeout(() => {
-        if (hint && hint.parentElement) {
-            hint.remove();
-        }
-    }, 3000);
 }
 
 // 检查并显示补全提示
