@@ -2,7 +2,7 @@
 .tag-container {
     position: absolute;
     left: 3px;
-    top: 1px;
+    top: -1px;
     z-index: 2;
     overflow: visible;
 }
@@ -33,54 +33,38 @@
     display: inline-flex;
     align-items: center;
     padding: 0 12px;
-    background-color: #9BA4B4;  /* 柔和的蓝灰色 */
-    border-radius: 16px;
+    background-color: rgba(60, 60, 67, 0.06);
+    border-radius: 3px;
     font-size: 13px;
-    color: white;
+    color: #454545;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    height: 24px;
-    box-shadow: 
-        0 1px 2px rgba(0, 0, 0, 0.04),
-        0 2px 4px rgba(0, 0, 0, 0.04);
+    height: 18px;
     position: relative;
-    padding-right: 24px;  /* 为删除按钮留出空间 */
+    padding-left: 12px;
+    padding-right: 20px;
+    font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+    border-left: 2px solid #40c463;
+    margin-left: 2px;
 }
 
 .tag:hover {
-    background-color: #7D8597;  /* 稍深的蓝灰色 */
-    box-shadow: 
-        0 2px 4px rgba(0, 0, 0, 0.06),
-        0 4px 8px rgba(0, 0, 0, 0.04);
-}
-
-/* 删除按钮 */
-.tag::after {
-    content: '×';
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    cursor: pointer;
-    pointer-events: none;  /* 默认不接受点击事件 */
+    background-color: rgba(60, 60, 67, 0.09);
+    color: #2c2c2e;
+    border-left-color: #2ea043;
 }
 
 .tag:hover::after {
-    opacity: 1;
-    pointer-events: auto;  /* 悬停时可以点击 */
+    opacity: 0.7;
+    pointer-events: auto;
 }
 
-/* 删除按钮悬停效果 */
-.tag::after:hover {
-    color: rgba(255, 255, 255, 1);
+.tag:hover::after:hover {
+    opacity: 1;
 }
 
 /* 标签输入框样式 */
@@ -156,4 +140,28 @@
 .tag-button:hover .tag-icon {
     transform: scale(1.2);
     font-weight: bold;
+}
+
+/* 删除按钮 */
+.tag::after {
+    content: '×';
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #8e8e93;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    cursor: pointer;
+    pointer-events: none;
+}
+
+.tag:hover::after {
+    opacity: 0.7;
+    pointer-events: auto;
+}
+
+.tag:hover::after:hover {
+    opacity: 1;
 } 
