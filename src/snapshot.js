@@ -165,6 +165,24 @@ export class Snapshot {
             const tab = e.target.closest('.tab');
             if (!tab) return;
             
+            // 创建涟漪效果
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            
+            // 计算涟漪位置
+            const rect = tab.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            
+            tab.appendChild(ripple);
+            
+            // 动画结束后移除涟漪元素
+            ripple.addEventListener('animationend', () => {
+                ripple.remove();
+            });
+            
             // 更新 tab 激活状态
             tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
