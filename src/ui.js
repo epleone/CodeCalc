@@ -385,12 +385,14 @@ function handleAsteriskInput(event, input) {
         // 阻止默认的 * 输入
         event.preventDefault();
         
-        // 删除前一个 * 并插入 **
-        const newText = textBeforeCursor.slice(0, -1) + '**' + input.value.substring(cursorPos);
-        input.value = newText;
+        // 删除前一个 * 并插入 **()
+        const beforeStars = textBeforeCursor.slice(0, -1);
+        const afterCursor = input.value.substring(cursorPos);
+        input.value = beforeStars + '**()' + afterCursor;
         
-        // 将光标移动到 ** 后面
-        input.setSelectionRange(cursorPos + 1, cursorPos + 1);
+        // 将光标移动到括号内
+        const newCursorPos = beforeStars.length + 3;
+        input.setSelectionRange(newCursorPos, newCursorPos);
         
         // 触发输入事件以更新计算结果
         input.dispatchEvent(new Event('input'));

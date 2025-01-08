@@ -44,6 +44,13 @@ const completions = generateCompletions();
 let isCompletionEnabled = true;
 let hasUsedArrowKeys = false;
 
+// 获取所有函数的首字母集合
+const functionFirstChars = new Set(
+    Object.keys(FUNCTIONS)
+        .filter(name => /^[a-zA-Z]/.test(name))
+        .map(name => name[0].toLowerCase())
+);
+
 // 显示补全提示
 function showCompletionHint(input, matches, isPropertyCompletion) {
     removeCompletionHint(input);
@@ -214,9 +221,11 @@ function applySelectedCompletion(input) {
 // 创建补全项的点击处理函数
 function createCompletionItemHandler(input, match, isPropertyCompletion, item) {
     return function handler(event) {
+        event.preventDefault(); // 阻止默认行为
+        event.stopPropagation(); // 阻止冒泡
         applyCompletion(input, match, isPropertyCompletion);
-        item.removeEventListener('click', handler);
-        removeCompletionHint(input);
+        item.removeEventListener('click', handler); // 恢复这行
+        removeCompletionHint(input); // 恢复这行
     };
 }
 
@@ -237,8 +246,10 @@ function applyCompletion(input, match, isPropertyCompletion) {
             input.setSelectionRange(newCursorPos, newCursorPos);
         }
     } else {
-        const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0];
-        const beforeWord = textBeforeCursor.slice(0, -lastWord.length);
+        const wordMatch = textBeforeCursor.match(/[a-zA-Z][a-zA-Z]*$/);
+        const beforeWord = wordMatch ? 
+            textBeforeCursor.slice(0, -wordMatch[0].length) : 
+            textBeforeCursor;
         
         if (completionText.endsWith('(')) {
             input.value = beforeWord + completionText + ')' + afterCursor;
@@ -255,15 +266,31 @@ function applyCompletion(input, match, isPropertyCompletion) {
     removeCompletionHint(input);
 }
 
-// 检查并显示补全提示
+// 简化补全触发逻辑
+function shouldTriggerCompletion(input, key) {
+    // 检查补全功能是否开启
+    if (!document.getElementById('completionToggle').checked) {
+        return false;
+    }
+    
+    // 只在输入字母或点号时触发补全
+    return key.match(/[a-zA-Z]/) || key === '.';
+}
+
+// 简化补全检查逻辑
 function checkCompletion(input) {
+    // 检查补全功能是否开启
+    if (!document.getElementById('completionToggle').checked) {
+        return;
+    }
+
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
 
-    // 检查是否需要显示补全提示
-    const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
+    // 检查是否是属性函数补全
+    const dotMatch = textBeforeCursor.match(/\.([a-zA-Z]*)$/);
     if (dotMatch) {
-        // 属性函数补全
+        // 只显示属性函数
         const propertyMatches = Object.entries(FUNCTIONS)
             .filter(([name, func]) => 
                 func.asProperty && 
@@ -273,30 +300,45 @@ function checkCompletion(input) {
         
         if (propertyMatches.length > 0) {
             showCompletionHint(input, propertyMatches, true);
+            return;
+        }
+    }
+
+    // 普通函数补全
+    const wordMatch = textBeforeCursor.match(/[a-zA-Z][a-zA-Z]*$/);
+    if (wordMatch) {
+        const word = wordMatch[0].toLowerCase();
+        const matches = Object.keys(FUNCTIONS)
+            .filter(name => name.toLowerCase().startsWith(word))
+            .map(name => name + '(');
+        
+        if (matches.length > 0) {
+            showCompletionHint(input, matches, false);
         }
     } else {
-        // 普通函数/常量补全
-        const lastWord = textBeforeCursor.match(/[a-zA-Z][a-zA-Z0-9_]*$/);
-        if (lastWord) {
-            // 合并函数和常量的匹配结果
-            const matches = [
-                ...Object.entries(FUNCTIONS)
-                    .filter(([name]) => name.toLowerCase().startsWith(lastWord[0].toLowerCase()))
-                    .map(([name]) => name + '('),
-                ...Object.keys(CONSTANTS)
-                    .filter(name => name.toLowerCase().startsWith(lastWord[0].toLowerCase()))
-            ];
-            
-            if (matches.length > 0) {
-                showCompletionHint(input, matches, false);
-            }
-        }
+        removeCompletionHint(input); // 如果没有匹配，移除补全提示
     }
 }
 
 // 处理补全相关的按键事件
 function handleCompletionKeyDown(event, input) {
+    // 检查补全功能是否开启
+    if (!document.getElementById('completionToggle').checked) {
+        return false;
+    }
+
     const hint = document.querySelector('.completion-hint');
+    
+    // 处理 ESC 键
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        if (hint) {
+            removeCompletionHint(input);
+            return true;
+        }
+        return false;
+    }
+
     if (!hint) return false;
 
     switch (event.key) {
@@ -325,40 +367,8 @@ function handleCompletionKeyDown(event, input) {
             }
             break;
 
-        case 'Escape':
-            removeCompletionHint(input);
-            return true;
     }
 
-    return false;
-}
-
-// 移除静态的 triggerChars 生成
-function shouldTriggerCompletion(input, key) {
-    const cursorPos = input.selectionStart;
-    const textBeforeCursor = input.value.substring(0, cursorPos);
-    
-    // 1. 点号触发属性函数补全
-    if (key === '.') {
-        // 确保点号前面是一个合法的表达式结尾
-        const beforeDot = textBeforeCursor.slice(0, -1).trim();
-        return beforeDot.length > 0 && !beforeDot.endsWith('.');
-    }
-    
-    // 2. 字母触发函数/常量补全
-    if (key.match(/[a-zA-Z]/)) {
-        // 检查是否在一个单词的开始位置
-        const lastChar = textBeforeCursor.slice(-1);
-        return !lastChar.match(/[a-zA-Z0-9_]/);
-    }
-    
-    // 3. 左括号可能触发函数补全
-    if (key === '(') {
-        const beforeParen = textBeforeCursor.slice(0, -1).trim();
-        // 检查括号前是否是可能的函数名
-        return beforeParen.match(/[a-zA-Z][a-zA-Z0-9_]*$/);
-    }
-    
     return false;
 }
 
