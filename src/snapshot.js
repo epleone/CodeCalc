@@ -50,10 +50,26 @@ export class Snapshot {
         
         // 初始化删除按钮状态
         this.updateDeleteButton();
+
+        // 获取添加快照按钮
+        this.addButton = this.panel.querySelector('.add-snapshot-btn');
+        
+        // 初始化按钮状态
+        this.updateAddButtonState();
+        
+        // 监听表达式变化
+        document.addEventListener('input', () => {
+            this.updateAddButtonState();
+        });
     }
     
     // 保存当前页面所有表达式的状态
     takeSnapshot() {
+        // 如果按钮被禁用，直接返回
+        if (this.addButton.disabled) {
+            return;
+        }
+        
         const lines = document.querySelectorAll('.expression-line');
         const state = Array.from(lines).map(line => {
             const input = line.querySelector('.input');
@@ -357,6 +373,17 @@ export class Snapshot {
 
         // 关闭快照面板
         this.togglePanel();
+    }
+
+    // 添加新方法：更新添加按钮状态
+    updateAddButtonState() {
+        const lines = document.querySelectorAll('.expression-line');
+        const hasValidExpression = Array.from(lines).some(line => {
+            const input = line.querySelector('.input');
+            return input && input.value.trim() !== '';
+        });
+        
+        this.addButton.disabled = !hasValidExpression;
     }
 }
 

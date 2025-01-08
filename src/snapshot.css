@@ -302,6 +302,13 @@
     background: rgba(76, 175, 80, 0.1);
 }
 
+.add-snapshot-btn:disabled {
+    cursor: not-allowed;
+    color: #666;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
 /* 删除按钮 */
 .clear-snapshot-btn {
     background: transparent;
