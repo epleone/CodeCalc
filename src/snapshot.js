@@ -1,6 +1,12 @@
 import { setTag, restoreTag } from './tag.js';
 
 export class Snapshot {
+    // 定义最多保存的快照数量
+    static MAX_SNAPSHOTS = 10;
+
+    // 定义最多保存的历史记录数量
+    static MAX_HISTORY = 10;
+
     constructor() {
         this.storage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
         // 打印使用的存储适配器
@@ -9,7 +15,6 @@ export class Snapshot {
         this.list = this.panel.querySelector('.snapshot-list');
         this.isPanelVisible = false;
         this.snapshots = []; // 存储所有快照
-        this.selectedSnapshots = new Set(); // 添加选中快照的集合
         
         // 创建蒙版元素
         this.overlay = document.createElement('div');
@@ -21,23 +26,6 @@ export class Snapshot {
             this.togglePanel();
         });
         
-        // 获取底部删除按钮
-        this.deleteButton = this.panel.querySelector('.clear-snapshot-btn');
-        
-        // 修改删除按钮点击事件
-        this.deleteButton.onclick = (e) => {
-            // 如果按钮处于非激活状态，不执行任何操作
-            if (!this.deleteButton.classList.contains('active')) {
-                return;
-            }
-            
-            if (this.selectedSnapshots.size > 0) {
-                this.deleteSelected();
-            } else {
-                this.clearSnapshots();
-            }
-        };
-
         // 添加 ESC 键监听
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isPanelVisible) {
@@ -48,11 +36,13 @@ export class Snapshot {
         // 尝试从 localStorage 加载历史快照
         this.loadSnapshots();
         
-        // 初始化删除按钮状态
-        this.updateDeleteButton();
-
         // 获取添加快照按钮
         this.addButton = this.panel.querySelector('.add-snapshot-btn');
+        
+        // 添加点击事件监听
+        this.addButton.addEventListener('click', () => {
+            this.takeSnapshot();
+        });
         
         // 初始化按钮状态
         this.updateAddButtonState();
@@ -64,9 +54,20 @@ export class Snapshot {
     }
     
     // 保存当前页面所有表达式的状态
-    takeSnapshot() {
+    // 传入参数：区分快照还是记录
+    takeSnapshot(isSnapshot = true) {
         // 如果按钮被禁用，直接返回
         if (this.addButton.disabled) {
+            return;
+        }
+        
+        // 将快照分为两组
+        const snapshots = this.snapshots.filter(s => s.isSnapshot);
+        const histories = this.snapshots.filter(s => !s.isSnapshot);
+        
+        // 检查数量限制
+        if (isSnapshot && snapshots.length >= Snapshot.MAX_SNAPSHOTS) {
+            this.showMessage(`最多只能保存 ${Snapshot.MAX_SNAPSHOTS} 个快照，请删除后再试`);
             return;
         }
         
@@ -74,16 +75,8 @@ export class Snapshot {
         const state = Array.from(lines).map(line => {
             const input = line.querySelector('.input');
             const result = line.querySelector('.result-value');
-            // 获取标签文本，如果存在标签则获取其文本内容
             const tagElement = line.querySelector('.tag');
             const tag = tagElement ? tagElement.textContent : '';
-
-            // 打印每条记录的完整信息
-            // console.log('Processing record:', {
-            //     expression: input.value,
-            //     result: result.textContent,
-            //     tag: tag
-            // });
 
             return {    
                 expression: input.value,
@@ -98,10 +91,23 @@ export class Snapshot {
                 timestamp: new Date().toISOString(),
                 records: state,
                 json: JSON.stringify(state),
-                title: this.formatTime(new Date()) // 默认使用时间作为标题
+                isSnapshot: isSnapshot,
+                title: this.formatTime(new Date()),
             };
             
-            this.snapshots.unshift(snapshot);
+            // 根据类型添加
+            if (isSnapshot) {
+                snapshots.unshift(snapshot);
+            } else {
+                histories.unshift(snapshot);
+                if (histories.length > Snapshot.MAX_HISTORY) {
+                    histories.pop(); // 历史记录仍然保持限制数量
+                }
+            }
+            
+            // 合并快照和历史记录
+            this.snapshots = [...snapshots, ...histories];
+            
             this.saveSnapshots();
             this.renderList();
         }
@@ -110,139 +116,212 @@ export class Snapshot {
     // 清空快照面板
     clearSnapshots() {
         this.snapshots = [];
-        this.selectedSnapshots.clear();
         this.list.innerHTML = '';
         // 从存储中移除数据
         this.storage.removeItem('calculatorSnapshots');
-        this.updateDeleteButton();
     }
     
     // 渲染快照列表
     renderList() {
+        // 保存当前激活的 tab
+        const activeTab = this.list.querySelector('.tab.active')?.getAttribute('data-tab') || 'snapshot';
+        
         this.list.innerHTML = '';
-        this.snapshots.forEach((snapshot, index) => {
-            const snapshotElement = document.createElement('div');
-            snapshotElement.className = 'snapshot-group collapsed';
-            
-            // 添加复选框
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'snapshot-checkbox';
-            checkbox.checked = this.selectedSnapshots.has(snapshot.timestamp);
-            checkbox.onclick = (e) => {
-                e.stopPropagation(); // 防止触发折叠/展开
-                this.toggleSelection(snapshot.timestamp);
-            };
-            
-            const headerContainer = document.createElement('div');
-            headerContainer.className = 'snapshot-header';
-            
-            // 添加展开/折叠图标
-            const toggleIcon = document.createElement('span');
-            toggleIcon.className = 'toggle-icon';
-            toggleIcon.innerHTML = `
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                    <path d="M7 10l5 5 5-5z" fill="currentColor"/>
-                </svg>
-            `;
-            
-            // 添加时间标题
-            const timeHeader = document.createElement('div');
-            timeHeader.className = 'snapshot-time';
-            timeHeader.innerHTML = `
-                <span class="snapshot-title">${snapshot.title || this.formatTime(new Date(snapshot.timestamp))}</span>
-                <input type="text" class="snapshot-title-input" value="${snapshot.title || ''}" placeholder="${this.formatTime(new Date(snapshot.timestamp))}">
-            `;
-            
-            // 添加标题编辑功能
-            const titleSpan = timeHeader.querySelector('.snapshot-title');
-            const titleInput = timeHeader.querySelector('.snapshot-title-input');
-            
-            titleSpan.onclick = (e) => {
-                e.stopPropagation();
-                timeHeader.classList.add('editing');
-                titleInput.value = snapshot.title || '';
-                titleInput.focus();
-            };
-            
-            titleInput.onblur = () => {
-                timeHeader.classList.remove('editing');
-                const newTitle = titleInput.value.trim();
-                if (newTitle) {
-                    snapshot.title = newTitle;
-                    titleSpan.textContent = newTitle;
-                } else {
-                    titleSpan.textContent = this.formatTime(new Date(snapshot.timestamp));
-                    delete snapshot.title;
-                }
-                this.saveSnapshots();
-            };
-            
-            titleInput.onkeydown = (e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') {
-                    titleInput.blur();
-                } else if (e.key === 'Escape') {
-                    timeHeader.classList.remove('editing');
-                    titleInput.value = snapshot.title || '';
-                }
-            };
-            
-            // 添加应用按钮
-            const applyButton = document.createElement('button');
-            applyButton.className = 'apply-snapshot-btn';
-            applyButton.innerHTML = `
-                <svg viewBox="0 0 24 24" width="14" height="14">
-                    <path d="M13 3c-4.97 0-9 4.03-9 9H1l4 3.99L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9" fill="currentColor"/>
-                </svg>
-            `;
-            applyButton.title = '恢复此快照';
-            applyButton.onclick = (e) => {
-                e.stopPropagation();
-                this.applySnapshot(snapshot.records);
-            };
-            
-            // 更新头部组装顺序
-            headerContainer.appendChild(checkbox);
-            headerContainer.appendChild(toggleIcon);
-            headerContainer.appendChild(timeHeader);
-            headerContainer.appendChild(applyButton);
-            
-            // 添加内容容器
-            const contentContainer = document.createElement('div');
-            contentContainer.className = 'snapshot-content';
-            
-            // 添加表达式和结果
-            snapshot.records.forEach(record => {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'snapshot-item';
-                itemElement.innerHTML = `
-                    <div class="snapshot-expression">
-                        ${record.tag ? `<span class="snapshot-tag">${record.tag}</span>` : ''}
-                        ${record.expression}
-                    </div>
-                    <div class="snapshot-result">${record.result}</div>
-                `;
-                contentContainer.appendChild(itemElement);
-            });
-            
-            // 添加点击展开/折叠功能
-            headerContainer.addEventListener('click', (e) => {
-                // 如果点击的是标题输入框或标题文本，不触发折叠/展开
-                if (e.target.classList.contains('snapshot-title') || 
-                    e.target.classList.contains('snapshot-title-input')) {
-                    return;
-                }
-                snapshotElement.classList.toggle('collapsed');
-            });
-            
-            snapshotElement.appendChild(headerContainer);
-            snapshotElement.appendChild(contentContainer);
-            this.list.appendChild(snapshotElement);
+        
+        // 创建 tab 容器
+        const tabContainer = document.createElement('div');
+        tabContainer.className = 'snapshot-tabs';
+        tabContainer.innerHTML = `
+            <div class="tab ${activeTab === 'snapshot' ? 'active' : ''}" data-tab="snapshot">快照</div>
+            <div class="tab ${activeTab === 'history' ? 'active' : ''}" data-tab="history">历史</div>
+        `;
+        
+        // 创建内容容器
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'snapshot-content-container';
+        
+        // 将快照分为两组
+        const snapshots = this.snapshots.filter(s => s.isSnapshot);
+        const histories = this.snapshots.filter(s => !s.isSnapshot);
+        
+        // 渲染快照组
+        const snapshotContainer = document.createElement('div');
+        snapshotContainer.className = `tab-content ${activeTab === 'snapshot' ? 'active' : ''}`;
+        snapshotContainer.setAttribute('data-tab', 'snapshot');
+        snapshots.forEach(snapshot => {
+            this.renderSnapshotItem(snapshot, snapshotContainer);
         });
         
-        // 更新删除按钮显示状态
-        this.updateDeleteButton();
+        // 渲染历史组
+        const historyContainer = document.createElement('div');
+        historyContainer.className = `tab-content ${activeTab === 'history' ? 'active' : ''}`;
+        historyContainer.setAttribute('data-tab', 'history');
+        histories.forEach(snapshot => {
+            this.renderSnapshotItem(snapshot, historyContainer);
+        });
+        
+        // 添加 tab 切换事件
+        tabContainer.addEventListener('click', (e) => {
+            const tab = e.target.closest('.tab');
+            if (!tab) return;
+            
+            // 更新 tab 激活状态
+            tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // 更新内容显示
+            const tabName = tab.getAttribute('data-tab');
+            contentContainer.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.toggle('active', c.getAttribute('data-tab') === tabName);
+            });
+        });
+        
+        // 组装结构
+        contentContainer.appendChild(snapshotContainer);
+        contentContainer.appendChild(historyContainer);
+        this.list.appendChild(tabContainer);
+        this.list.appendChild(contentContainer);
+    }
+    
+    // 抽取渲染单个快照项的逻辑为独立方法
+    renderSnapshotItem(snapshot, container) {
+        const snapshotElement = document.createElement('div');
+        snapshotElement.className = 'snapshot-group collapsed';
+        snapshotElement.setAttribute('data-type', snapshot.isSnapshot ? 'snapshot' : 'history');
+        
+        const headerContainer = document.createElement('div');
+        headerContainer.className = 'snapshot-header';
+        
+        // 添加展开/折叠图标
+        const toggleIcon = document.createElement('span');
+        toggleIcon.className = 'toggle-icon';
+        toggleIcon.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M7 10l5 5 5-5z" fill="currentColor"/>
+            </svg>
+        `;
+        
+        // 添加时间标题
+        const timeHeader = document.createElement('div');
+        timeHeader.className = 'snapshot-time';
+        timeHeader.innerHTML = `
+            <span class="snapshot-type-icon">
+                ${snapshot.isSnapshot ? 
+                    `<svg viewBox="0 0 24 24" width="16" height="16">
+                        <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" fill="currentColor"/>
+                    </svg>` : 
+                    `<svg viewBox="0 0 24 24" width="16" height="16">
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="currentColor"/>
+                    </svg>`
+                }
+            </span>
+            <span class="snapshot-title">${snapshot.title || this.formatTime(new Date(snapshot.timestamp))}</span>
+            <input type="text" class="snapshot-title-input" value="${snapshot.title || ''}" placeholder="${this.formatTime(new Date(snapshot.timestamp))}">
+        `;
+        
+        // 添加标题编辑功能
+        const titleSpan = timeHeader.querySelector('.snapshot-title');
+        const titleInput = timeHeader.querySelector('.snapshot-title-input');
+        
+        titleSpan.onclick = (e) => {
+            e.stopPropagation();
+            timeHeader.classList.add('editing');
+            titleInput.value = snapshot.title || '';
+            titleInput.focus();
+        };
+        
+        titleInput.onblur = () => {
+            timeHeader.classList.remove('editing');
+            const newTitle = titleInput.value.trim();
+            if (newTitle) {
+                snapshot.title = newTitle;
+                titleSpan.textContent = newTitle;
+            } else {
+                titleSpan.textContent = this.formatTime(new Date(snapshot.timestamp));
+                delete snapshot.title;
+            }
+            this.saveSnapshots();
+        };
+        
+        titleInput.onkeydown = (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') {
+                titleInput.blur();
+            } else if (e.key === 'Escape') {
+                timeHeader.classList.remove('editing');
+                titleInput.value = snapshot.title || '';
+            }
+        };
+        
+        // 添加应用按钮
+        const applyButton = document.createElement('button');
+        applyButton.className = 'apply-snapshot-btn';
+        applyButton.innerHTML = `
+            <svg viewBox="0 0 24 24" width="14" height="14">
+                <path d="M13 3c-4.97 0-9 4.03-9 9H1l4 3.99L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9" fill="currentColor"/>
+            </svg>
+        `;
+        applyButton.title = '恢复此快照';
+        applyButton.onclick = (e) => {
+            e.stopPropagation();
+            this.applySnapshot(snapshot.records);
+        };
+        
+        // 添加删除按钮
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'delete-snapshot-btn';
+        deleteButton.innerHTML = `
+            <svg viewBox="0 0 24 24" width="14" height="14">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
+            </svg>
+        `;
+        deleteButton.title = '删除此快照';
+        deleteButton.onclick = (e) => {
+            e.stopPropagation();
+            // 删除整个快照
+            this.snapshots = this.snapshots.filter(s => s.timestamp !== snapshot.timestamp);
+            this.saveSnapshots();
+            this.renderList();
+        };
+        
+        // 更新头部组装顺序
+        headerContainer.appendChild(toggleIcon);
+        headerContainer.appendChild(timeHeader);
+        headerContainer.appendChild(applyButton);
+        headerContainer.appendChild(deleteButton);
+        
+        // 添加内容容器
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'snapshot-content';
+        
+        // 添加表达式和结果
+        snapshot.records.forEach((record, recordIndex) => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'snapshot-item';
+            itemElement.innerHTML = `
+                <div class="snapshot-expression">
+                    ${record.tag ? `<span class="snapshot-tag">${record.tag}</span>` : ''}
+                    ${record.expression}
+                </div>
+                <div class="snapshot-result">${record.result}</div>
+            `;
+            
+            contentContainer.appendChild(itemElement);
+        });
+        
+        // 添加点击展开/折叠功能
+        headerContainer.addEventListener('click', (e) => {
+            // 如果点击的是标题输入框或标题文本，不触发折叠/展开
+            if (e.target.classList.contains('snapshot-title') || 
+                e.target.classList.contains('snapshot-title-input')) {
+                return;
+            }
+            snapshotElement.classList.toggle('collapsed');
+        });
+        
+        snapshotElement.appendChild(headerContainer);
+        snapshotElement.appendChild(contentContainer);
+        container.appendChild(snapshotElement);
     }
     
     // 保存快照到 dbStorage
@@ -306,47 +385,6 @@ export class Snapshot {
         this.panel.style.right = this.isPanelVisible ? '0' : '-300px';
     }
     
-    // 切换选中状态
-    toggleSelection(timestamp) {
-        if (this.selectedSnapshots.has(timestamp)) {
-            this.selectedSnapshots.delete(timestamp);
-        } else {
-            this.selectedSnapshots.add(timestamp);
-        }
-        this.updateDeleteButton();
-    }
-    
-    // 更新删除按钮状态
-    updateDeleteButton() {
-        if (this.selectedSnapshots.size > 0) {
-            this.deleteButton.classList.add('active');
-            this.deleteButton.innerHTML = `
-                <svg class="delete-icon" viewBox="0 0 24 24" width="18" height="18">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
-                </svg>
-                删除所选 (${this.selectedSnapshots.size})
-            `;
-        } else {
-            this.deleteButton.classList.remove('active');
-            this.deleteButton.innerHTML = `
-                <svg class="delete-icon" viewBox="0 0 24 24" width="18" height="18">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
-                </svg>
-                删除
-            `;
-        }
-    }
-    
-    // 删除选中的快照
-    deleteSelected() {
-        this.snapshots = this.snapshots.filter(
-            snapshot => !this.selectedSnapshots.has(snapshot.timestamp)
-        );
-        this.selectedSnapshots.clear();
-        this.saveSnapshots();
-        this.renderList();
-    }
-    
     // 应用快照
     applySnapshot(records) {
         // 清空所有变量和行
@@ -354,7 +392,7 @@ export class Snapshot {
         
         // 依次填入快照中的记录
         records.forEach((record, index) => {
-            if (index > 0) { // 因为第一行已经存在,所以从第二条记录开始才需要新增行
+            if (index > 0) {
                 window.addNewLine();
             }
             const line = document.querySelectorAll('.expression-line')[index];
@@ -371,6 +409,9 @@ export class Snapshot {
 
         window.addNewLine();
 
+        // 更新添加按钮状态
+        this.updateAddButtonState();
+
         // 关闭快照面板
         this.togglePanel();
     }
@@ -384,6 +425,29 @@ export class Snapshot {
         });
         
         this.addButton.disabled = !hasValidExpression;
+    }
+
+    // 添加显示消息的方法
+    showMessage(message) {
+        // 移除可能存在的旧消息
+        const oldMessage = document.querySelector('.snapshot-message');
+        if (oldMessage) {
+            oldMessage.remove();
+        }
+
+        // 创建消息元素
+        const messageElement = document.createElement('div');
+        messageElement.className = 'snapshot-message';
+        messageElement.textContent = message;
+        
+        // 添加到 body 中而不是面板中
+        document.body.appendChild(messageElement);
+        
+        // 3秒后自动移除
+        setTimeout(() => {
+            messageElement.classList.add('fade-out');
+            setTimeout(() => messageElement.remove(), 300);
+        }, 3000);
     }
 }
 

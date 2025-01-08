@@ -501,6 +501,9 @@ function calculateLine(input) {
 function clearAll() {
     const container = document.getElementById('expression-container');
     
+    // 在清空之前保存历史记录
+    snapshot.takeSnapshot(false);  // 传入 false 表示这是一个历史记录而不是快照
+    
     // 不使用克隆，而是创建新的行
     const newLine = document.createElement('div');
     newLine.className = 'expression-line';
