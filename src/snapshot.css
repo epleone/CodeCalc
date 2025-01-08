@@ -40,7 +40,7 @@
 .snapshot-list {
     flex: 1;
     overflow-y: auto;
-    padding: 4px 8px;
+    padding: 0;
     background: #f5f7fa;
 }
 
@@ -228,8 +228,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.6;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
     width: 24px;
     height: 24px;
     min-width: 24px;
@@ -353,13 +354,14 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     border: none;
     cursor: pointer;
     padding: 4px;
-    color: #f44336;
+    color: #757575;
     border-radius: 4px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.6;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
     width: 24px;
     height: 24px;
     min-width: 24px;
@@ -369,7 +371,7 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
 .delete-snapshot-btn:hover {
     opacity: 1;
     transform: scale(1.15);
-    color: #d32f2f;
+    color: #f44336;
 }
 
 .delete-snapshot-btn svg {
@@ -388,6 +390,7 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     display: inline-flex;
     align-items: center;
     margin-right: 6px;
+    color: rgba(0, 0, 0, 0.41);  /* 使用与 tab 下划线相同的灰色 */
 }
 
 .snapshot-type-icon svg {
@@ -395,15 +398,15 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     height: 16px;
 }
 
-/* 为不同类型设置不同的颜色 */
+/* 删除之前的颜色区分 */
 .snapshot-time .snapshot-type-icon {
-    color: #757575;  /* 默认使用灰色 */
+    color: rgba(0, 0, 0, 0.41);  /* 统一使用灰色 */
 }
 
-/* 快照使用绿色 */
+/* 删除快照的绿色样式 */
 .snapshot-group[data-type="snapshot"] .snapshot-type-icon,
 .snapshot-time:has(+ .apply-snapshot-btn) .snapshot-type-icon {
-    color: #4CAF50;
+    color: rgba(0, 0, 0, 0.41);  /* 统一使用灰色 */
 }
 
 /* 消息提示样式 */
@@ -468,7 +471,7 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     color: rgba(0, 0, 0, 0.6);
     cursor: pointer;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 400;
     position: relative;
     background: transparent;
     border: none;
@@ -485,7 +488,7 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     left: 50%;
     width: 0;
     height: 2px;
-    background: #4CAF50;
+    background: rgba(0, 0, 0, 0.41);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateX(-50%);
 }
@@ -496,7 +499,8 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
 }
 
 .snapshot-tabs .tab.active {
-    color: #4CAF50;
+    color: rgba(0, 0, 0, 0.87);
+    font-weight: 500;
 }
 
 .snapshot-tabs .tab.active::after {
@@ -523,7 +527,7 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
 /* 调整内容区域样式 */
 .tab-content {
     display: none;
-    padding: 16px;
+    padding: 16px 8px;
     animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -545,6 +549,7 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
 /* 调整列表容器样式 */
 .snapshot-list {
     background: #fff;
+    padding: 0;
 }
 
 /* 内容容器样式 */
@@ -552,4 +557,30 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     flex: 1;
     overflow: hidden;
     background: #fff;
+}
+
+/* 在快照组标题被悬停时显示按钮 */
+.snapshot-group .snapshot-header:hover .apply-snapshot-btn,
+.snapshot-group .snapshot-header:hover .delete-snapshot-btn {
+    opacity: 0.6;  /* 显示时使用半透明 */
+    visibility: visible;
+}
+
+/* 按钮自身的悬停效果 */
+.apply-snapshot-btn:hover {
+    opacity: 1;
+    transform: rotate(-180deg) scale(1.15);
+    color: #2E7D32;
+}
+
+.delete-snapshot-btn:hover {
+    opacity: 1;
+    transform: scale(1.15);
+    color: #f44336;
+}
+
+/* 优化过渡动画 */
+.apply-snapshot-btn,
+.delete-snapshot-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }

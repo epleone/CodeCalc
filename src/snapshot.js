@@ -109,7 +109,9 @@ export class Snapshot {
             this.snapshots = [...snapshots, ...histories];
             
             this.saveSnapshots();
-            this.renderList();
+            
+            // 渲染列表时强制激活快照 tab
+            this.renderList('snapshot');  // 添加参数来指定要激活的 tab
         }
     }
     
@@ -122,9 +124,9 @@ export class Snapshot {
     }
     
     // 渲染快照列表
-    renderList() {
-        // 保存当前激活的 tab
-        const activeTab = this.list.querySelector('.tab.active')?.getAttribute('data-tab') || 'snapshot';
+    renderList(activeTabName = null) {
+        // 如果没有指定要激活的 tab，则保持当前激活的 tab
+        const activeTab = activeTabName || this.list.querySelector('.tab.active')?.getAttribute('data-tab') || 'snapshot';
         
         this.list.innerHTML = '';
         
