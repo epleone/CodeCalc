@@ -5,14 +5,15 @@ import * as Tag from './tag.js';
 import * as Snapshot from './snapshot.js';
 import * as Settings from './settings.js';
 import {
-    triggerChars,
     completions,
     isCompletionEnabled,
     showCompletionHint,
     removeCompletionHint,
     navigateCompletion,
     applySelectedCompletion,
-    checkCompletion
+    checkCompletion,
+    handleCompletionKeyDown,
+    shouldTriggerCompletion
 } from './completion.js';
 
 
@@ -98,40 +99,9 @@ function handleLineDelete(input) {
 }
 
 function handleKeyDown(event, input) {
-    const hint = document.querySelector('.completion-hint');
-
-    // 处理补全相关的按键
-    if (hint) {
-        switch (event.key) {
-            case 'ArrowUp':
-            case 'ArrowDown':
-                if (isCompletionEnabled) {
-                    event.preventDefault();
-                    navigateCompletion(event.key === 'ArrowUp' ? 'prev' : 'next');
-                    return;
-                }
-                break;
-
-            case 'Enter':
-                if (isCompletionEnabled && hint.querySelector('.completion-item.selected')) {
-                    event.preventDefault();
-                    applySelectedCompletion(input);
-                    return;
-                }
-                break;
-
-            case 'Tab':
-                if (isCompletionEnabled) {
-                    event.preventDefault();
-                    applySelectedCompletion(input);
-                    return;
-                }
-                break;
-
-            case 'Escape':
-                removeCompletionHint(input);
-                return;
-        }
+    // 首先检查是否是补全相关的按键
+    if (handleCompletionKeyDown(event, input)) {
+        return;
     }
 
     // 处理其他键盘事件
@@ -167,6 +137,7 @@ function handleKeyDown(event, input) {
 
         case 'ArrowUp':
         case 'ArrowDown':
+            const hint = document.querySelector('.completion-hint');
             if (!hint) {  // 只在没有补全提示时处理上下行切换
                 event.preventDefault();
                 const currentLine = input.closest('.expression-line');
@@ -188,9 +159,8 @@ function handleKeyDown(event, input) {
             return;
 
         default:
-            // 检查是否是触发补全的字符
-            if (isCompletionEnabled && triggerChars.has(event.key)) {
-                // 等待当前按键输入完成后再检查补全
+            // 检查是否应该触发补全
+            if (isCompletionEnabled && shouldTriggerCompletion(input, event.key)) {
                 setTimeout(() => checkCompletion(input), 0);
             }
             break;

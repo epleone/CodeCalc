@@ -1,34 +1,5 @@
 import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
 
-// 生成触发补全的字符集
-function generateTriggerChars() {
-    const triggerChars = new Set();
-    
-    // 添加点号(属性函数补全)
-    triggerChars.add('.');
-    
-    // 添加左括号(函数补全)
-    triggerChars.add('(');
-    
-    // 从 FUNCTIONS 中获取所有函数名的首字母
-    Object.keys(FUNCTIONS).forEach(funcName => {
-        if (funcName[0].match(/[a-zA-Z]/)) {
-            triggerChars.add(funcName[0].toLowerCase());
-            triggerChars.add(funcName[0].toUpperCase());
-        }
-    });
-    
-    // 从 CONSTANTS 中获取所有常量名的首字母
-    Object.keys(CONSTANTS).forEach(constName => {
-        if (constName[0].match(/[a-zA-Z]/)) {
-            triggerChars.add(constName[0].toLowerCase());
-            triggerChars.add(constName[0].toUpperCase());
-        }
-    });
-    
-    return triggerChars;
-}
-
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {
     const completions = [];
@@ -66,8 +37,7 @@ function generateCompletions() {
     return completions;
 }
 
-// 生成触发字符集和补全列表
-const triggerChars = generateTriggerChars();
+// 生成补全列表
 const completions = generateCompletions();
 
 // 全局变量
@@ -305,12 +275,17 @@ function checkCompletion(input) {
             showCompletionHint(input, propertyMatches, true);
         }
     } else {
-        // 普通函数补全
-        const lastWord = textBeforeCursor.match(/(?:[a-zA-Z0-9]|\*\*)*$/)[0].toLowerCase();
+        // 普通函数/常量补全
+        const lastWord = textBeforeCursor.match(/[a-zA-Z][a-zA-Z0-9_]*$/);
         if (lastWord) {
-            const matches = completions.filter(c => 
-                c.toLowerCase().startsWith(lastWord)
-            );
+            // 合并函数和常量的匹配结果
+            const matches = [
+                ...Object.entries(FUNCTIONS)
+                    .filter(([name]) => name.toLowerCase().startsWith(lastWord[0].toLowerCase()))
+                    .map(([name]) => name + '('),
+                ...Object.keys(CONSTANTS)
+                    .filter(name => name.toLowerCase().startsWith(lastWord[0].toLowerCase()))
+            ];
             
             if (matches.length > 0) {
                 showCompletionHint(input, matches, false);
@@ -319,8 +294,75 @@ function checkCompletion(input) {
     }
 }
 
+// 处理补全相关的按键事件
+function handleCompletionKeyDown(event, input) {
+    const hint = document.querySelector('.completion-hint');
+    if (!hint) return false;
+
+    switch (event.key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+            if (isCompletionEnabled) {
+                event.preventDefault();
+                navigateCompletion(event.key === 'ArrowUp' ? 'prev' : 'next');
+                return true;
+            }
+            break;
+
+        case 'Enter':
+            if (isCompletionEnabled && hint.querySelector('.completion-item.selected')) {
+                event.preventDefault();
+                applySelectedCompletion(input);
+                return true;
+            }
+            break;
+
+        case 'Tab':
+            if (isCompletionEnabled) {
+                event.preventDefault();
+                applySelectedCompletion(input);
+                return true;
+            }
+            break;
+
+        case 'Escape':
+            removeCompletionHint(input);
+            return true;
+    }
+
+    return false;
+}
+
+// 移除静态的 triggerChars 生成
+function shouldTriggerCompletion(input, key) {
+    const cursorPos = input.selectionStart;
+    const textBeforeCursor = input.value.substring(0, cursorPos);
+    
+    // 1. 点号触发属性函数补全
+    if (key === '.') {
+        // 确保点号前面是一个合法的表达式结尾
+        const beforeDot = textBeforeCursor.slice(0, -1).trim();
+        return beforeDot.length > 0 && !beforeDot.endsWith('.');
+    }
+    
+    // 2. 字母触发函数/常量补全
+    if (key.match(/[a-zA-Z]/)) {
+        // 检查是否在一个单词的开始位置
+        const lastChar = textBeforeCursor.slice(-1);
+        return !lastChar.match(/[a-zA-Z0-9_]/);
+    }
+    
+    // 3. 左括号可能触发函数补全
+    if (key === '(') {
+        const beforeParen = textBeforeCursor.slice(0, -1).trim();
+        // 检查括号前是否是可能的函数名
+        return beforeParen.match(/[a-zA-Z][a-zA-Z0-9_]*$/);
+    }
+    
+    return false;
+}
+
 export {
-    triggerChars,
     completions,
     isCompletionEnabled,
     hasUsedArrowKeys,
@@ -328,5 +370,7 @@ export {
     removeCompletionHint,
     navigateCompletion,
     applySelectedCompletion,
-    checkCompletion
+    checkCompletion,
+    handleCompletionKeyDown,
+    shouldTriggerCompletion
 };
