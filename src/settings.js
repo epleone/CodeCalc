@@ -37,6 +37,10 @@ export class Settings {
     togglePanel() {
         this.isPanelVisible = !this.isPanelVisible;
         if (this.isPanelVisible) {
+            // 使用全局 window.snapshot 替代导入的 snapshot
+            if (window.snapshot.isPanelVisible) {
+                window.snapshot.togglePanel();
+            }
             this.panel.classList.add('show');
             this.overlay.classList.add('show');
             document.body.style.overflow = 'hidden';
@@ -47,9 +51,6 @@ export class Settings {
         }
     }
 }
-
-
-export const settings = new Settings();
 
 // 添加快捷键支持，Ctrl + ` 打开设置页面
 document.addEventListener('keydown', (e) => {

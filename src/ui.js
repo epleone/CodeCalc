@@ -2,8 +2,8 @@ import Calculator from './calculator.js';
 import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
 import * as Copy from './copy.js';
 import * as Tag from './tag.js';
-import * as Snapshot from './snapshot.js';
-import * as Settings from './settings.js';
+import { Settings } from './settings.js';
+import { Snapshot } from './snapshot.js';
 import {
     completions,
     isCompletionEnabled,
@@ -16,6 +16,13 @@ import {
     shouldTriggerCompletion
 } from './completion.js';
 
+// 创建实例
+export const settings = new Settings();
+export const snapshot = new Snapshot();
+
+// 导出面板切换函数
+export const toggleSnapshotPanel = () => snapshot.togglePanel();
+export const toggleSettingsPanel = () => settings.togglePanel();
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
@@ -577,10 +584,13 @@ Object.assign(window, {
     // 初始化函数
     initializeUI,
     
-    // 快照相关函数
-    toggleSnapshotPanel: function() {
-        Snapshot.snapshot.togglePanel();
-    }
+    // 面板切换函数
+    toggleSnapshotPanel,
+    toggleSettingsPanel,
+    
+    // 实例
+    settings,
+    snapshot
 });
 
 // 导出函数供模块使用

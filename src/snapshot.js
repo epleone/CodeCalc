@@ -1,6 +1,6 @@
 import { setTag, restoreTag } from './tag.js';
 
-class Snapshot {
+export class Snapshot {
     constructor() {
         this.storage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
         // 打印使用的存储适配器
@@ -275,13 +275,17 @@ class Snapshot {
     togglePanel() {
         this.isPanelVisible = !this.isPanelVisible;
         if (this.isPanelVisible) {
+            // 使用全局 window.settings 替代导入的 settings
+            if (window.settings.isPanelVisible) {
+                window.settings.togglePanel();
+            }
             this.panel.classList.add('show');
             this.overlay.classList.add('show');
-            document.body.style.overflow = 'hidden'; // 防止背景滚动
+            document.body.style.overflow = 'hidden';
         } else {
             this.panel.classList.remove('show');
             this.overlay.classList.remove('show');
-            document.body.style.overflow = ''; // 恢复背景滚动
+            document.body.style.overflow = '';
         }
         this.panel.style.right = this.isPanelVisible ? '0' : '-300px';
     }
@@ -355,9 +359,6 @@ class Snapshot {
         this.togglePanel();
     }
 }
-
-export const snapshot = new Snapshot();
-export { Snapshot }; 
 
 // 添加快捷键支持
 document.addEventListener('keydown', (e) => {
