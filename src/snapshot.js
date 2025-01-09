@@ -112,6 +112,9 @@ export class Snapshot {
             
             // 渲染列表时强制激活快照 tab
             this.renderList('snapshot');  // 添加参数来指定要激活的 tab
+        }else{
+            this.showMessage('当前页面没有计算记录，无法创建快照');
+            this.updateAddButtonState();
         }
     }
     
