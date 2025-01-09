@@ -298,10 +298,56 @@ export class Snapshot {
         deleteButton.title = '删除此快照';
         deleteButton.onclick = (e) => {
             e.stopPropagation();
-            // 删除整个快照
-            this.snapshots = this.snapshots.filter(s => s.timestamp !== snapshot.timestamp);
-            this.saveSnapshots();
-            this.renderList();
+            
+            // 获取要删除的快照组元素
+            const groupElement = snapshotElement;
+            const container = groupElement.parentElement;
+            
+            // 记录所有其他元素的初始位置
+            const siblings = Array.from(container.children).filter(el => el !== groupElement);
+            const positions = siblings.map(el => {
+                const rect = el.getBoundingClientRect();
+                return { el, top: rect.top };
+            });
+            
+            // 添加删除动画类
+            groupElement.classList.add('deleting');
+            
+            // 监听删除动画结束
+            groupElement.addEventListener('animationend', () => {
+                // 移除元素
+                groupElement.style.display = 'none';
+                
+                // 记录其他元素的新位置并计算位移
+                positions.forEach(({ el, top }) => {
+                    const newTop = el.getBoundingClientRect().top;
+                    const delta = top - newTop;
+                    
+                    // 设置初始位置
+                    el.style.transform = `translateY(${delta}px)`;
+                    el.style.transition = 'none';
+                    
+                    // 触发重排
+                    void el.offsetHeight;
+                    
+                    // 添加过渡并移动到最终位置
+                    el.style.transition = 'transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1)';
+                    el.style.transform = '';
+                });
+                
+                // 等待位移动画完成后再实际删除元素和更新数据
+                setTimeout(() => {
+                    groupElement.remove();
+                    this.snapshots = this.snapshots.filter(s => s.timestamp !== snapshot.timestamp);
+                    this.saveSnapshots();
+                    
+                    // 清理样式
+                    positions.forEach(({ el }) => {
+                        el.style.transform = '';
+                        el.style.transition = '';
+                    });
+                }, 300);
+            }, { once: true });
         };
         
         // 更新头部组装顺序
@@ -336,7 +382,99 @@ export class Snapshot {
                 e.target.classList.contains('snapshot-title-input')) {
                 return;
             }
-            snapshotElement.classList.toggle('collapsed');
+
+            const content = snapshotElement.querySelector('.snapshot-content');
+            const isCollapsed = snapshotElement.classList.contains('collapsed');
+            
+            // 如果正在动画中，不处理点击
+            if (content.classList.contains('animating') || 
+                content.classList.contains('collapsing')) {
+                return;
+            }
+
+            if (isCollapsed) {
+                // 展开动画
+                content.style.display = 'block';
+                // 获取内容实际高度
+                const height = content.offsetHeight;
+                content.classList.add('animating');
+                
+                // 记录其他元素的初始位置
+                const siblings = Array.from(container.children)
+                    .filter(el => el !== snapshotElement && el.offsetTop > snapshotElement.offsetTop);
+                const positions = siblings.map(el => {
+                    const rect = el.getBoundingClientRect();
+                    return { el, top: rect.top };
+                });
+
+                content.addEventListener('animationend', () => {
+                    content.classList.remove('animating');
+                    snapshotElement.classList.remove('collapsed');
+                    
+                    // 处理其他元素的位移
+                    positions.forEach(({ el, top }) => {
+                        const newTop = el.getBoundingClientRect().top;
+                        const delta = top - newTop;
+                        
+                        // 设置初始位置
+                        el.style.transform = `translateY(${delta}px)`;
+                        el.style.transition = 'none';
+                        
+                        // 触发重排
+                        void el.offsetHeight;
+                        
+                        // 添加过渡并移动到最终位置
+                        el.style.transition = 'transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1)';
+                        el.style.transform = '';
+                        
+                        // 清理样式
+                        setTimeout(() => {
+                            el.style.transform = '';
+                            el.style.transition = '';
+                        }, 300);
+                    });
+                }, { once: true });
+            } else {
+                // 折叠动画
+                content.classList.add('collapsing');
+                
+                // 记录其他元素的初始位置
+                const siblings = Array.from(container.children)
+                    .filter(el => el !== snapshotElement && el.offsetTop > snapshotElement.offsetTop);
+                const positions = siblings.map(el => {
+                    const rect = el.getBoundingClientRect();
+                    return { el, top: rect.top };
+                });
+
+                content.addEventListener('animationend', () => {
+                    content.classList.remove('collapsing');
+                    snapshotElement.classList.add('collapsed');
+                    content.style.display = 'none';
+                    
+                    // 处理其他元素的位移
+                    positions.forEach(({ el, top }) => {
+                        const newTop = el.getBoundingClientRect().top;
+                        const delta = top - newTop;
+                        
+                        // 设置初始位置
+                        el.style.transform = `translateY(${delta}px)`;
+                        el.style.transition = 'none';
+                        
+                        // 触发重排
+                        void el.offsetHeight;
+                        
+                        // 添加过渡并移动到最终位置
+                        el.style.transition = 'transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1)';
+                        el.style.transform = '';
+                        
+                        // 清理样式
+                        setTimeout(() => {
+                            el.style.transform = '';
+                            el.style.transition = '';
+                        }, 300);
+                    });
+                }, { once: true });
+            }
         });
         
         snapshotElement.appendChild(headerContainer);
