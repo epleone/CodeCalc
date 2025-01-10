@@ -56,6 +56,9 @@ export class Snapshot {
     // 保存当前页面所有表达式的状态
     // 传入参数：区分快照还是记录
     takeSnapshot(isSnapshot = true) {
+        // 添加这行来追踪调用来源
+        // console.log('takeSnapshot called from:', new Error().stack);
+
         // 如果按钮被禁用，直接返回
         if (this.addButton.disabled) {
             return;
@@ -112,7 +115,8 @@ export class Snapshot {
             
             // 渲染列表时强制激活快照 tab
             this.renderList('snapshot');  // 添加参数来指定要激活的 tab
-        }else{
+        }
+        else{
             this.showMessage('当前页面没有计算记录，无法创建快照');
             this.updateAddButtonState();
         }

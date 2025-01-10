@@ -555,6 +555,9 @@ function clearAll() {
     const newResult = newLine.querySelector('.result');
     addResultClickHandler(newResult);
     
+    // 在清空之后, 更新快照添加按钮状态
+    snapshot.updateAddButtonState();
+
     // 聚焦到输入框
     input.focus();
 }
