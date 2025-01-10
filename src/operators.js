@@ -2,8 +2,11 @@ import Utils from './utils.js';
 
 // 常数定义
 export const CONSTANTS = {
+    'π': Math.PI,
     'PI': Math.PI,
+    'pi': Math.PI,
     'e': Math.E,
+    'E': Math.E,
 };
 
 // 定界符定义

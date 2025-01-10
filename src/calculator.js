@@ -441,7 +441,12 @@ const Calculator = (function() {
                             const newTokens = [];
                             for (let j = 0; j < parts.length; j++) {
                                 if (parts[j]) {
-                                    newTokens.push(['string', parts[j]]);
+                                    // 保持原始token类型
+                                    if (constants.has(parts[j])) {
+                                        newTokens.push(['constant', parts[j]]);
+                                    } else {
+                                        newTokens.push(['string', parts[j]]);
+                                    }
                                 }
                                 if (j < parts.length - 1) {
                                     newTokens.push(['operator', '*']);
