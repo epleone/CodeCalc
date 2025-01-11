@@ -120,12 +120,12 @@ export const OPERATORS = {
     },
 
     // 一元运算符
-    '#': {
-        precedence: 6,
+    '@': {
+        precedence: 0,
         args: 1,
-        func: x => x + 1,
-        position: 'prefix',
-        description: '前缀自增'
+        func: x => x,
+        position: 'postfix',
+        description: '时间戳转成日期'
     },
     '°': {
         alias: '.deg',

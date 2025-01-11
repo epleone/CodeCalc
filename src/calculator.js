@@ -184,6 +184,10 @@ const Calculator = (function() {
                 if (varName.startsWith('_ccstr_i')) {
                     throw new Error(`变量名不能以 "_ccstr_i" 开头，这是系统保留的前缀`);
                 }
+
+                if (varName.startsWith('_ccdate_i')) {
+                    throw new Error(`变量名不能以 "_ccdate_i" 开头，这是系统保留的前缀`);
+                }
                 
                 // 检查是否与运算符冲突
                 if (OPERATORS.hasOwnProperty(varName)) {
@@ -240,8 +244,94 @@ const Calculator = (function() {
             return processed;
         }
 
+        // 辅助函数：根据格式解析日期字符串
+        function parseDate(dateString, format) {
+            const now = new Date();
+            let date;
+
+            switch (format) {
+                case 'YYYY-MM-DD HH:mm:ss':
+                    date = new Date(dateString);
+                    break;
+                case 'YYYY-MM-DD HH:mm':
+                    date = new Date(dateString + ':00');
+                    break;
+                case 'YYYY-MM-DD':
+                    date = new Date(dateString + 'T00:00:00');
+                    break;
+                case 'YYYY':
+                    date = new Date(dateString + '-01-01T00:00:00');
+                    break;
+                case 'YYYY-MM':
+                    date = new Date(dateString + '-01T00:00:00');
+                    break;
+                case 'MM-DD':
+                    date = new Date(now.getFullYear() + '-' + dateString + 'T00:00:00');
+                    break;
+                case 'HH:mm:ss':
+                    date = new Date(now.toISOString().split('T')[0] + 'T' + dateString);
+                    break;
+                case 'HH:mm':
+                    date = new Date(now.toISOString().split('T')[0] + 'T' + dateString + ':00');
+                    break;
+                default:
+                    return null;
+            }
+
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        // 处理日期, 保存到变量字典中
+        function processDate(expr) {
+            // 添加日期常量计数器
+            let dateConstantCounter = 0;
+
+            // 匹配日期格式
+            const datePatterns = [
+                { regex: /#(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm:ss' },
+                { regex: /#(\d{4}-\d{2}-\d{2} \d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm' },
+                { regex: /#(\d{4}-\d{2}-\d{2})/, format: 'YYYY-MM-DD' },
+                { regex: /#(\d{4})/, format: 'YYYY' },
+                { regex: /#(\d{4}-\d{2})/, format: 'YYYY-MM' },
+                { regex: /#(\d{2}-\d{2})/, format: 'MM-DD' },
+                { regex: /#(\d{2}:\d{2}:\d{2})/, format: 'HH:mm:ss' },
+                { regex: /#(\d{2}:\d{2})/, format: 'HH:mm' }
+            ];
+
+            // 继续处理直到没有更多匹配
+            let lastExpr;
+            do {
+                lastExpr = expr;
+                // 遍历所有模式并替换为日期常量标识符
+                for (const { regex, format } of datePatterns) {
+                    const match = regex.exec(expr);
+                    if (match) {
+                        const [fullMatch, dateString] = match;
+                        const date = parseDate(dateString, format);
+                        if (date) {
+                            // 生成日期常量标识符
+                            const constName = `_ccdate_i${dateConstantCounter++}`;
+                            // 将时间戳保存到变量字典中
+                            variables.set(constName, date.getTime());
+                            // 只替换当前匹配到的日期
+                            expr = expr.substring(0, match.index) + 
+                                   constName + 
+                                   expr.substring(match.index + fullMatch.length);
+                            break; // 找到一个匹配后跳出当前循环，重新开始搜索
+                        }
+                    }
+                }
+            } while (expr !== lastExpr); // 当没有任何改变时停止循环
+
+            return expr;
+        }
+
+
         // 替换可能输错的半角符号
         expr = normalizeSymbols(expr);
+
+        // 先处理日期
+        expr = processDate(expr);
 
         // 先处理字符串字面量
         expr = processStringLiterals(expr);
@@ -594,6 +684,10 @@ const Calculator = (function() {
                 if (type === 'operator' && 
                     OPERATORS[value] && 
                     OPERATORS[value].position === 'postfix') {
+                    // 检查优先级 - 只有当当前运算符优先级大于等于传入的优先级时才处理
+                    if (OPERATORS[value].precedence < precedence) {
+                        break;
+                    }
                     current++;
                     left = createNode(value, [left], 'operator');
                     continue;
@@ -609,10 +703,9 @@ const Calculator = (function() {
 
                 current++;
                 const op = OPERATORS[value];
-                // 赋值运算符是右结合的，其他运算符是左结合的
                 const nextPrecedence = op.isCompoundAssignment ? 
-                    op.precedence :  // 赋值运算符使用相同优先级，实现右结合
-                    op.precedence + 1;  // 其他运算符增加优先级，实现左结合
+                    op.precedence :  
+                    op.precedence + 1;  
                     
                 const right = parseExpression(nextPrecedence);
                 left = createNode(value, [left, right], 'operator');
