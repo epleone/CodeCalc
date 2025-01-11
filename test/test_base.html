@@ -293,6 +293,9 @@
             { group: '负数运算', name: "负数整除", input: "(-7) // 3", expected: "-3" },
             { group: '负数运算', name: "负数整除", input: "-(7 // 3)", expected: "-2" },
             { group: '负数运算', name: "连续负号", input: "--5", expected: "5" },
+            { group: '负数运算', name: "连续正号", input: "+5", expected: "5" },
+            { group: '负数运算', name: "连续正号", input: "++5", expected: "5" },
+            { group: '负数运算', name: "连续负号", input: "---5", expected: "-5" },
             { group: '负数运算', name: "括号负数", input: "(-1) * (-1)", expected: "1" },
             { group: '负数运算', name: "复杂负数", input: "-(3 + 2) * -2", expected: "10" },
 
@@ -303,6 +306,7 @@
             { group: '一元负号', name: "负号优先级", input: "-2 ** 2", expected: "-4" },
             { group: '一元负号', name: "负号优先级", input: "-1 + (-2)", expected: "-3" },
             { group: '一元负号', name: "负号优先级", input: "-1 +-2", expected: "-3" },
+            { group: '一元负号', name: "负号括号", input: "---2", expected: "-2" },
             { group: '一元负号', name: "负号括号", input: "-(-(-2))", expected: "-2" },
             { group: '一元负号', name: "负号函数", input: "-max(1, -2, 3)", expected: "-3" },
             { group: '一元负号', name: "负号属性", input: "-PI", expected: "-3.141592653589793" },

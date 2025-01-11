@@ -659,16 +659,13 @@ const Calculator = (function() {
             if (type === 'operator' && 
                 OPERATORS[value] && 
                 OPERATORS[value].position === 'prefix') {
-                // 添加优先级检查
-                if (OPERATORS[value].precedence < precedence) {
-                    depth--;
-                    return parsePrimary();
-                }
+                
                 current++;
                 
-                // 使用运算符自身的优先级来决定右侧表达式的解析
-                const nextPrecedence = OPERATORS[value].precedence + 1;
-                const right = parseExpression(nextPrecedence);
+                // 直接使用运算符的优先级,不需要特殊处理
+                // 在 operators.js 中设置 unary- 的优先级小于 **
+                const right = parseExpression(OPERATORS[value].precedence);
+                
                 depth--;
                 return createNode(value, [right], 'operator');
             }
