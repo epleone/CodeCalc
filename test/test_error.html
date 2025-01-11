@@ -61,7 +61,7 @@
             { group: '语法错误', name: "括号不匹配2", input: "((1 + 2)", expected: "error" },
             { group: '语法错误', name: "空表达式", input: "", expected: "error" },
             { group: '语法错误', name: "非法字符", input: "@#$", expected: "error" },
-            { group: '语法错误', name: "连续运算符", input: "1 ++ 2", expected: "error" },
+            { group: '语法错误', name: "连续运算符", input: "1 %% 2", expected: "error" },
             { group: '语法错误', name: "缺少操作数1", input: "1 +", expected: "error" },
             { group: '语法错误', name: "缺少操作数2", input: "* 2", expected: "error" },
             { group: '语法错误', name: "多余的逗号", input: "max(1,,2)", expected: "error" },
