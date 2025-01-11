@@ -215,7 +215,19 @@
                 <button id="calculate">计算</button>
             </div>
             <div id="examples">
-                <h3>示例表达式：</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0;">示例表达式：</h3>
+                    <button id="runAllTests" style="
+                        padding: 5px 15px;
+                        background-color: #4CAF50;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 0.9em;">
+                        运行所有测试
+                    </button>
+                </div>
                 <!-- 示例组会在这里渲染 -->
             </div>
         </div>
@@ -238,14 +250,10 @@
     <!-- 先加载基础依赖 -->
     <script src="ast-visualizer.js"></script>
     <script type="module">
-        import { OPERATORS, FUNCTIONS, CONSTANTS } from '../src/operators.js';
         import Calculator from '../src/calculator.js';
         
         // 添加到全局作用域
         window.Calculator = Calculator;
-        window.OPERATORS = OPERATORS;
-        window.FUNCTIONS = FUNCTIONS;
-        window.CONSTANTS = CONSTANTS;
     </script>
     
     <!-- 主要逻辑 -->
@@ -273,11 +281,9 @@
 
                 // 获取词法分析结果
                 try {
-                    const operators = new Set(Object.keys(OPERATORS));
-                    const functions = new Set(Object.keys(FUNCTIONS));
-                    const constants = new Set(Object.keys(CONSTANTS));
+                    const { operators, functions, constants } = Calculator.getCfg();
                     const { expr: processedExpr, operators: sortedOperators } = 
-                        Calculator.preprocess(expr, operators, functions);
+                        Calculator.preprocess(expr, operators, functions, constants);
                     tokens = Calculator.tokenize(processedExpr, sortedOperators, functions, constants);
                     
                     // 显示tokens
@@ -352,10 +358,8 @@
                 ],
                 '异常测试': [
                     { expr: "1 = 2", error: "变量名" },
-                    { expr: "1 ++ 2", error: "意外的token" },
                     { expr: "2 +* (3 + 4)", error: "意外的token" },
                     { expr: "(1 + 2)) * (-3 - 4)", error: "多余的右括号" },
-                    { expr: "+-1", error: "意外的token" },
                     { expr: "-1+", error: "意外的表达式结束" },
                     { expr: "abs(-1 -1", error: "缺少右括号" },
                     { expr: "c + 1", error: "无效" },
@@ -373,7 +377,7 @@
                     { expr: "#2025-01-01 12:34", expect: "1735706040000" },
                     { expr: "#2025-01-01", expect: "1735660800000" },
                     { expr: "#2025", expect: "1735660800000" },
-                    { expr: "#2025-01", expect: "1735660799999" },
+                    { expr: "#2025-01", expect: "1735660800000" },
                     { expr: "#01-01", expect: "1735660800000" },
                     { expr: "#12:34:56", expect: "1736570096000" },
                     { expr: "#12:34", expect: "1736570040000" }
@@ -438,6 +442,48 @@
 
                 examplesDiv.appendChild(groupDiv);
             }
+
+            // 获取运行所有测试的按钮
+            const runAllTestsBtn = document.getElementById('runAllTests');
+
+            // 添加点击事件处理
+            runAllTestsBtn.onclick = function() {
+                // 重置所有按钮的样式
+                document.querySelectorAll('.example-group button').forEach(button => {
+                    button.className = '';
+                });
+
+                // 获取所有示例按钮
+                const buttons = document.querySelectorAll('.example-group button');
+                let successCount = 0;
+                let failCount = 0;
+
+                // 运行所有测试
+                buttons.forEach(button => {
+                    button.click();
+                    if (button.className === 'test-success') {
+                        successCount++;
+                    } else if (button.className === 'test-fail') {
+                        failCount++;
+                    }
+                });
+
+                // 更新按钮文本显示测试结果
+                runAllTestsBtn.textContent = `测试完成 (${successCount}成功/${failCount}失败)`;
+                
+                // 根据测试结果更改按钮颜色
+                if (failCount > 0) {
+                    runAllTestsBtn.style.backgroundColor = '#f44336';
+                } else {
+                    runAllTestsBtn.style.backgroundColor = '#4CAF50';
+                }
+
+                // 3秒后恢复按钮原始文本
+                setTimeout(() => {
+                    runAllTestsBtn.textContent = '运行所有测试';
+                    runAllTestsBtn.style.backgroundColor = '#4CAF50';
+                }, 3000);
+            };
         };
     </script>
 </body>

@@ -57,7 +57,7 @@ const Calculator = (function() {
     }
 
     // 1. 预处理模块 - 处理属性调用和运算符生成
-    function preprocess(expr, operators, functions) {
+    function preprocess(expr, operators, functions, constants) {
 
         // 替换可能输错的半角符号
         const normalized = normalizeSymbols(expr);
@@ -87,7 +87,7 @@ const Calculator = (function() {
         checkParentheses(expr, MAX_DEPTH);
 
         // 最后检查变量名
-        expr = checkVariableName(expr);
+        expr = checkVariableName(expr, operators, functions, constants);
 
         // TODO: 如果有新属性，需要手动动态添加
         for (const [name, func] of Object.entries(FUNCTIONS)) {
@@ -718,7 +718,7 @@ const Calculator = (function() {
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));
 
-            const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions);
+            const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions, constants);
             const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
             const result = evaluate(ast, operators, functions);
@@ -733,17 +733,29 @@ const Calculator = (function() {
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));
 
-            const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions);
+            const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions, constants);
             const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             return buildAst(tokens, operators, functions);
+        },
+
+        getCfg() {
+            const operators = new Set(Object.keys(OPERATORS));
+            const functions = new Set(Object.keys(FUNCTIONS));
+            const constants = new Set(Object.keys(CONSTANTS));
+
+            return {
+                operators,
+                functions,
+                constants
+            };
         },
 
         tokenize(expr, operators, functions, constants) {
             return tokenize(expr, operators, functions, constants);
         },
 
-        preprocess(expr, operators, functions) {
-            return preprocess(expr, operators, functions);
+        preprocess(expr, operators, functions, constants) {
+            return preprocess(expr, operators, functions, constants);
         },
 
         // 添加获取所有变量的方法

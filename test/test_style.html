@@ -122,18 +122,12 @@
     </div>
 
     <script type="module">
-        import Calculator from '../src/calculator.js';
         import * as UI from '../src/ui.js';
-
 
         // 等待 DOM 加载完成
         document.addEventListener('DOMContentLoaded', () => {
-            // 初始化计算器
-            window.calculate = Calculator.calculate;
-            
             // 将函数添加到全局作用域
             Object.assign(window, UI);
-
 
             // 执行测试用例
             const testCases = [

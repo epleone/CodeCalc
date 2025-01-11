@@ -115,7 +115,7 @@ function checkParentheses(expr, MAX_DEPTH = 1000) {
 }
 
 // 检查变量名是否合法
-function checkVariableName(expr) {
+function checkVariableName(expr, operators, functions, constants) {
     // 修改正则表达式，只匹配单个等号的赋值
     // 使用负向前瞻确保等号前面不是其它赋值运算符
     const assignmentRegex = /([^=+\-*/%&|^<>!~]+?)(?<![\+\-\*\/%&\|\^<>!~])\s*=/g;
@@ -138,17 +138,17 @@ function checkVariableName(expr) {
         }
 
         // 检查是否与运算符冲突
-        if (OPERATORS.hasOwnProperty(varName)) {
+        if (operators.hasOwnProperty(varName)) {
             throw new Error(`变量名 "${varName}" 与运算符冲突`);
         }
         
         // 检查是否与函数名冲突
-        if (FUNCTIONS.hasOwnProperty(varName)) {
+        if (functions.hasOwnProperty(varName)) {
             throw new Error(`变量名 "${varName}" 与函数名冲突`);
         }
         
         // 检查是否与常量冲突
-        if (CONSTANTS.hasOwnProperty(varName)) {
+        if (constants.hasOwnProperty(varName)) {
             throw new Error(`变量名 "${varName}" 与常量冲突`);
         }
         
