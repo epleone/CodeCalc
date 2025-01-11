@@ -146,7 +146,7 @@ export const OPERATORS = {
             const minutes = date.getMinutes();
             const seconds = date.getSeconds();
             
-            return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`;
+            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
         },
         position: 'postfix',
         description: '日期可视化'
