@@ -227,7 +227,6 @@
 
             // 错误处理测试
             { group: '错误处理', name: "除零错误", input: "1/0", expected: "error" },
-            { group: '错误处理', name: "语法错误", input: "1 ++ 2", expected: "error" },
             { group: '错误处理', name: "未定义变量", input: "y + 1", expected: "error" },
             { group: '错误处理', name: "参数个数错误", input: "sin(1,2)", expected: "error" },
 
@@ -266,7 +265,7 @@
             { group: '边界情况', name: "连续运算符", input: "1+-2", expected: "-1" },
             { group: '边界情况', name: "函数空格", input: "sin (PI/2)", expected: "1" },
             { group: '边界情况', name: "括号空格", input: "( 1 + 2 ) * ( 3 + 4 )", expected: "21" },
-            { group: '边界情况', name: "多重一元", input: "--++-2", expected: "error" },
+            { group: '边界情况', name: "多重一元", input: "--++-2", expected: "-2" },
 
             // 字符串高级测试
             { group: '字符串高级', name: "嵌套引号", input: "'It\\'s ok'", expected: "It's ok" },
@@ -315,11 +314,17 @@
 
             // 正负号混合测试
             { group: '正负号混合', name: "正负号混合", input: "+1+-2", expected: "-1" },
-            { group: '正负号混合', name: "正负号混合", input: "+1-+2", expected: "3" },
+            { group: '正负号混合', name: "正负号混合", input: "+1-+2", expected: "-1" },
             { group: '正负号混合', name: "正负号混合", input: "+1--2", expected: "3" },
             { group: '正负号混合', name: "正负号混合", input: "-1++2", expected: "1" },
             { group: '正负号混合', name: "正负号混合", input: "+1++2", expected: "3" },
             { group: '正负号混合', name: "正负号混合", input: "+1+-+2", expected: "-1" },
+            { group: '正负号混合', name: "正负号混合", input: "---2", expected: "-2" },
+            { group: '正负号混合', name: "正负号混合", input: "-++2", expected: "-2" }, 
+            { group: '正负号混合', name: "正负号混合", input: "-+-2", expected: "2" },
+            { group: '正负号混合', name: "正负号混合", input: "+--2+", expected: "error" },
+            { group: '正负号混合', name: "正负号混合", input: "+--2--+3", expected: "5" },
+            { group: '正负号混合', name: "正负号混合", input: "---2--+3-", expected: "error" },
 
             // 负数函数测试
             { group: '负数函数', name: "负数绝对值", input: "(-5).abs", expected: "5" },

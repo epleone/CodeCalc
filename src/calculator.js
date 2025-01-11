@@ -378,17 +378,20 @@ const Calculator = (function() {
         const sortedOperators = [...operators].sort((a, b) => b.length - a.length);
         let lastTokenType = null;  // 添加上一个 token 的类型记录
 
-        // 检查区分负号-和减号-
-        function shouldBeUnaryMinus() {
+        // 检查区分正号+和加号+，负号-和减号-
+        function shouldBeUnaryOperator() {
             if (tokens.length === 0) return true;
             
             const [type, value] = tokens[tokens.length - 1];
             
-            // 只有在这些情况下是二元减号，其他都是一元负号
+            // 只有在这些情况下是二元运算符，其他都是一元运算符
             return !(
                 type === 'string' ||           // 数字/变量后
                 type === 'constant' ||         // 常量后
-                (type === 'delimiter' && value === ')')  // 右括号后
+                (type === 'delimiter' && value === ')') ||  // 右括号后
+                type === 'function' ||         // 函数名后
+                type === 'identifier' ||       // 标识符后
+                (type === 'operator' && value.startsWith('.'))  // 属性访问运算符后
             );
         }
 
@@ -441,9 +444,16 @@ const Calculator = (function() {
                         }
                     }
                     // 移除连续运算符的检查
-                    if (op === '-') {
+                    if (op === '+') {
+                        // 特殊处理加号
+                        if (shouldBeUnaryOperator()) {
+                            tokens.push(['operator', 'unary+']);
+                        } else {
+                            tokens.push(['operator', '+']);
+                        }
+                    } else if (op === '-') {
                         // 特殊处理减号
-                        if (shouldBeUnaryMinus()) {
+                        if (shouldBeUnaryOperator()) {
                             tokens.push(['operator', 'unary-']);
                         } else {
                             tokens.push(['operator', '-']);
