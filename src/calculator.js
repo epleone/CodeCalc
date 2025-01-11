@@ -348,7 +348,7 @@ const Calculator = (function() {
             if (func.asProperty) {
                 operators.add('.' + name);
                 OPERATORS['.' + name] = {
-                    precedence: 7,
+                    precedence: 8,
                     args: 1,
                     func: func.func,
                     position: 'postfix',
@@ -645,7 +645,7 @@ const Calculator = (function() {
             current++;
         }
 
-        function parseUnary() {
+        function parseUnary(precedence = 0) {
             depth++;
             checkDepth();
 
@@ -659,10 +659,16 @@ const Calculator = (function() {
             if (type === 'operator' && 
                 OPERATORS[value] && 
                 OPERATORS[value].position === 'prefix') {
+                // 添加优先级检查
+                if (OPERATORS[value].precedence < precedence) {
+                    depth--;
+                    return parsePrimary();
+                }
                 current++;
                 
-                // 使用更高的优先级，确保只解析到下一个基本表达式
-                const right = parseExpression(OPERATORS[value].precedence + 1);
+                // 使用运算符自身的优先级来决定右侧表达式的解析
+                const nextPrecedence = OPERATORS[value].precedence + 1;
+                const right = parseExpression(nextPrecedence);
                 depth--;
                 return createNode(value, [right], 'operator');
             }
@@ -675,7 +681,7 @@ const Calculator = (function() {
             depth++;
             checkDepth();
 
-            let left = parseUnary();
+            let left = parseUnary(precedence);
             
             while (current < tokens.length) {
                 const [type, value] = tokens[current];

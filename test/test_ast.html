@@ -104,6 +104,8 @@
             background-color: white;
             cursor: pointer;
             font-size: 0.9em;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
         .example-group button:hover {
@@ -179,6 +181,29 @@
         .token-string { background-color: #fff3e0; }
         .token-delimiter { background-color: #f3e5f5; }
         .token-separator { background-color: #ede7f6; }
+
+        .test-success {
+            background-color: #e8f5e9 !important;
+            border-color: #4caf50 !important;
+            color: #2e7d32;
+        }
+
+        .test-fail {
+            background-color: #ffebee !important;
+            border-color: #ef5350 !important;
+            color: #c62828;
+            box-shadow: 0 0 5px rgba(239, 83, 80, 0.3);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .test-fail {
+            animation: shake 0.4s ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -297,145 +322,58 @@
             // 示例部分保持不变
             const exampleGroups = {
                 '基础运算': [
-                    "1 + 2",
-                    "2 * (3 + 4)",
-                    "(1 + 2) * (-3 - 4)",
-                    "-1",
-                    "-1-1",
-                    "(-1-1)",
-                    "(-1-1).abs"
+                    { expr: "-1/1 - 2 * (-3 - 4)", expect: "13" }, 
+                    { expr: "2 ** 3 ** 4 // 5 * 0.86569", expect: "709.00011" }, 
+                    { expr: "5 & 3 | ~4", expect: "-5" }, 
+                    { expr: "(-1-1).abs", expect: "2" },
+                    { expr: "30°.rad", expect: "30" },  // 角度转弧度再转角度
+                    { expr: "max(-1,-1-1,1, min(10, -1-1, 2))", expect: "1" },
+                    { expr: "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))", expect: "2.017453292519943" },
+                    { expr: "-1*3 + 6/2 @", expect: "0" },  // -3 + 3 = 0
+                    { expr: "1++2", expect: "3" },  // 1 + (-2)
+                    { expr: "+1-+2", expect: "-1" },  // 1 + (-2)
+                    { expr: "1+-2", expect: "-1" },  // 1 + (-2)
+                    { expr: "1-+2", expect: "-1" },  // 1 - (+2)
+                    { expr: "1--2", expect: "3" },  // 1 - (-2)
+                    { expr: "-1+2", expect: "1" },  // (-1) + 2
+                    { expr: "+1+2", expect: "3" },  // (+1) + 2
                 ],
                 '赋值运算': [
-                    "a = 1",
-                    "a = 1 + 2",
-                    "a = (1 + 2)",
-                    "a = 1 + 2 * 3 / 4 + 5",
-                    "a += 1",
-                    "a -= 1",
-                    "a *= 2",
-                    "a /= 2",
+                    { expr: "a = 1", expect: "1" },
+                    { expr: "a = 1 + 2 * 3 / 4 + 5", expect: "7.5" },
+                    { expr: "a += 1", expect: "8.5" },
+                    { expr: "a -= 1", expect: "7.5" },
+                    { expr: "a *= 2", expect: "15" },
+                    { expr: "a /= 2", expect: "7.5" },
                 ],
                 '异常测试': [
-                    "1 = 2",
-                    "1 ++ 2",
-                    "2 +* (3 + 4)",
-                    "(1 + 2)) * (-3 - 4)",
-                    "+-1",
-                    "-1+",
-                    "abs(-1 -1",
-                    "c + 1",
-                    "c += 1"
-                ],
-                '函数调用': [
-                    "max(-1,-1-1,1, min(10, -1-1, 2))",
-                    "max(1, 2, 3)",
-                    "min(1, 2, 3)"
-                ],
-                '后缀运算符': [
-                    "#1",
-                    "#(1+2)",
-                    "#1 + 2",
-                    "#e",
-                    "150°"
-                ],
-                '角度转换': [
-                    "deg(150)",
-                    "150.deg",
-                    "rad(1.5)",
-                    "1.5.rad",
-                    "rad(1.5).deg",
-                    "1.5.rad.deg",
-                    "(1+2).deg"
-                ],
-                '高级运算': [
-                    "7 // 2",        // 整除
-                    "7 % 3",         // 取余
-                    "2 ** 3",        // 幂运算
-                    "2 ** 3 ** 2",   // 幂运算右结合
-                    "10 // 3 * 2"    // 混合运算
-                ],
-                '三角函数': [
-                    "sin(PI/2)",
-                    "cos(PI)",
-                    "tan(PI/4)",
-                    "sin(30°)",
-                    "cos(45.deg)"
-                ],
-                '反三角函数': [
-                    "asin(1)",
-                    "acos(0)",
-                    "atan(1)"
-                ],
-                '双曲函数': [
-                    "sinh(1)",
-                    "cosh(0)",
-                    "tanh(0)"
-                ],
-                '复杂表达式': [
-                    "sin(cos(PI/2))",
-                    "2 * sin(30°) * cos(60°)",
-                    "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))"
-                ],
-                '对数和指数': [
-                    "log(100)",        // 以10为底的对数
-                    "log(1000)",       // log(1000) = 3
-                    "ln(e)",          // 自然对数，结果为1
-                    "ln(1)",          // 自然对数，结果为0
-                    "exp(1)",         // e的1次方，结果为e
-                    "exp(2)",         // e的平方
-                    "exp(ln(2))",     // 先求ln再求exp，结果为2
-                    "log(10**3)"      // 结果为3
-                ],
-                '基本函数': [
-                    "sqrt(2)",        // 根号2
-                    "sqrt(4)",        // 2
-                    "sqrt(9)",        // 3
-                    "pow(2,3)",      // 2的3次方 = 8
-                    "pow(3,2)",      // 3的平方 = 9
-                    "abs(-1)",       // 绝对值 = 1
-                    "abs(1-2)",      // |1-2| = 1
-                    "sqrt(pow(3,2) + pow(4,2))",  // 勾股定理
-                    "pow(2, 1/2)",   // 另一种求平方根的方式
-                    "abs(sin(PI))"   // 复合函数
+                    { expr: "1 = 2", error: "变量名" },
+                    { expr: "1 ++ 2", error: "意外的token" },
+                    { expr: "2 +* (3 + 4)", error: "意外的token" },
+                    { expr: "(1 + 2)) * (-3 - 4)", error: "多余的右括号" },
+                    { expr: "+-1", error: "意外的token" },
+                    { expr: "-1+", error: "意外的表达式结束" },
+                    { expr: "abs(-1 -1", error: "缺少右括号" },
+                    { expr: "c + 1", error: "无效" },
+                    { expr: "c += 1", error: "未定义" }
                 ],
                 '进制转换': [
-                    "0b111",         // 二进制 111 = 7
-                    "0b1010",        // 二进制 1010 = 10
-                    "0o111",         // 八进制 111 = 73
-                    "0o777",         // 八进制 777 = 511
-                    "0x111",         // 十六进制 111 = 273
-                    "0xFF",          // 十六进制 FF = 255
-                    "0xAB + 0b11",   // 混合运算
-                    "0xFF.abs",       // 与属性调用组合
-                    "0x13e48326954132e2",
-                    "1433414783146734306"
+                    { expr: "0xAB + 0b101000", expect: "211" },  // 171 + 40 = 211
+                    { expr: "0o1731", expect: "985" },
+                    { expr: "-0xFF.abs", expect: "-255" },
+                    { expr: "750.bin.oct.hex", expect: "0x2ee" },
+                    { expr: "0x13e48326954132e2", expect: "1433414783146734306" },
                 ],
-                '位运算': [
-                    // 基本位运算
-                    "5 & 3",           // 101 & 011 = 001 = 1
-                    "5 | 3",           // 101 | 011 = 111 = 7
-                    "5 ^ 3",           // 101 ^ 011 = 110 = 6
-                    "~5",              // ~00000101 = 11111010 = -6
-                    
-                    // 移位运算
-                    "1 << 2",          // 1 左移 2 位 = 4
-                    "8 >> 2",          // 8 右移 2 位 = 2
-                    "-8 >>> 2",        // -8 无符号右移 2 位
-                    
-                    // 组合运算
-                    "(5 & 3) | 4",     // (1) | 4 = 5
-                    "~(5 & 3)",        // ~1 = -2
-                    
-                    // 与进制转换结合
-                    "(5 & 3).bin",     // 结果的二进制表示
-                    "(5 | 3).bin",     // 结果的二进制表示
-                    "(1 << 4).bin",    // 16的二进制表示
-                    
-                    // 复杂组合
-                    "1010.bin & 0o1100.bin",  // 二进制数的位运算
-                    "0xFF.hex & 0o10.hex",      // 十六进制数的位运算
-                    "(0xFF & 0xF).hex"                    // 结果转十六进制
-                ]
+                '日期': [
+                    { expr: "#2025-01-01 12:34:56", expect: "1735706096000" },
+                    { expr: "#2025-01-01 12:34", expect: "1735706040000" },
+                    { expr: "#2025-01-01", expect: "1735660800000" },
+                    { expr: "#2025", expect: "1735660800000" },
+                    { expr: "#2025-01", expect: "1735660799999" },
+                    { expr: "#01-01", expect: "1735660800000" },
+                    { expr: "#12:34:56", expect: "1736570096000" },
+                    { expr: "#12:34", expect: "1736570040000" }
+                ],
             };
 
             // 示例渲染部分保持不变
@@ -452,12 +390,43 @@
                 groupDiv.className = 'example-group';
                 
                 // 添加示例按钮
-                examples.forEach(expr => {
+                examples.forEach(example => {
                     const button = document.createElement('button');
+                    // 如果是对象格式，取expr属性，否则直接使用示例
+                    const expr = typeof example === 'object' ? example.expr : example;
                     button.textContent = expr;
                     button.onclick = function() {
                         input.value = expr;
                         calculateBtn.click();
+                        
+                        // 添加结果验证
+                        if (typeof example === 'object') {
+                            const result = resultDiv.textContent.split('\n')[0].replace('结果: ', '');
+                            if (example.error) {
+                                // 检查是否包含预期的错误信息
+                                if (!resultDiv.textContent.includes(example.error)) {
+                                    button.className = 'test-fail';
+                                    console.error(`测试失败: ${expr}\n预期错误: ${example.error}\n实际结果: ${resultDiv.textContent}`);
+                                } else {
+                                    button.className = 'test-success';
+                                }
+                            } else if (example.expect) {
+                                // 检查结果是否匹配预期
+                                // 对于浮点数，允许小的误差
+                                const expected = parseFloat(example.expect);
+                                const actual = parseFloat(result);
+                                const isMatch = isNaN(expected) ? 
+                                    result === example.expect :  // 精确匹配
+                                    Math.abs(actual - expected) < 0.001;  // 浮点数比较
+                                    
+                                if (!isMatch) {
+                                    button.className = 'test-fail';
+                                    console.error(`测试失败: ${expr}\n预期结果: ${example.expect}\n实际结果: ${result}`);
+                                } else {
+                                    button.className = 'test-success';
+                                }
+                            }
+                        }
                     };
                     groupDiv.appendChild(button);
                     groupDiv.appendChild(document.createTextNode(' '));

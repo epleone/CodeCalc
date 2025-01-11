@@ -112,7 +112,7 @@ export const OPERATORS = {
         description: '取模'
     },
     '**': {
-        precedence: 5,
+        precedence: 7,
         args: 2,
         func: (x, y) => Math.pow(x.toString(), y.toString()),
         position: 'infix',
@@ -132,11 +132,18 @@ export const OPERATORS = {
         description: '角度转弧度'
     },
     'unary-': {
-        precedence: 2,
+        precedence: 5,
         args: 1,
         func: x => -x,
         position: 'prefix',
-        description: '一元负号'
+        description: '负号'
+    },
+    'unary+': {
+        precedence: 5,
+        args: 1,
+        func: x => +x,
+        position: 'prefix',
+        description: '正号'
     },
     // 位运算符
     '&': {
