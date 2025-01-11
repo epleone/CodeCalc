@@ -123,9 +123,103 @@ export const OPERATORS = {
     '@': {
         precedence: 0,
         args: 1,
-        func: x => x,
+        func: ms =>  {
+            const seconds = Math.floor((ms / 1000) % 60);
+            const minutes = Math.floor((ms / (1000 * 60)) % 60);
+            const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+            const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+        
+            return `${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
+        },
         position: 'postfix',
-        description: '时间戳转成日期'
+        description: '时间差可视化'
+    },
+    '@#': {
+        precedence: 0,
+        args: 1,
+        func: x => {
+            const date = new Date(x);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const seconds = date.getSeconds();
+            
+            return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`;
+        },
+        position: 'postfix',
+        description: '日期可视化'
+    },
+    '@week': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const weeks = ms / (1000 * 60 * 60 * 24 * 7);
+            return weeks.toFixed(2) + '周';
+        },
+        position: 'postfix',
+        description: '时间差转成周数'
+    },
+    '@w': {
+        alias: '@week',
+        description: '时间差转成周数'
+    },
+    '@day': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const days = ms / (1000 * 60 * 60 * 24);
+            return days.toFixed(2) + '天';
+        },
+        position: 'postfix',
+        description: '时间差转成天数'
+    },
+    '@d': {
+        alias: '@day',
+        description: '时间差转成天数'
+    },
+    '@hour': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const hours = ms / (1000 * 60 * 60);
+            return hours.toFixed(2) + '小时';
+        },
+        position: 'postfix',
+        description: '时间差转成小时数'
+    },
+    '@h': {
+        alias: '@hour',
+        description: '时间差转成小时数'
+    },
+    '@minute': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const minutes = ms / (1000 * 60);
+            return minutes.toFixed(2) + '分钟';
+        },
+        position: 'postfix',
+        description: '时间差转成分钟数'
+    },
+    '@m': {
+        alias: '@minute',
+        description: '时间差转成分钟数'
+    },
+    '@second': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const seconds = ms / 1000;
+            return seconds.toFixed(2) + '秒';
+        },
+        position: 'postfix',
+        description: '时间差转成秒数'
+    },
+    '@s': {
+        alias: '@second',
+        description: '时间差转成秒数'
     },
     '°': {
         alias: '.deg',

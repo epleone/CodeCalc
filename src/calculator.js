@@ -181,14 +181,10 @@ const Calculator = (function() {
                 }
                 
                 // 修改检查的前缀
-                if (varName.startsWith('_ccstr_i')) {
-                    throw new Error(`变量名不能以 "_ccstr_i" 开头，这是系统保留的前缀`);
+                if (varName.startsWith('_cc')) {
+                    throw new Error(`变量名不能以 "_cc" 开头，这是系统保留的前缀`);
                 }
 
-                if (varName.startsWith('_ccdate_i')) {
-                    throw new Error(`变量名不能以 "_ccdate_i" 开头，这是系统保留的前缀`);
-                }
-                
                 // 检查是否与运算符冲突
                 if (OPERATORS.hasOwnProperty(varName)) {
                     throw new Error(`变量名 "${varName}" 与运算符冲突`);
@@ -250,6 +246,12 @@ const Calculator = (function() {
             let date;
 
             switch (format) {
+                case 'now':
+                    date = now;
+                    break;
+                case 'today':
+                    date = new Date(now.toISOString().split('T')[0] + 'T00:00:00');
+                    break;
                 case 'YYYY-MM-DD HH:mm:ss':
                     date = new Date(dateString);
                     break;
@@ -259,14 +261,27 @@ const Calculator = (function() {
                 case 'YYYY-MM-DD':
                     date = new Date(dateString + 'T00:00:00');
                     break;
-                case 'YYYY':
-                    date = new Date(dateString + '-01-01T00:00:00');
+                case 'MM-DD HH:mm:ss':
+                    dateString = dateString.replace(/^(\d{1,2})-(\d{1,2})/, (match, m, d) => 
+                        `${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+                    date = new Date(now.getFullYear() + '-' + dateString);
+                    break;
+                case 'MM-DD HH:mm':
+                    dateString = dateString.replace(/^(\d{1,2})-(\d{1,2})/, (match, m, d) =>
+                        `${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+                    date = new Date(now.getFullYear() + '-' + dateString + ':00');
                     break;
                 case 'YYYY-MM':
                     date = new Date(dateString + '-01T00:00:00');
                     break;
                 case 'MM-DD':
+                    dateString = dateString.replace(/(\d{1,2})-(\d{1,2})/, (match, m, d) => {
+                        return `${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                    });
                     date = new Date(now.getFullYear() + '-' + dateString + 'T00:00:00');
+                    break;
+                case 'YYYY':
+                    date = new Date(dateString + '-01-01T00:00:00');
                     break;
                 case 'HH:mm:ss':
                     date = new Date(now.toISOString().split('T')[0] + 'T' + dateString);
@@ -288,14 +303,18 @@ const Calculator = (function() {
 
             // 匹配日期格式
             const datePatterns = [
-                { regex: /#(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm:ss' },
-                { regex: /#(\d{4}-\d{2}-\d{2} \d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm' },
-                { regex: /#(\d{4}-\d{2}-\d{2})/, format: 'YYYY-MM-DD' },
-                { regex: /#(\d{4})/, format: 'YYYY' },
-                { regex: /#(\d{4}-\d{2})/, format: 'YYYY-MM' },
-                { regex: /#(\d{2}-\d{2})/, format: 'MM-DD' },
-                { regex: /#(\d{2}:\d{2}:\d{2})/, format: 'HH:mm:ss' },
-                { regex: /#(\d{2}:\d{2})/, format: 'HH:mm' }
+                { regex: /#\s*(\d{4}-\d{1,2}-\d{1,2}\s+\d{2}:\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm:ss' },
+                { regex: /#\s*(\d{4}-\d{1,2}-\d{1,2}\s+\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm' },
+                { regex: /#\s*(\d{4}-\d{1,2}-\d{1,2})/, format: 'YYYY-MM-DD' },
+                { regex: /#\s*(\d{1,2}-\d{1,2}\s+\d{2}:\d{2}:\d{2})/, format: 'MM-DD HH:mm:ss' },
+                { regex: /#\s*(\d{1,2}-\d{1,2}\s+\d{2}:\d{2})/, format: 'MM-DD HH:mm' },
+                { regex: /#\s*(\d{4}-\d{2})/, format: 'YYYY-MM' },
+                { regex: /#\s*(\d{1,2}-\d{1,2})/, format: 'MM-DD' },
+                { regex: /#\s*(\d{4})/, format: 'YYYY' },
+                { regex: /#\s*(\d{2}:\d{2}:\d{2})/, format: 'HH:mm:ss' },
+                { regex: /#\s*(\d{2}:\d{2})/, format: 'HH:mm' },
+                { regex: /#\s*now/, format: 'now' },
+                { regex: /#\s*today/, format: 'today' },
             ];
 
             // 继续处理直到没有更多匹配
@@ -326,11 +345,99 @@ const Calculator = (function() {
             return expr;
         }
 
+         // 处理时间间隔
+         function processDuration(expr) {
+            const TIME_UNITS = {
+                SECOND: 1000,
+                MINUTE: 1000 * 60,
+                HOUR: 1000 * 60 * 60,
+                DAY: 1000 * 60 * 60 * 24,
+                WEEK: 1000 * 60 * 60 * 24 * 7,
+            };
+
+            // 定义时间单位格式，年和月不支持，因为定义是模糊的
+            const DURATION_PATTERNS = [
+                { 
+                    regex: /#\s*(\d+)\s*w\b/, 
+                    format: 'week',
+                    toMs: value => BigInt(value) * BigInt(TIME_UNITS.WEEK)
+                },
+                { 
+                    regex: /#\s*(\d+)\s*d\b/, 
+                    format: 'day',
+                    toMs: value => BigInt(value) * BigInt(TIME_UNITS.DAY)
+                },
+                { 
+                    regex: /#\s*(\d+)\s*h\b/, 
+                    format: 'hour',
+                    toMs: value => BigInt(value) * BigInt(TIME_UNITS.HOUR)
+                },
+                { 
+                    regex: /#\s*(\d+)\s*m\b/, 
+                    format: 'minute',
+                    toMs: value => BigInt(value) * BigInt(TIME_UNITS.MINUTE)
+                },
+                { 
+                    regex: /#\s*(\d+)\s*s\b/, 
+                    format: 'second',
+                    toMs: value => BigInt(value) * BigInt(TIME_UNITS.SECOND)
+                },
+                { 
+                    regex: /#\s*(\d+)\s*ms\b/, 
+                    format: 'millisecond',
+                    toMs: value => value
+                }
+            ];
+
+            let durationConstantCounter = 0;
+
+            // 处理单个匹配
+            function processMatch(match, pattern) {
+                const [fullMatch, value] = match;
+                const timeValue = pattern.toMs(parseInt(value));
+
+                const constName = `_ccduration_i${durationConstantCounter++}`;
+                variables.set(constName, timeValue);
+                
+                return {
+                    fullMatch,
+                    constName
+                };
+            }
+
+            // 替换表达式中的匹配
+            function replaceMatch(expr, matchInfo, matchIndex) {
+                return expr.substring(0, matchIndex) + 
+                       matchInfo.constName + 
+                       expr.substring(matchIndex + matchInfo.fullMatch.length);
+            }
+
+            // 主处理循环
+            let lastExpr;
+            do {
+                lastExpr = expr;
+                
+                for (const pattern of DURATION_PATTERNS) {
+                    const match = pattern.regex.exec(expr);
+                    if (!match) continue;
+
+                    const matchInfo = processMatch(match, pattern);
+                    expr = replaceMatch(expr, matchInfo, match.index);
+                    break; // 找到一个匹配后重新开始搜索
+                }
+            } while (expr !== lastExpr);
+
+            return expr;
+        }
+
 
         // 替换可能输错的半角符号
         expr = normalizeSymbols(expr);
 
-        // 先处理日期
+        // 先处理时间间隔
+        expr = processDuration(expr);
+
+        // 再处理日期
         expr = processDate(expr);
 
         // 先处理字符串字面量
