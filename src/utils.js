@@ -157,7 +157,18 @@ const Utils = {
         return degrees;
     },
 
-
+    // 时间戳格式化成日期字符串
+    formatDate(x) {
+        const date = new Date(x);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const seconds = date.getSeconds();
+        
+        return `${year}/${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
 };
 
 // 删除全局导出

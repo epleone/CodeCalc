@@ -235,10 +235,20 @@ function parseDate(dateString, format) {
             date = new Date(dateString + '-01-01T00:00:00');
             break;
         case 'HH:mm:ss':
-            date = new Date(now.toISOString().split('T')[0] + 'T' + dateString);
+            // 只转换时分秒为时间戳,不考虑日期
+            {
+                const [h, m, s] = dateString.split(':').map(Number);
+                date = new Date(0);
+                date.setUTCHours(h, m, s);
+            }
             break;
         case 'HH:mm':
-            date = new Date(now.toISOString().split('T')[0] + 'T' + dateString + ':00');
+            // 只转换时分秒为时间戳,不考虑日期
+            {
+                const [h, m] = dateString.split(':').map(Number);
+                date = new Date(0);
+                date.setUTCHours(h, m, 0);
+            }
             break;
         default:
             return null;

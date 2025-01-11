@@ -134,6 +134,13 @@ export const OPERATORS = {
         position: 'postfix',
         description: '时间差可视化'
     },
+    '@#': {
+        precedence: 0,
+        args: 1,
+        func: x => Utils.formatDate(x),
+        position: 'postfix',
+        description: '日期可视化'
+    },
     '@week': {
         precedence: 0,
         args: 1,
@@ -404,16 +411,7 @@ export const OPERATORS = {
         func: (x, y) => {
             // x, y 都是时间戳
             const timestamp = Number(x) + Number(y);
-            const date = new Date(timestamp);
-
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const hours = date.getHours();
-            const minutes = date.getMinutes();
-            const seconds = date.getSeconds();
-            
-            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+            return Utils.formatDate(timestamp);
         },
         position: 'infix',
         description: '日期加法'
@@ -424,16 +422,7 @@ export const OPERATORS = {
         func: (x, y) => {
             // x, y 都是时间戳
             const timestamp = Number(x) - Number(y);
-            const date = new Date(timestamp);
-
-            const year = date.getFullYear();
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            const hours = date.getHours();
-            const minutes = date.getMinutes();
-            const seconds = date.getSeconds();
-            
-            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+            return Utils.formatDate(timestamp);
         },
         position: 'infix',
         description: '日期减法'
