@@ -1,4 +1,3 @@
-
 // 添加cc临时变量字典
 const ccVariables = new Map();
 
@@ -297,89 +296,43 @@ function processDate(expr) {
     return expr;
 }
 
- // 处理时间间隔
- function processDuration(expr) {
-    const TIME_UNITS = {
-        SECOND: 1000,
-        MINUTE: 1000 * 60,
-        HOUR: 1000 * 60 * 60,
-        DAY: 1000 * 60 * 60 * 24,
-        WEEK: 1000 * 60 * 60 * 24 * 7,
+// 处理时间间隔, 将语法糖转成函数
+function processDuration(expr) {
+    // 定义所有支持的时间单位
+    const timeUnits = {
+        'w': 'week',
+        'd': 'day',
+        'h': 'hour',
+        'm': 'minute',
+        's': 'second',
+        'ms': 'millisecond'
     };
-
-    // 定义时间单位格式，年和月不支持，因为定义是模糊的
-    const DURATION_PATTERNS = [
-        { 
-            regex: /#\s*(\d+)\s*w\b/, 
-            format: 'week',
-            toMs: value => BigInt(value) * BigInt(TIME_UNITS.WEEK)
-        },
-        { 
-            regex: /#\s*(\d+)\s*d\b/, 
-            format: 'day',
-            toMs: value => BigInt(value) * BigInt(TIME_UNITS.DAY)
-        },
-        { 
-            regex: /#\s*(\d+)\s*h\b/, 
-            format: 'hour',
-            toMs: value => BigInt(value) * BigInt(TIME_UNITS.HOUR)
-        },
-        { 
-            regex: /#\s*(\d+)\s*m\b/, 
-            format: 'minute',
-            toMs: value => BigInt(value) * BigInt(TIME_UNITS.MINUTE)
-        },
-        { 
-            regex: /#\s*(\d+)\s*s\b/, 
-            format: 'second',
-            toMs: value => BigInt(value) * BigInt(TIME_UNITS.SECOND)
-        },
-        { 
-            regex: /#\s*(\d+)\s*ms\b/, 
-            format: 'millisecond',
-            toMs: value => value
-        }
-    ];
-
-    let durationConstantCounter = 0;
-
-    // 处理单个匹配
-    function processMatch(match, pattern) {
-        const [fullMatch, value] = match;
-        const timeValue = pattern.toMs(parseInt(value));
-
-        const constName = `_cc_duration_i${durationConstantCounter++}`;
-        ccVariables.set(constName, timeValue);
+    
+    let processed = expr;
+    
+    // 第一步：处理带括号格式
+    for (const [shortUnit, fullUnit] of Object.entries(timeUnits)) {
+        // 匹配 #(...)unit 格式的正则表达式
+        const pattern = new RegExp(`#\\s*\\((.*?)\\)\\s*${shortUnit}\\b`, 'g');
         
-        return {
-            fullMatch,
-            constName
-        };
+        // 将 #(...)unit 替换为 #unit(...)
+        processed = processed.replace(pattern, (match, content) => {
+            return `#${shortUnit}(${content})`;
+        });
     }
-
-    // 替换表达式中的匹配
-    function replaceMatch(expr, matchInfo, matchIndex) {
-        return expr.substring(0, matchIndex) + 
-               matchInfo.constName + 
-               expr.substring(matchIndex + matchInfo.fullMatch.length);
-    }
-
-    // 主处理循环
-    let lastExpr;
-    do {
-        lastExpr = expr;
+    
+    // 第二步：处理无括号格式
+    for (const [shortUnit, fullUnit] of Object.entries(timeUnits)) {
+        // 匹配 #数字unit 格式的正则表达式
+        const noParenPattern = new RegExp(`#\\s*(\\d+(?:\\.\\d+)?)\\s*${shortUnit}\\b`, 'g');
         
-        for (const pattern of DURATION_PATTERNS) {
-            const match = pattern.regex.exec(expr);
-            if (!match) continue;
-
-            const matchInfo = processMatch(match, pattern);
-            expr = replaceMatch(expr, matchInfo, match.index);
-            break; // 找到一个匹配后重新开始搜索
-        }
-    } while (expr !== lastExpr);
-
-    return expr;
+        // 将 #数字unit 替换为 #unit(数字)
+        processed = processed.replace(noParenPattern, (match, number) => {
+            return `#${shortUnit}(${number})`;
+        });
+    }
+    
+    return processed;
 }
 
 export {

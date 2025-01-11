@@ -66,11 +66,13 @@ const Calculator = (function() {
             addWarning(`格式化: "${normalized}"`);
         }
 
+        // 先处理时间间隔
+        // console.log('processDuration 1: ', normalized);
+        expr = processDuration(normalized);
+        // console.log('processDuration 2: ', expr);
+        
         // 清除cc 临时系统变量
         ccVariables.clear();
-
-        // 先处理时间间隔
-        expr = processDuration(normalized);
 
         // 再处理日期
         expr = processDate(expr);
