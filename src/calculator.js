@@ -67,9 +67,9 @@ const Calculator = (function() {
         }
 
         // 先处理时间间隔
-        // console.log('processDuration 1: ', normalized);
+        console.log('processDuration 1: ', normalized);
         expr = processDuration(normalized);
-        // console.log('processDuration 2: ', expr);
+        console.log('processDuration 2: ', expr);
         
         // 清除cc 临时系统变量
         ccVariables.clear();

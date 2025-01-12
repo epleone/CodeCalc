@@ -120,97 +120,6 @@ export const OPERATORS = {
     },
 
     // 一元运算符
-    '@': {
-        precedence: 0,
-        args: 1,
-        func: ms =>  {
-            const seconds = Math.floor((ms / 1000) % 60);
-            const minutes = Math.floor((ms / (1000 * 60)) % 60);
-            const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-            const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-        
-            return `${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
-        },
-        position: 'postfix',
-        description: '时间差可视化'
-    },
-    '@#': {
-        precedence: 0,
-        args: 1,
-        func: x => Utils.formatDate(x),
-        position: 'postfix',
-        description: '日期可视化'
-    },
-    '@week': {
-        precedence: 0,
-        args: 1,
-        func: ms => {
-            const weeks = ms / (1000 * 60 * 60 * 24 * 7);
-            return weeks.toFixed(2) + '周';
-        },
-        position: 'postfix',
-        description: '时间差转成周数'
-    },
-    '@w': {
-        alias: '@week',
-        description: '时间差转成周数'
-    },
-    '@day': {
-        precedence: 0,
-        args: 1,
-        func: ms => {
-            const days = ms / (1000 * 60 * 60 * 24);
-            return days.toFixed(2) + '天';
-        },
-        position: 'postfix',
-        description: '时间差转成天数'
-    },
-    '@d': {
-        alias: '@day',
-        description: '时间差转成天数'
-    },
-    '@hour': {
-        precedence: 0,
-        args: 1,
-        func: ms => {
-            const hours = ms / (1000 * 60 * 60);
-            return hours.toFixed(2) + '小时';
-        },
-        position: 'postfix',
-        description: '时间差转成小时数'
-    },
-    '@h': {
-        alias: '@hour',
-        description: '时间差转成小时数'
-    },
-    '@minute': {
-        precedence: 0,
-        args: 1,
-        func: ms => {
-            const minutes = ms / (1000 * 60);
-            return minutes.toFixed(2) + '分钟';
-        },
-        position: 'postfix',
-        description: '时间差转成分钟数'
-    },
-    '@m': {
-        alias: '@minute',
-        description: '时间差转成分钟数'
-    },
-    '@second': {
-        precedence: 0,
-        args: 1,
-        func: ms => {
-            const seconds = ms / 1000;
-            return seconds.toFixed(2) + '秒';
-        },
-        position: 'postfix',
-        description: '时间差转成秒数'
-    },
-    '@s': {
-        alias: '@second',
-        description: '时间差转成秒数'
-    },
     '°': {
         alias: '.deg',
         description: '角度转弧度'
@@ -404,14 +313,47 @@ export const OPERATORS = {
         isCompoundAssignment: true
     },
 
-    // 时间日期操作符
+    // 日期操作符
+    '@': {
+        precedence: 1,
+        args: 1,
+        func: x => {
+            const date = new Date(x);
+            if (isNaN(date.getTime())) {
+                throw new Error(`无法将字符串${x}转日期`);
+            }
+            return date.getTime();
+        },
+        position: 'prefix',
+        acceptAny: true, // 支持任何类型输入，不转换类型
+        description: '字符串转日期'
+    },
     '@+': {
         precedence: 0,
         args: 2,
+        acceptAny: true,
         func: (x, y) => {
-            // x, y 都是时间戳
-            const timestamp = Number(x) + Number(y);
-            return Utils.formatDate(timestamp);
+            //判断y是否是字典
+            if (typeof y === 'object') {
+                const date = new Date(x);
+                if (y.hasOwnProperty('months') || y.hasOwnProperty('months') || y.hasOwnProperty('days')){
+                    const years = y.hasOwnProperty('years') ? y.years : 0;
+                    const months = y.hasOwnProperty('months') ? y.months : 0;
+                    const days = y.hasOwnProperty('days') ? y.days : 0;
+                    date.setFullYear(date.getFullYear() + years);
+                    date.setMonth(date.getMonth() + months);
+                    date.setDate(date.getDate() + days);
+                    return Utils.formatDate(date.getTime());
+                
+                }else{
+                    throw new Error('日期加法：传入不支持的参数');
+                }
+            } else {
+                // x, y 都是时间戳
+                const timestamp = Number(x) + Number(y);
+                return Utils.formatDate(timestamp);
+            }
+            
         },
         position: 'infix',
         description: '日期加法'
@@ -419,13 +361,123 @@ export const OPERATORS = {
     '@-': {
         precedence: 0,
         args: 2,
+        acceptAny: true,
         func: (x, y) => {
-            // x, y 都是时间戳
-            const timestamp = Number(x) - Number(y);
-            return Utils.formatDate(timestamp);
+            //判断y是否是字典
+            if (typeof y === 'object') {
+                const date = new Date(x);
+                if (y.hasOwnProperty('months') || y.hasOwnProperty('months') || y.hasOwnProperty('days')){
+                    const years = y.hasOwnProperty('years') ? y.years : 0;
+                    const months = y.hasOwnProperty('months') ? y.months : 0;
+                    const days = y.hasOwnProperty('days') ? y.days : 0;
+                    date.setFullYear(date.getFullYear() - years);
+                    date.setMonth(date.getMonth() - months);
+                    date.setDate(date.getDate() - days);
+                    return Utils.formatDate(date.getTime());
+                }else{
+                    throw new Error('日期减法：传入不支持的参数');
+                }
+            } else {
+                // x, y 都是时间戳
+                const timestamp = Number(x) - Number(y);
+                return Utils.formatDate(timestamp);
+            }
         },
         position: 'infix',
         description: '日期减法'
+    },
+    '>@': {
+        precedence: 0,
+        args: 1,
+        func: x => Utils.formatDate(x),
+        position: 'postfix',
+        description: '日期可视化'
+    },
+
+    // 时间操作符
+    '>#': {
+        precedence: 0,
+        args: 1,
+        func: ms =>  {
+            const seconds = Math.floor((ms / 1000) % 60);
+            const minutes = Math.floor((ms / (1000 * 60)) % 60);
+            const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+            const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+        
+            return `${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
+        },
+        position: 'postfix',
+        description: '时间差可视化'
+    },
+    '>#week': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const weeks = ms / (1000 * 60 * 60 * 24 * 7);
+            return weeks.toFixed(2) + '周';
+        },
+        position: 'postfix',
+        description: '时间差转成周数'
+    },
+    '>#w': {
+        alias: '>#week',
+        description: '时间差转成周数'
+    },
+    '>#day': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const days = ms / (1000 * 60 * 60 * 24);
+            return days.toFixed(2) + '天';
+        },
+        position: 'postfix',
+        description: '时间差转成天数'
+    },
+    '>#d': {
+        alias: '>#day',
+        description: '时间差转成天数'
+    },
+    '>#hour': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const hours = ms / (1000 * 60 * 60);
+            return hours.toFixed(2) + '小时';
+        },
+        position: 'postfix',
+        description: '时间差转成小时数'
+    },
+    '>#h': {
+        alias: '>#hour',
+        description: '时间差转成小时数'
+    },
+    '>#minute': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const minutes = ms / (1000 * 60);
+            return minutes.toFixed(2) + '分钟';
+        },
+        position: 'postfix',
+        description: '时间差转成分钟数'
+    },
+    '>#m': {
+        alias: '>#minute',
+        description: '时间差转成分钟数'
+    },
+    '>#second': {
+        precedence: 0,
+        args: 1,
+        func: ms => {
+            const seconds = ms / 1000;
+            return seconds.toFixed(2) + '秒';
+        },
+        position: 'postfix',
+        description: '时间差转成秒数'
+    },
+    '>#s': {
+        alias: '>#second',
+        description: '时间差转成秒数'
     }
 };
 
@@ -673,60 +725,50 @@ export const FUNCTIONS = {
         acceptAny: true,
         asProperty: true
     },
-
+    // 日期函数
+    '#y_m_d': {
+        args: 3,
+        func: (x, y, z) => {
+            // x, y, z 必须是非负整数
+            const years = Number(x);
+            const months = Number(y);
+            const days = Number(z);
+            if (years < 0 || months < 0 || days < 0) {
+                throw new Error(`年:${years}月:${months}日:${days}必须是非负整数`);
+            }
+            return {"years": years, "months": months, "days": days};
+        },
+        description: '年月日语法糖'
+    },
     // 时间日期函数
-    '#week': {
+    '#weeks': {
         args: 1,
         func: x => Math.floor(Number(x) * 1000 * 60 * 60 * 24 * 7),
         description: '周数转成毫秒'
     },
-    '#w': {
-        alias: '#week',
-        description: '周数转成毫秒'
-    },
-    '#day': {
+    '#days': {
         args: 1,
         func: x => Math.floor(Number(x) * 1000 * 60 * 60 * 24),
         description: '天数转成毫秒'
     },
-    '#d': {
-        alias: '#day',
-        description: '天数转成毫秒'
-    },
-    '#hour': {
+    '#hours': {
         args: 1,
         func: x => Math.floor(Number(x) * 1000 * 60 * 60),
         description: '小时数转成毫秒'
     },
-    '#h': {
-        alias: '#hour',
-        description: '小时数转成毫秒'
-    },
-    '#minute': {
+    '#minutes': {
         args: 1,
         func: x => Math.floor(Number(x) * 1000 * 60),
         description: '分钟数转成毫秒'
     },
-    '#m': {
-        alias: '#minute',
-        description: '分钟数转成毫秒'
-    },
-    '#second': {
+    '#seconds': {
         args: 1,
         func: x => Math.floor(Number(x) * 1000),
         description: '秒数转成毫秒'
     },
-    '#s': {
-        alias: '#second',
-        description: '秒数转成毫秒'
-    },
-    '#millisecond': {
+    '#milliseconds': {
         args: 1,
         func: x => Math.floor(Number(x)),
-        description: '毫秒数'
-    },
-    '#ms': {
-        alias: '#millisecond',
         description: '毫秒数'
     },
 }; 

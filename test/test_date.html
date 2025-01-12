@@ -328,25 +328,26 @@
             // 示例部分保持不变
             const exampleGroups = {
                 '日期格式': [
-                    { expr: "#2024-03-15 14:30:00", desc: "完整日期时间" },
-                    { expr: "#2024-03-15 14:30", desc: "日期时分" },
-                    { expr: "#2024-03-15", desc: "仅日期" },
-                    { expr: "#03-15 14:30:00", desc: "月日时分秒" },
-                    { expr: "#03-15 14:30", desc: "月日时分" },
-                    { expr: "#2024-03", desc: "年月" },
-                    { expr: "#03-15", desc: "月日" },
-                    { expr: "#2024", desc: "年份" },
-                    { expr: "#14:30:00", desc: "时分秒" },
-                    { expr: "#14:30", desc: "时分" },
-                    { expr: "#now", desc: "当前时间" },
-                    { expr: "#today", desc: "今天" }
+                    { expr: "@2020-03-15 14:30:00", desc: "完整日期时间" },
+                    { expr: "@2020-03-15 14:30", desc: "日期时分" },
+                    { expr: "@2020-03-15", desc: "仅日期" },
+                    { expr: "@03-15 14:30:00", desc: "月日时分秒" },
+                    { expr: "@03-15 14:30", desc: "月日时分" },
+                    { expr: "@2020-03", desc: "年月" },
+                    { expr: "@03-15", desc: "月日" },
+                    { expr: "@2020", desc: "年份" },
+                    { expr: "@14:30:00", desc: "时分秒" },
+                    { expr: "@14:30", desc: "时分" },
+                    { expr: "@now", desc: "当前时间" },
+                    { expr: "@today", desc: "今天" },
+                    { expr: "@now - #7d > @", desc: "当前时间减去7天(无括号)" },
                 ],
                 
                 '日期计算': [
-                    { expr: "#2024-03-15 - #2024-03-14", desc: "日期相减得到毫秒数" },
-                    { expr: "#now - #today", desc: "当前时间减去今天" },
-                    { expr: "#2024-03-15 + 86400000", desc: "日期加上毫秒数" },
-                    { expr: "#today + 86400000", desc: "今天加上一天的毫秒数" }
+                    { expr: "@2077-03-15 - @1990-03-14 > #", desc: "日期相减得到毫秒数" },
+                    { expr: "@now - @today > #", desc: "当前时间减去今天" },
+                    { expr: "@2025-03-15 + 86400000 > @", desc: "日期加上毫秒数" },
+                    { expr: "@today + 86400000 > @", desc: "今天加上一天的毫秒数" }
                 ],
                 
                 '时间间隔语法糖': [
@@ -371,9 +372,7 @@
                     { expr: "#(1)d + #24h", desc: "混合格式相加", expect: "172800000" },
                     { expr: "#7w + #7d + #24h", desc: "多个无括号格式相加", expect: "4924800000" },
                     { expr: "#(7)w + #7d + #(24)h", desc: "多种格式混合", expect: "4924800000" },
-                    
-                    { expr: "#now - #7d", desc: "当前时间减去7天(无括号)" },
-                    { expr: "#2024-03-15 + #7d + #12h", desc: "日期加上多个时间间隔(无括号)" }
+                    { expr: "@2091-03-15 + #7d + #12h > @", desc: "日期加上多个时间间隔(无括号)", expect: "2091/03/22 12:00:00" }
                 ],
                 
                 '时间间隔异常测试': [
@@ -406,7 +405,71 @@
                     
                     // 多单位混合测试
                     { expr: "#1.5d + #36h + #(90)m", desc: "多单位小数混合", expect: "264600000" },
-                    { expr: "#(7*0.5)d + #(12*2)h", desc: "括号内计算混合", expect: "388800000" }
+                    { expr: "#(7*0.5)d + #(12*2)h", desc: "括号内计算混合", expect: "388800000" },
+                    
+                    // 添加新的单位转换测试
+                    { expr: "#1d", desc: "d → days", expect: "86400000" },
+                    { expr: "#1day", desc: "day → days", expect: "86400000" },
+                    { expr: "#1days", desc: "days → days", expect: "86400000" },
+                    
+                    { expr: "#1h", desc: "h → hours", expect: "3600000" },
+                    { expr: "#1hour", desc: "hour → hours", expect: "3600000" },
+                    { expr: "#1hours", desc: "hours → hours", expect: "3600000" },
+                    
+                    { expr: "#1m", desc: "m → minutes", expect: "60000" },
+                    { expr: "#1minute", desc: "minute → minutes", expect: "60000" },
+                    { expr: "#1minutes", desc: "minutes → minutes", expect: "60000" },
+                    
+                    { expr: "#1s", desc: "s → seconds", expect: "1000" },
+                    { expr: "#1second", desc: "second → seconds", expect: "1000" },
+                    { expr: "#1seconds", desc: "seconds → seconds", expect: "1000" },
+                    
+                    { expr: "#1w", desc: "w → weeks", expect: "604800000" },
+                    { expr: "#1week", desc: "week → weeks", expect: "604800000" },
+                    { expr: "#1weeks", desc: "weeks → weeks", expect: "604800000" },
+                    
+                    { expr: "#1ms", desc: "ms → milliseconds", expect: "1" },
+                    { expr: "#1millisecond", desc: "millisecond → milliseconds", expect: "1" },
+                    { expr: "#1milliseconds", desc: "milliseconds → milliseconds", expect: "1" },
+                    
+                    // 带括号格式的单位转换测试
+                    { expr: "#(1)d", desc: "d() → days()", expect: "86400000" },
+                    { expr: "#(1)day", desc: "day() → days()", expect: "86400000" },
+                    { expr: "#(1)days", desc: "days() → days()", expect: "86400000" },
+                    
+                    // 复合表达式中的单位转换测试
+                    { expr: "#1d + #1day + #1days", desc: "混合日单位", expect: "259200000" },
+                    { expr: "#1h + #1hour + #1hours", desc: "混合小时单位", expect: "10800000" },
+                    { expr: "#(1)d + #(2)day + #(3)days", desc: "带括号的混合单位", expect: "518400000" },
+                    
+                    // 添加复杂括号表达式测试
+                    { expr: "#(7*0.5)d + #(12*2)h", desc: "复杂括号表达式", expect: "388800000" },
+                    { expr: "#(3+2)d + #(60*2)m", desc: "混合运算括号表达式", expect: "439200000" },
+                    { expr: "#(6/2)h + #(30*10)m", desc: "除法和乘法混合", expect: "28800000" },
+                    
+                    
+                    // 多个单位混合测试
+                    { expr: "#(7)d + #(12)h + #(60)m", desc: "三个单位混合", expect: "651600000" },
+                    { expr: "#(0.5)d + #(6)h + #(15)m + #(30)s", desc: "四个单位混合", expect: "65730000" },
+                    
+                    // 边界情况测试
+                    { expr: "#(1+2*3)d", desc: "复杂运算优先级", expect: "604800000" },
+                    { expr: "#(1.5*2)d + #(3.5*2)h", desc: "小数乘法混合", expect: "284400000" },
+                    { expr: "#(10/2)h + #(120/2)m", desc: "除法混合", expect: "21600000" },
+                    
+                    // 添加函数调用测试
+                    { expr: "#(max(1,2))d", desc: "简单函数调用", expect: "172800000" },
+                    { expr: "#(min(24,12))h", desc: "函数返回较小值", expect: "43200000" },
+                    { expr: "#(abs(-1.5))d", desc: "绝对值函数", expect: "129600000" },
+
+                    
+                    // 复杂函数调用测试
+                    { expr: "#(max(1,min(3,4)))d", desc: "嵌套函数调用", expect: "259200000" },
+                    
+                    // 函数与运算符混合测试
+                    { expr: "#(max(1,2)*3)d", desc: "函数结果参与计算", expect: "518400000" },
+                    { expr: "#(min(2+3,4)*2)h", desc: "运算符在函数内", expect: "28800000" },
+                    { expr: "#(abs(-2))d + #(max(1, 1.6))h", desc: "多函数混合计算", expect: "178560000" }
                 ],
                 
                 '时间间隔边界测试': [
@@ -425,7 +488,14 @@
                     { expr: "#1dh", error: true },        // 多个单位
                     { expr: "#1hd", error: true },        // 单位顺序错误
                     { expr: "#1dd", error: true },        // 重复单位
-                    { expr: "#1D", error: true }          // 大写单位
+                    { expr: "#1D", error: true },          // 大写单位
+
+                    // 嵌套表达式测试
+                    { expr: "#(1+1)d + #(#(2)h + #(30)m)",  error: true  },
+                    { expr: "#(2*#(1)h)d", error: true  },
+
+                    { expr: "#(max(#(1)h, #(30)m))m", error: true },
+                    
                 ]
             };
 

@@ -264,18 +264,18 @@ function processDate(expr) {
 
     // 匹配日期格式
     const datePatterns = [
-        { regex: /#\s*(\d{4}-\d{1,2}-\d{1,2}\s+\d{2}:\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm:ss' },
-        { regex: /#\s*(\d{4}-\d{1,2}-\d{1,2}\s+\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm' },
-        { regex: /#\s*(\d{4}-\d{1,2}-\d{1,2})/, format: 'YYYY-MM-DD' },
-        { regex: /#\s*(\d{1,2}-\d{1,2}\s+\d{2}:\d{2}:\d{2})/, format: 'MM-DD HH:mm:ss' },
-        { regex: /#\s*(\d{1,2}-\d{1,2}\s+\d{2}:\d{2})/, format: 'MM-DD HH:mm' },
-        { regex: /#\s*(\d{4}-\d{2})/, format: 'YYYY-MM' },
-        { regex: /#\s*(\d{1,2}-\d{1,2})/, format: 'MM-DD' },
-        { regex: /#\s*(\d{4})/, format: 'YYYY' },
-        { regex: /#\s*(\d{2}:\d{2}:\d{2})/, format: 'HH:mm:ss' },
-        { regex: /#\s*(\d{2}:\d{2})/, format: 'HH:mm' },
-        { regex: /#\s*now/, format: 'now' },
-        { regex: /#\s*today/, format: 'today' },
+        { regex: /@\s*(\d{4}-\d{1,2}-\d{1,2}\s+\d{2}:\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm:ss' },
+        { regex: /@\s*(\d{4}-\d{1,2}-\d{1,2}\s+\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm' },
+        { regex: /@\s*(\d{4}-\d{1,2}-\d{1,2})/, format: 'YYYY-MM-DD' },
+        { regex: /@\s*(\d{1,2}-\d{1,2}\s+\d{2}:\d{2}:\d{2})/, format: 'MM-DD HH:mm:ss' },
+        { regex: /@\s*(\d{1,2}-\d{1,2}\s+\d{2}:\d{2})/, format: 'MM-DD HH:mm' },
+        { regex: /@\s*(\d{4}-\d{2})/, format: 'YYYY-MM' },
+        { regex: /@\s*(\d{1,2}-\d{1,2})/, format: 'MM-DD' },
+        { regex: /@\s*(\d{4})/, format: 'YYYY' },
+        { regex: /@\s*(\d{2}:\d{2}:\d{2})/, format: 'HH:mm:ss' },
+        { regex: /@\s*(\d{2}:\d{2})/, format: 'HH:mm' },
+        { regex: /@\s*now/, format: 'now' },
+        { regex: /@\s*today/, format: 'today' },
     ];
 
     // 继续处理直到没有更多匹配
@@ -306,41 +306,94 @@ function processDate(expr) {
     return expr;
 }
 
+
+// 写一个函数，处理 #1y2m3d 这种类型，转换成#y_m_d(1, 2, 3), 年和月必须存在一个
+function processYMD(expr) {
+    let processed = expr;
+    
+    // 匹配模式：#数字y数字m数字d，所有数字部分都是可选的
+    const ymdPattern = /#\s*(\d+y)?(\d+m)?(\d+d)?/g;
+    
+    processed = processed.replace(ymdPattern, (match) => {
+        // 如果只是单独的#，则不处理
+        if (match === '#') return match;
+        
+        // 提取年月日的数值
+        const y = match.match(/(\d+)y/)?.[1] || '0';
+        const m = match.match(/(\d+)m/)?.[1] || '0';
+        const d = match.match(/(\d+)d/)?.[1] || '0';
+        
+        // 检查是否至少有年或月
+        if (y === '0' && m === '0') {
+            return match; // 如果既没有年也没有月，保持原样不变
+        }
+        
+        // 转换成函数调用格式
+        return `#y_m_d(${y}, ${m}, ${d})`;
+    });
+    
+    return processed;
+}
+
 // 处理时间间隔, 将语法糖转成函数
 function processDuration(expr) {
-    // 定义所有支持的时间单位
+    // 定义所有支持的时间单位，按长度降序排序以避免部分匹配问题
     const timeUnits = {
-        'w': 'week',
-        'd': 'day',
-        'h': 'hour',
-        'm': 'minute',
-        's': 'second',
-        'ms': 'millisecond'
+        'milliseconds': 'milliseconds',
+        'millisecond': 'milliseconds', 
+        'ms': 'milliseconds',
+        'minutes': 'minutes',
+        'minute': 'minutes',
+        'min': 'minutes',
+        'seconds': 'seconds', 
+        'second': 'seconds',
+        's': 'seconds',
+        'weeks': 'weeks',
+        'week': 'weeks',
+        'w': 'weeks',
+        'hours': 'hours',
+        'hour': 'hours', 
+        'h': 'hours',
+        'days': 'days',
+        'day': 'days',
+        'd': 'days',
     };
     
     let processed = expr;
+
+    // 处理年月日语法糖
+    processed = processYMD(processed);
     
-    // 第一步：处理带括号格式
-    for (const [shortUnit, fullUnit] of Object.entries(timeUnits)) {
-        // 匹配 #(...)unit 格式的正则表达式
-        const pattern = new RegExp(`#\\s*\\((.*?)\\)\\s*${shortUnit}\\b`, 'g');
-        
-        // 将 #(...)unit 替换为 #unit(...)
-        processed = processed.replace(pattern, (match, content) => {
-            return `#${shortUnit}(${content})`;
-        });
-    }
+    // 将时间单位按长度降序排序，避免短单位错误匹配长单位的一部分
+    const sortedUnits = Object.entries(timeUnits).sort((a, b) => b[0].length - a[0].length);
     
-    // 第二步：处理无括号格式
-    for (const [shortUnit, fullUnit] of Object.entries(timeUnits)) {
-        // 匹配 #数字unit 格式的正则表达式
-        const noParenPattern = new RegExp(`#\\s*(\\d+(?:\\.\\d+)?)\\s*${shortUnit}\\b`, 'g');
+    // 使用一个函数来处理所有的替换
+    let lastProcessed;
+    do {
+        lastProcessed = processed;
         
-        // 将 #数字unit 替换为 #unit(数字)
-        processed = processed.replace(noParenPattern, (match, number) => {
-            return `#${shortUnit}(${number})`;
-        });
-    }
+        // 第一步：处理带括号格式
+        for (const [shortUnit, fullUnit] of sortedUnits) {
+            // 简单匹配 #(任意内容)unit 格式
+            const pattern = new RegExp(`#\\s*\\(([^#]*)\\)\\s*${shortUnit}\\b(?![a-zA-Z])`, 'g');
+            
+            // 将 #(...)unit 替换为 #fullUnit(...)
+            processed = processed.replace(pattern, (match, content) => {
+                return `#${fullUnit}(${content})`;
+            });
+        }
+        
+        // 第二步：处理无括号格式
+        for (const [shortUnit, fullUnit] of sortedUnits) {
+            // 匹配 #数字unit 格式的正则表达式
+            const noParenPattern = new RegExp(`#\\s*(\\d+(?:\\.\\d+)?)\\s*${shortUnit}\\b(?![a-zA-Z])`, 'g');
+            
+            // 将 #数字unit 替换为 #fullUnit(数字)
+            processed = processed.replace(noParenPattern, (match, number) => {
+                return `#${fullUnit}(${number})`;
+            });
+        }
+    } while (processed !== lastProcessed); // 继续处理直到没有更多变化
     
     return processed;
 }
