@@ -1,0 +1,94 @@
+/* LaTeX矩阵样式 */
+.latex-matrix {
+    display: inline-block;
+    position: relative;
+    font-family: "Times New Roman", serif;
+    font-size: 1.2em;
+    margin: 20px 0;
+    padding: 0 3px;  /* 减小左右padding */
+}
+
+/* 使用伪元素添加方括号 */
+.latex-matrix::before,
+.latex-matrix::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 6px;  /* 减小方括号的整体宽度 */
+    background:
+        linear-gradient(to right, black 100%, transparent 100%) top,
+        linear-gradient(to right, black 100%, transparent 100%) bottom,
+        linear-gradient(to bottom, black, black) left;
+    background-size: 
+        6px 2px,  /* 调整横线宽度 */
+        6px 2px,
+        2px 100%;
+    background-repeat: no-repeat;
+}
+
+.latex-matrix::before {
+    left: 0;
+}
+
+.latex-matrix::after {
+    right: 0;
+    transform: scaleX(-1); /* 翻转右边的方括号 */
+}
+
+.latex-matrix .matrix-content {
+    padding: 0.2em 0.3em;  /* 减小内容区域的padding */
+}
+
+.latex-matrix .matrix-row {
+    display: flex;
+    justify-content: center;
+    margin: 2px 0;
+    line-height: 1.2;
+}
+
+.matrix-element {
+    padding: 0 3px;  /* 减小元素之间的间距 */
+    min-width: 20px;
+    text-align: center;
+}
+
+/* 添加省略号样式 */
+.matrix-element.dots {
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.matrix-display {
+    font-family: monospace;
+    white-space: pre;
+} 
+
+/* 
+function arrayToHtml(array) {
+    // 使用数组join方法代替字符串拼接,提高性能
+    const isVector = !Array.isArray(array[0]);
+    
+    // 处理向量(一维数组)
+    if (isVector) {
+        const rows = array.map(element => 
+            `<div class="matrix-row"><span class="matrix-element">${element}</span></div>`
+        );
+        return `<div class="matrix-content">${rows.join('')}</div>`;
+    }
+    
+    // 处理矩阵(二维数组) 
+    const rows = array.map(row => {
+        const elements = row.map(element =>
+            `<span class="matrix-element">${element}</span>`
+        );
+        return `<div class="matrix-row">${elements.join('')}</div>`;
+    });
+    
+    return `<div class="matrix-content">${rows.join('')}</div>`;
+} 
+
+const array2 = mat2Array(mat1);
+
+matrixAPreview.innerHTML = `<div class="latex-matrix">${arrayToHtml(array2)}</div>`;
+*/
