@@ -344,7 +344,8 @@ function processDuration(expr) {
         'ms': 'milliseconds',
         'minutes': 'minutes',
         'minute': 'minutes',
-        'min': 'minutes',
+        'mins': 'minutes',   // min 会和函数名冲突
+        'mi': 'minutes',
         'seconds': 'seconds', 
         'second': 'seconds',
         's': 'seconds',
@@ -361,9 +362,6 @@ function processDuration(expr) {
     
     let processed = expr;
 
-    // 处理年月日语法糖
-    processed = processYMD(processed);
-    
     // 将时间单位按长度降序排序，避免短单位错误匹配长单位的一部分
     const sortedUnits = Object.entries(timeUnits).sort((a, b) => b[0].length - a[0].length);
     
@@ -395,6 +393,10 @@ function processDuration(expr) {
         }
     } while (processed !== lastProcessed); // 继续处理直到没有更多变化
     
+
+    // 最后处理年月日语法糖
+    processed = processYMD(processed);
+
     return processed;
 }
 
