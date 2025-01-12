@@ -272,8 +272,8 @@ function processDate(expr) {
         { regex: /@\s*(\d{4}-\d{2})/, format: 'YYYY-MM' },
         { regex: /@\s*(\d{1,2}-\d{1,2})/, format: 'MM-DD' },
         { regex: /@\s*(\d{4})/, format: 'YYYY' },
-        { regex: /@\s*(\d{2}:\d{2}:\d{2})/, format: 'HH:mm:ss' },
-        { regex: /@\s*(\d{2}:\d{2})/, format: 'HH:mm' },
+        { regex: /#\s*(\d{2}:\d{2}:\d{2})/, format: 'HH:mm:ss' },
+        { regex: /#\s*(\d{2}:\d{2})/, format: 'HH:mm' },
         { regex: /@\s*now/, format: 'now' },
         { regex: /@\s*today/, format: 'today' },
     ];
