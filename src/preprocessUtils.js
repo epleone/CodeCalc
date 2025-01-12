@@ -114,51 +114,40 @@ function checkParentheses(expr, MAX_DEPTH = 1000) {
 }
 
 // 检查变量名是否合法
-function checkVariableName(expr, operators, functions, constants) {
-    // 修改正则表达式，只匹配单个等号的赋值
-    // 使用负向前瞻确保等号前面不是其它赋值运算符
-    const assignmentRegex = /([^=+\-*/%&|^<>!~]+?)(?<![\+\-\*\/%&\|\^<>!~])\s*=/g;
-    let match;
-    
-    while ((match = assignmentRegex.exec(expr)) !== null) {
-        const varName = match[1].trim();  // 去除前后空格
-        
-        // 检查是否是合法的变量名格式
-        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
-            if (/\s/.test(varName)) {
-                throw new Error(`变量名 "${varName}" 不能包含空格`);
-            }
-            throw new Error(`变量名 "${varName}" 格式不正确，只能包含字母、数字和下划线，且不以数字开头`);
+function checkVariableName(varName, operators, functions, constants) {
+    // 检查是否是合法的变量名格式
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
+        if (/\s/.test(varName)) {
+            throw new Error(`变量名 "${varName}" 不能包含空格`);
         }
-        
-        // 修改检查的前缀
-        if (varName.startsWith('_cc_')) {
-            throw new Error(`变量名不能以 "_cc_" 开头，这是系统保留的前缀`);
-        }
-
-        // 检查是否与运算符冲突
-        if (operators.hasOwnProperty(varName)) {
-            throw new Error(`变量名 "${varName}" 与运算符冲突`);
-        }
-        
-        // 检查是否与函数名冲突
-        if (functions.hasOwnProperty(varName)) {
-            throw new Error(`变量名 "${varName}" 与函数名冲突`);
-        }
-        
-        // 检查是否与常量冲突
-        if (constants.hasOwnProperty(varName)) {
-            throw new Error(`变量名 "${varName}" 与常量冲突`);
-        }
-        
-        // 检查是否是保留字
-        const reservedWords = ['if', 'else', 'true', 'false', 'null', 'undefined'];
-        if (reservedWords.includes(varName)) {
-            throw new Error(`变量名 "${varName}" 是保留字`);
-        }
+        throw new Error(`变量名 "${varName}" 格式不正确，只能包含字母、数字和下划线，且不以数字开头`);
     }
     
-    return expr;
+    // 检查是否以系统保留前缀开头
+    if (varName.startsWith('_cc_')) {
+        throw new Error(`变量名不能以 "_cc_" 开头，这是系统保留的前缀`);
+    }
+
+    // 检查是否与运算符冲突
+        if (operators.hasOwnProperty(varName)) {
+        throw new Error(`变量名 "${varName}" 与运算符冲突`);
+    }
+    
+    // 检查是否与函数名冲突
+    if (functions.hasOwnProperty(varName)) {
+        throw new Error(`变量名 "${varName}" 与函数名冲突`);
+    }
+    
+    // 检查是否与常量冲突
+    if (constants.hasOwnProperty(varName)) {
+        throw new Error(`变量名 "${varName}" 与常量冲突`);
+    }
+    
+    // 检查是否是保留字
+    const reservedWords = ['if', 'else', 'true', 'false', 'null', 'undefined'];
+    if (reservedWords.includes(varName)) {
+        throw new Error(`变量名 "${varName}" 是保留字`);
+    }
 }
 
 // 处理字符串字面量

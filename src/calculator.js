@@ -85,11 +85,8 @@ const Calculator = (function() {
             variables.set(key, value);
         }
 
-        // 再检查括号匹配
+        // 检查括号匹配
         checkParentheses(expr, MAX_DEPTH);
-
-        // 最后检查变量名
-        expr = checkVariableName(expr, operators, functions, constants);
 
         // TODO: 如果有新属性，需要手动动态添加
         for (const [name, func] of Object.entries(FUNCTIONS)) {
@@ -529,7 +526,7 @@ const Calculator = (function() {
     }
 
     // 4. 求值模块
-    function evaluate(node, operators, functions, depth = 0) {
+    function evaluate(node, operators, functions, constants, depth = 0) {
         if (depth > MAX_DEPTH) {
             throw new Error('表达式求值嵌套深度过大，可能存在无限递归');
         }
@@ -563,7 +560,7 @@ const Calculator = (function() {
         }
 
         // 递归计算参数
-        const args = node.args.map(arg => evaluate(arg, operators, functions, depth + 1));
+        const args = node.args.map(arg => evaluate(arg, operators, functions, constants, depth + 1));
 
         // 处理运算符
         if (node.type === 'operator') {
@@ -582,8 +579,11 @@ const Calculator = (function() {
                     throw new Error('赋值运算符左侧必须是变量名');
                 }
                 
+                // 检查变量名是否合法
+               checkVariableName(left.value, operators, functions, constants);
+                
                 // 计算右侧表达式
-                const rightValue = evaluate(right, operators, functions, depth + 1);
+                const rightValue = evaluate(right, operators, functions, constants, depth + 1);
                 
                 // 对于等号，直接赋值
                 if (node.value === '=') {
@@ -723,7 +723,7 @@ const Calculator = (function() {
             const { expr: processedExpr, operators: sortedOperators } = preprocess(expr, operators, functions, constants);
             const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
-            const result = evaluate(ast, operators, functions);
+            const result = evaluate(ast, operators, functions, constants);
             // 添加格式化处理，传入完整的上下文
             const exprResult = formatOutput(result, ast, operators, functions);
             
