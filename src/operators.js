@@ -121,7 +121,7 @@ export const OPERATORS = {
 
     // 一元运算符
     '°': {
-        alias: '.deg',
+        alias: '.rad',
         description: '角度转弧度'
     },
     'unary-': {
@@ -629,7 +629,7 @@ export const FUNCTIONS = {
         asProperty: true,
         description: '绝对值'
     },
-    'deg': {
+    'rad': {
         args: 1,
         func: x => x * CONSTANTS.PI / 180,
         asProperty: true,
@@ -637,7 +637,7 @@ export const FUNCTIONS = {
         repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '度数转换为弧度'
     },
-    'rad': {
+    'deg': {
         args: 1,
         func: Utils.radianToDeg,
         asProperty: true,
