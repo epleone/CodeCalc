@@ -61,9 +61,6 @@ const Utils = {
         if (typeof x === 'bigint' || typeof y === 'bigint') {
             return BigInt(x) + BigInt(y);
         }
-        if (typeof x !== typeof y) {
-            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-        }
         if(isDatestamp(x) && isDatestamp(y)) {
             return new Datestamp(x.year + y.year, x.month + y.month, x.timestamp + y.timestamp);
         }
@@ -89,6 +86,9 @@ const Utils = {
         {
             // 返回错误
             throw new Error('两个日期类型不能相加');
+        }
+        if (typeof x !== typeof y) {
+            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
         }
         return x + y;
     },
@@ -128,6 +128,11 @@ const Utils = {
                 throw new Error('不支持的日期减法');
             }
         }
+
+        if (typeof x !== typeof y) {
+            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
+        }
+        
         return x - y;
     },
 

@@ -343,64 +343,116 @@ function processDate(expr) {
 // 分钟匹配 mm,minute,minutes
 // 秒匹配 s,second,seconds
 // 毫秒匹配 ms,millisecond,milliseconds
-/*
-这个实现太复杂了，让我们重新实现一下这个函数，首先我们假定一定是参数一定是按照顺序传入的，没有的可以空，但是不能乱序。
-那么我们现匹配到这样的类似表达式#1y2m3w4d5h6mm7s8ms。
-对于匹配到结果，我们先找到 # 和 y,year,years 中间的结果，将其保存为第一个参数，没有的话默认为0, 如果中间是只有空格等空白字符，请报错。
-接着，我们将原来的表达式移除匹配到的字段，剩下 #xxm...  等等，继续按照这个思路进行，直到所有的都匹配完。
-*/
+
 function processTimestamp(expr) {
-    // 定义时间单位的匹配模式
+    // 定义时间单位的匹配模式，按顺序排列
     const patterns = [
-        { units: ['years?', 'y(?![a-z])'], name: 'year' },
-        { units: ['months?', 'm(?![a-z])'], name: 'month' },
-        { units: ['weeks?', 'w(?![a-z])'], name: 'week' },
-        { units: ['days?', 'd(?![a-z])'], name: 'day' },
-        { units: ['hours?', 'h(?![a-z])'], name: 'hour' },
-        { units: ['minutes?', 'mm'], name: 'minute' },
-        { units: ['seconds?', 's(?![a-z])'], name: 'second' },
-        { units: ['milliseconds?', 'ms'], name: 'millisecond' }
+        { units: ['years?', 'y(?![a-z])'], index: 0 },  // 年
+        { units: ['months?', 'm(?![a-z])'], index: 1 },  // 月
+        { units: ['weeks?', 'w(?![a-z])'], index: 2 },  // 周
+        { units: ['days?', 'd(?![a-z])'], index: 3 },  // 天
+        { units: ['hours?', 'h(?![a-z])'], index: 4 },  // 小时
+        { units: ['minutes?', 'mm'], index: 5 }, // 分钟
+        { units: ['seconds?', 's(?![a-z])'], index: 6 },  // 秒
+        { units: ['milliseconds?', 'ms'], index: 7 }  // 毫秒
     ];
 
-    // 匹配以#开头的完整表达式
-    return expr.replace(/#([^#]*?)(?=(?:#|$))/g, (fullMatch, content) => {
-        // 如果只是#，直接返回
-        if (fullMatch === '#') return fullMatch;
+    // 处理单个时间戳表达式
+    function processSingleTimestamp(expr) {
+        if (expr === '#') return expr;
+        if (/^#\s*$/.test(expr)) return expr;
 
-        // 如果是纯运算符表达式，直接返回
-        if (/^#\s*[-+*/\s]*$/.test(fullMatch)) return fullMatch;
-
-        let remaining = content; // 不需要移除#，因为捕获组已经不包含#
+        // 移除开头的#
+        let remaining = expr.slice(1);
         const values = new Array(8).fill('0');
 
         // 依次处理每个时间单位
-        for (let i = 0; i < patterns.length; i++) {
-            const { units, name } = patterns[i];
-            // 构建匹配当前单位的正则表达式，支持小数和括号表达式
+        for (const { units, index } of patterns) {
+            // 匹配数字（包括负数和小数）+ 任意一个单位
             const pattern = new RegExp(
-                `^\\s*(?:([a-zA-Z_]\\w*\\([^)]+\\)|\\([^)]+\\)|[0-9]+(?:\\.[0-9]+)?)\\s*)(${units.join('|')})`,
+                `^\\s*(-?\\d*\\.?\\d+)\\s*(${units.join('|')})`,
                 'i'
             );
-
             const match = remaining.match(pattern);
+            
             if (match) {
-                const [fullUnitMatch, value] = match;
-                if (!value || value.trim() === '') {
-                    throw new Error(`时间单位 ${name} 缺少值`);
-                }
-                values[i] = value.trim();
-                remaining = remaining.slice(fullUnitMatch.length);
+                values[index] = match[1];
+                remaining = remaining.slice(match[0].length);
             }
         }
 
-        // 如果还有剩余未匹配的内容，检查是否是合法的运算符
+        // 如果还有剩余内容，报错
         remaining = remaining.trim();
-        if (remaining && !/^[-+*/\s]*$/.test(remaining)) {
+        if (remaining) {
             throw new Error(`无法识别的时间格式: ${remaining}`);
         }
 
-        return `#timestamp(${values.join(', ')})`;
-    });
+        return `timestamp(${values.join(', ')})`;
+    }
+
+    // 主处理逻辑：找到所有的时间戳表达式并处理
+    let result = '';
+    let pos = 0;
+    
+    while (pos < expr.length) {
+        // 检查是否是运算符后面跟着的#
+        if (pos > 0 && expr[pos] === '#' && /[+\-*/>=<]/.test(expr[pos - 1])) {
+            result += expr[pos];
+            pos++;
+            continue;
+        }
+
+        if (expr[pos] === '#') {
+            // 找到这个时间戳表达式的结束位置
+            let end = pos + 1;
+            let foundNumber = false;
+            let inWhitespace = false;  // 标记是否在空白区域
+            
+            while (end < expr.length) {
+                const char = expr[end];
+                
+                // 处理空白字符
+                if (/\s/.test(char)) {
+                    inWhitespace = true;
+                    end++;
+                    continue;
+                }
+                
+                // 如果之前有空白，现在遇到了非法字符，就停止
+                if (inWhitespace && !/[a-zA-Z0-9\-.]/.test(char)) {
+                    break;
+                }
+                
+                // 如果遇到运算符
+                if (/[+*/>=<]|#/.test(char)) {
+                    break;
+                }
+                
+                // 特殊处理减号：只有在已经找到数字后才视为运算符
+                if (char === '-' && foundNumber) {
+                    break;
+                }
+                
+                // 记录是否找到数字
+                if (/\d/.test(char)) {
+                    foundNumber = true;
+                    inWhitespace = false;  // 重置空白标记
+                }
+                
+                end++;
+            }
+            
+            // 处理这个时间戳表达式
+            const timeExpr = expr.substring(pos, end);
+            result += processSingleTimestamp(timeExpr);
+            pos = end;
+        } else {
+            result += expr[pos];
+            pos++;
+        }
+    }
+
+    return result;
 }
 
 
@@ -419,38 +471,25 @@ export {
 function testProcessTimestamp() {
     const tests = [
         '#1y2m3w4d5h6mm7s8ms',
-        '#(1)y(2)m(3)w(4)d(5)h(6)mm(7)s(8)ms',
         '#1year2month3week4day5hour6minute7second8millisecond',
-        '#(1)year(2)month(3)week(4)day(5)hour(6)minute(7)second(8)millisecond',
-        
-        // 测试单个单位
         '#5y', '#10m', '#2w', '#3d', '#12h', '#30mm', '#45s', '#100ms',
-        '#(5)year', '#(10)month', '#(2)week', '#(3)day', 
-        '#(12)hour', '#(30)minute', '#(45)second', '#(100)millisecond',
-        
-        // 测试小数
+
         '#1.5y', '#2.5m', '#0.5w', '#1.5d',
-        '#(1.5)year', '#(2.5)month', '#(0.5)week', '#(1.5)day',
-        
+
         // 测试空格
-        '# 1y 2m 3w', '#(1) y (2) m (3) w',
+        '# 1y 2m 3w', 
         
         // 测试组合
         '#1y3d', '#2m12h', '#1w30mm', '#5d100ms',
-        '#(1)y(3)d', '#(2)m(12)h', '#(1)w(30)mm', '#(5)d(100)ms',
-
-        // 测试中间是函数
-        '#max(1,3)y2m min(1,3)w',
-
+        
         // 多个表达式混合
         '#1y2m3w4d5h6mm7s8ms + #1y2m3w',
         '#2m12h + #1y2m3w',
-        '#(7)w + #7d + #(11)h',
         '#2m + #1d',
         '#2m - #1d', // 会吞掉负号，能否支持负号#-1d？
-
-        // 困难测试
-        '#max(1,3)m min(1,3)mm',
+        '@now + #1y2m3w >@',
+        '@now - #1y2m3w >#w',
+        '#-1.5d',
 
         // 空白报错
         '#y','#1ym','#1y2mw',

@@ -605,7 +605,7 @@ export const FUNCTIONS = {
         asProperty: true
     },
     // 日期函数
-    '#timestamp': {
+    'timestamp': {
         args: 8,
         func: (year=0, month=0, week=0, day=0, hour=0, minute=0, second=0, millisecond=0) => {
             // year和month必须是非负整数
