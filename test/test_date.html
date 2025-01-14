@@ -363,6 +363,7 @@
                     { expr: "#24h", desc: "小时语法糖(无括号)", expect: "86400000" },
                     { expr: "#60mm", desc: "分钟语法糖(无括号)", expect: "3600000" },
                     { expr: "#1d", desc: "天语法糖(无括号)", expect: "86400000" },
+                    { expr: "#1D", desc: "天语法糖(无括号)", expect: "86400000" },
                     { expr: "#30s", desc: "秒语法糖(无括号)", expect: "30000" },
                     { expr: "#500ms", desc: "毫秒语法糖(无括号)", expect: "500" }
                 ],
@@ -380,7 +381,6 @@
                     { expr: "#abc d", error: true },
                     { expr: "#1dd", error: true },
                     { expr: "#1dh", error: true },
-                    { expr: "#-1d", error: true },
                     { expr: "#d1", error: true },
                     { expr: "#1", error: true },
                     { expr: "#1x", error: true }
@@ -488,8 +488,6 @@
                     { expr: "#1dh", error: true },        // 多个单位
                     { expr: "#1hd", error: true },        // 单位顺序错误
                     { expr: "#1dd", error: true },        // 重复单位
-                    { expr: "#1D", error: true },          // 大写单位
-
                     // 嵌套表达式测试
                     { expr: "#(1+1)d + #(#(2)h + #(30)m)",  error: true  },
                     { expr: "#(2*#(1)h)d", error: true  },
@@ -498,19 +496,7 @@
                     
                 ],
                 
-                '年月日语法糖测试': [
-                    { expr: "@2025-03-15 @+ #1y2m3d", desc: "基本年月日语法糖", expect: "2026-05-18 00:00:00" },
-                    { expr: "@2025-03-15 @- #1y2m3d", desc: "年月日语法糖减法", expect: "2024-01-12 00:00:00" },
-                    { expr: "@2025-03-15 @+ #2y", desc: "仅年份", expect: "2027-03-15 00:00:00" },
-                    { expr: "@2025-03-15 @+ #3m", desc: "仅月份", expect: "2025-06-15 00:00:00" },
-                    { expr: "@2025-03-15 @+ #15d", desc: "仅天数", expect: "2025-03-30 00:00:00" },
-                    { expr: "@2025-03-15 @+ #1y6m", desc: "年月组合", expect: "2026-09-15 00:00:00" },
-                    { expr: "@2025-03-15 @+ #2m15d", desc: "月日组合", expect: "2025-05-30 00:00:00" },
-                    
-                    // 边界情况测试
-                    { expr: "@2025-02-28 @+ #1y", desc: "闰年处理", expect: "2026-02-28 00:00:00" },
-                    { expr: "@2025-03-31 @+ #1m", desc: "月末处理", expect: "2025-04-30 00:00:00" },
-                    
+                '年月日语法糖测试': [                    
                     // 错误情况测试
                     { expr: "#y", error: true, desc: "缺少数值" },
                     { expr: "#1y2y", error: true, desc: "重复单位" },

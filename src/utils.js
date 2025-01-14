@@ -132,7 +132,7 @@ const Utils = {
         if (typeof x !== typeof y) {
             throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
         }
-        
+
         return x - y;
     },
 
@@ -333,7 +333,15 @@ const Utils = {
 
     // 时间戳格式化成日期字符串
     formatDate(x) {
+        if(isDatestamp(x)){
+            throw new Error(`无法将时间戳转成日期, 请使用"> #"`);
+        }
+
         const date = new Date(x);
+        //判断是否是日期
+        if(isNaN(date.getTime())){
+            throw new Error(`无法将${x}转成日期`);
+        }
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
         const day = date.getDate();

@@ -190,7 +190,7 @@ function parseDate(dateString, format) {
             date = now;
             break;
         case 'today':
-            date = new Date(now.toISOString().split('T')[0] + 'T00:00:00');
+            date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             break;
         case 'YYYY-MM-DD HH:mm:ss':
             date = new Date(dateString);
@@ -357,20 +357,61 @@ function processTimestamp(expr) {
         { units: ['milliseconds?', 'ms'], index: 7 }  // 毫秒
     ];
 
-    // 处理单个时间戳表达式
+    // 在 patterns 定义后添加一个新的辅助函数
+    function extractParenthesesContent(str) {
+        if (!str.startsWith('(')) return null;
+        let count = 0;
+        let end = -1;
+        
+        for (let i = 0; i < str.length; i++) {
+            if (str[i] === '(') count++;
+            if (str[i] === ')') count--;
+            if (count === 0) {
+                end = i;
+                break;
+            }
+        }
+        
+        if (end === -1) return null;
+        return {
+            content: str.substring(1, end),
+            length: end + 1
+        };
+    }
+
+    // 修改 processSingleTimestamp 函数中的相关部分
     function processSingleTimestamp(expr) {
         if (expr === '#') return expr;
         if (/^#\s*$/.test(expr)) return expr;
 
         // 移除开头的#
-        let remaining = expr.slice(1);
+        let remaining = expr.slice(1).trim();
         const values = new Array(8).fill('0');
 
         // 依次处理每个时间单位
         for (const { units, index } of patterns) {
-            // 匹配数字（包括负数和小数）+ 任意一个单位
+            remaining = remaining.trim();
+            
+            // 先检查是否有括号
+            if (remaining.startsWith('(')) {
+                const result = extractParenthesesContent(remaining);
+                if (result) {
+                    // 检查括号后是否跟着正确的单位
+                    const unitPattern = new RegExp(`^\\s*(${units.join('|')})`, 'i');
+                    const afterParens = remaining.substring(result.length).trim();
+                    const unitMatch = afterParens.match(unitPattern);
+                    
+                    if (unitMatch) {
+                        values[index] = result.content; // 保存括号内的表达式
+                        remaining = afterParens.substring(unitMatch[0].length);
+                        continue;
+                    }
+                }
+            }
+
+            // 如果没有括号，使用原来的匹配逻辑
             const pattern = new RegExp(
-                `^\\s*(-?\\d*\\.?\\d+)\\s*(${units.join('|')})`,
+                `^(-?\\d*\\.?\\d+)\\s*(${units.join('|')})`,
                 'i'
             );
             const match = remaining.match(pattern);
@@ -407,9 +448,28 @@ function processTimestamp(expr) {
             let end = pos + 1;
             let foundNumber = false;
             let inWhitespace = false;  // 标记是否在空白区域
+            let parenCount = 0;  // 添加括号计数
             
             while (end < expr.length) {
                 const char = expr[end];
+                
+                // 处理括号
+                if (char === '(') {
+                    parenCount++;
+                    end++;
+                    continue;
+                }
+                if (char === ')') {
+                    parenCount--;
+                    end++;
+                    continue;
+                }
+                
+                // 如果在括号内，继续处理直到括号闭合
+                if (parenCount > 0) {
+                    end++;
+                    continue;
+                }
                 
                 // 处理空白字符
                 if (/\s/.test(char)) {
@@ -419,7 +479,7 @@ function processTimestamp(expr) {
                 }
                 
                 // 如果之前有空白，现在遇到了非法字符，就停止
-                if (inWhitespace && !/[a-zA-Z0-9\-.]/.test(char)) {
+                if (inWhitespace && !/[a-zA-Z0-9\-.(]/.test(char)) {
                     break;
                 }
                 
@@ -428,8 +488,8 @@ function processTimestamp(expr) {
                     break;
                 }
                 
-                // 特殊处理减号：只有在已经找到数字后才视为运算符
-                if (char === '-' && foundNumber) {
+                // 特殊处理减号：只有在已经找到数字且不在括号内时才视为运算符
+                if (char === '-' && foundNumber && parenCount === 0) {
                     break;
                 }
                 
@@ -491,8 +551,22 @@ function testProcessTimestamp() {
         '@now - #1y2m3w >#w',
         '#-1.5d',
 
+        //添加括号测试
+        '#(1+2)y(3x4)m(5-2w)w',
+
         // 空白报错
         '#y','#1ym','#1y2mw',
+
+        // 括号测试
+        '#(1+2)y(3*4)m(5-2)w',
+        '#(x+1)y(y*2)m',
+        '#(a+b)d(c*d)h',
+        '#(1.5*2)y(3/2)m',
+        '#(foo())y(bar())m',
+        
+        // 混合测试
+        '#(1+2)y3m(4-1)w',
+        '#1y(2*3)m4d',
     ];
     
     // 执行测试并输出结果
