@@ -324,6 +324,76 @@ function processYMD(expr) {
     return processed;
 }
 
+// 写一个函数，处理 #1y2m3w4d5h6mm7s8ms 这种类型, 转换成 #timestamp(1, 2, 3, 4, 5, 6, 7, 8)
+// 年匹配 y,year,years
+// 月匹配 m,month,months
+// 周匹配 w,week,weeks
+// 天匹配 d,day,days
+// 小时匹配 h,hour,hours
+// 分钟匹配 mm,minute,minutes
+// 秒匹配 s,second,seconds
+// 毫秒匹配 ms,millisecond,milliseconds
+/*
+这个实现太复杂了，让我们重新实现一下这个函数，首先我们假定一定是参数一定是按照顺序传入的，没有的可以空，但是不能乱序。
+那么我们现匹配到这样的类似表达式#1y2m3w4d5h6mm7s8ms。
+对于匹配到结果，我们先找到 # 和 y,year,years 中间的结果，将其保存为第一个参数，没有的话默认为0, 如果中间是只有空格等空白字符，请报错。
+接着，我们将原来的表达式移除匹配到的字段，剩下 #xxm...  等等，继续按照这个思路进行，直到所有的都匹配完。
+*/
+function processTimestamp(expr) {
+    // 定义时间单位的匹配模式
+    const patterns = [
+        { units: ['years?', 'y(?![a-z])'], name: 'year' },
+        { units: ['months?', 'm(?![a-z])'], name: 'month' },
+        { units: ['weeks?', 'w(?![a-z])'], name: 'week' },
+        { units: ['days?', 'd(?![a-z])'], name: 'day' },
+        { units: ['hours?', 'h(?![a-z])'], name: 'hour' },
+        { units: ['minutes?', 'mm'], name: 'minute' },
+        { units: ['seconds?', 's(?![a-z])'], name: 'second' },
+        { units: ['milliseconds?', 'ms'], name: 'millisecond' }
+    ];
+
+    // 匹配以#开头的完整表达式
+    return expr.replace(/#([^#]*?)(?=(?:#|$))/g, (fullMatch, content) => {
+        // 如果只是#，直接返回
+        if (fullMatch === '#') return fullMatch;
+
+        // 如果是纯运算符表达式，直接返回
+        if (/^#\s*[-+*/\s]*$/.test(fullMatch)) return fullMatch;
+
+        let remaining = content; // 不需要移除#，因为捕获组已经不包含#
+        const values = new Array(8).fill('0');
+
+        // 依次处理每个时间单位
+        for (let i = 0; i < patterns.length; i++) {
+            const { units, name } = patterns[i];
+            // 构建匹配当前单位的正则表达式，支持小数和括号表达式
+            const pattern = new RegExp(
+                `^\\s*(?:([a-zA-Z_]\\w*\\([^)]+\\)|\\([^)]+\\)|[0-9]+(?:\\.[0-9]+)?)\\s*)(${units.join('|')})`,
+                'i'
+            );
+
+            const match = remaining.match(pattern);
+            if (match) {
+                const [fullUnitMatch, value] = match;
+                if (!value || value.trim() === '') {
+                    throw new Error(`时间单位 ${name} 缺少值`);
+                }
+                values[i] = value.trim();
+                remaining = remaining.slice(fullUnitMatch.length);
+            }
+        }
+
+        // 如果还有剩余未匹配的内容，检查是否是合法的运算符
+        remaining = remaining.trim();
+        if (remaining && !/^[-+*/\s]*$/.test(remaining)) {
+            throw new Error(`无法识别的时间格式: ${remaining}`);
+        }
+
+        return `#timestamp(${values.join(', ')})`;
+    });
+}
+
+
 // 处理时间间隔, 将语法糖转成函数
 function processDuration(expr) {
     // 定义所有支持的时间单位，按长度降序排序以避免部分匹配问题
@@ -366,7 +436,7 @@ function processDuration(expr) {
             
             // 将 #(...)unit 替换为 #fullUnit(...)
             processed = processed.replace(pattern, (match, content) => {
-                return `#${fullUnit}(${content})`;
+                return `#${fullUnit}((${content}))`;
             });
         }
         
@@ -377,24 +447,81 @@ function processDuration(expr) {
             
             // 将 #数字unit 替换为 #fullUnit(数字)
             processed = processed.replace(noParenPattern, (match, number) => {
-                return `#${fullUnit}(${number})`;
+                return `#${fullUnit}((${number}))`;
             });
         }
     } while (processed !== lastProcessed); // 继续处理直到没有更多变化
     
-
     // 最后处理年月日语法糖
     processed = processYMD(processed);
 
     return processed;
 }
 
-export {
-    ccVariables,
-    normalizeSymbols,
-    checkParentheses,
-    checkVariableName,
-    processStringLiterals,
-    processDate,
-    processDuration
+// export {
+//     ccVariables,
+//     normalizeSymbols,
+//     checkParentheses,
+//     checkVariableName,
+//     processStringLiterals,
+//     processDate,
+//     processDuration
+// }
+
+
+// 一个测试函数，测试processTimestamp
+function testProcessTimestamp() {
+    const tests = [
+        '#1y2m3w4d5h6mm7s8ms',
+        '#(1)y(2)m(3)w(4)d(5)h(6)mm(7)s(8)ms',
+        '#1year2month3week4day5hour6minute7second8millisecond',
+        '#(1)year(2)month(3)week(4)day(5)hour(6)minute(7)second(8)millisecond',
+        
+        // 测试单个单位
+        '#5y', '#10m', '#2w', '#3d', '#12h', '#30mm', '#45s', '#100ms',
+        '#(5)year', '#(10)month', '#(2)week', '#(3)day', 
+        '#(12)hour', '#(30)minute', '#(45)second', '#(100)millisecond',
+        
+        // 测试小数
+        '#1.5y', '#2.5m', '#0.5w', '#1.5d',
+        '#(1.5)year', '#(2.5)month', '#(0.5)week', '#(1.5)day',
+        
+        // 测试空格
+        '# 1y 2m 3w', '#(1) y (2) m (3) w',
+        
+        // 测试组合
+        '#1y3d', '#2m12h', '#1w30mm', '#5d100ms',
+        '#(1)y(3)d', '#(2)m(12)h', '#(1)w(30)mm', '#(5)d(100)ms',
+
+        // 测试中间是函数
+        '#max(1,3)y2m min(1,3)w',
+
+        // 多个表达式混合
+        '#1y2m3w4d5h6mm7s8ms + #1y2m3w',
+        '#2m12h + #1y2m3w',
+
+        // 困难测试
+        '#max(1,3)m min(1,3)mm',
+
+        // 空白报错
+        '#y','#1ym','#1y2mw',
+    ];
+    
+    // 执行测试并输出结果
+    tests.forEach((expr, index) => {
+        try {
+            const result = processTimestamp(expr);
+            console.log(`Test ${index + 1} passed:`, {
+                input: expr,
+                output: result
+            });
+        } catch (error) {
+            console.error(`Test ${index + 1} failed:`, {
+                input: expr,
+                error: error.message
+            });
+        }
+    });
 }
+
+testProcessTimestamp();

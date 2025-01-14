@@ -3,6 +3,14 @@
 // 对于任意类型，在表达式预处理的时候，生成默认变量，然后进行计算（字符串，日期，向量矩阵）
 // 对任意类型的支持，在函数内部自己完成
 
+//写一个类 datestamp, 包含三个属性，year, month, timestamp
+class Datestamp {
+    constructor(year, month, timestamp) {
+        this.year = year;
+        this.month = month;
+        this.timestamp = timestamp;
+    }
+}
 
 // 类型转换工具
 const Utils = {
@@ -13,6 +21,16 @@ const Utils = {
 
     isString(value) {
         return typeof value === 'string';
+    },
+
+    // 判断是否是日期
+    isDate(value) {
+        return value instanceof Date && !isNaN(value);
+    },
+
+    // 判断是否是Datestamp
+    isDatestamp(value) {
+        return value instanceof Datestamp;
     },
 
     // 字符串转数字，用于输入时处理
@@ -171,8 +189,5 @@ const Utils = {
     }
 };
 
-// 删除全局导出
-// window.Utils = Utils; 
 
-// 添加ES6模块导出
-export default Utils;
+export { Utils, Datestamp };

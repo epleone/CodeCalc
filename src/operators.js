@@ -1,4 +1,4 @@
-import Utils from './utils.js';
+import { Utils, Datestamp } from './utils.js';
 
 // 常数定义
 export const CONSTANTS = {
@@ -726,49 +726,22 @@ export const FUNCTIONS = {
         asProperty: true
     },
     // 日期函数
-    '#y_m_d': {
-        args: 3,
-        func: (x, y, z) => {
-            // x, y, z 必须是非负整数
-            const years = Number(x);
-            const months = Number(y);
-            const days = Number(z);
-            if (years < 0 || months < 0 || days < 0) {
-                throw new Error(`年:${years}月:${months}日:${days}必须是非负整数`);
+    '#timestamp': {
+        args: 8,
+        func: (year=0, month=0, week=0, day=0, hour=0, minute=0, second=0, millisecond=0) => {
+            // year和month必须是非负整数
+            const years = Number(year);
+            const months = Number(month);
+            if (years < 0 || months < 0) {
+                throw new Error(`年:${years}月:${months}必须是非负整数`);
             }
-            return {"years": years, "months": months, "days": days};
+
+            // week, day, hour, minute, second, millisecond 求和，单位ms,
+            const totalMilliseconds = ((((week * 7 + day)*24 + hour)*60 + minute)*60 + second)*1000 + millisecond;
+            
+            // 返回Datestamp对象
+            return new Datestamp(years, months, totalMilliseconds);
         },
-        description: '年月日语法糖'
-    },
-    // 时间日期函数
-    '#weeks': {
-        args: 1,
-        func: x => Math.floor(Number(x) * 1000 * 60 * 60 * 24 * 7),
-        description: '周数转成毫秒'
-    },
-    '#days': {
-        args: 1,
-        func: x => Math.floor(Number(x) * 1000 * 60 * 60 * 24),
-        description: '天数转成毫秒'
-    },
-    '#hours': {
-        args: 1,
-        func: x => Math.floor(Number(x) * 1000 * 60 * 60),
-        description: '小时数转成毫秒'
-    },
-    '#minutes': {
-        args: 1,
-        func: x => Math.floor(Number(x) * 1000 * 60),
-        description: '分钟数转成毫秒'
-    },
-    '#seconds': {
-        args: 1,
-        func: x => Math.floor(Number(x) * 1000),
-        description: '秒数转成毫秒'
-    },
-    '#milliseconds': {
-        args: 1,
-        func: x => Math.floor(Number(x)),
-        description: '毫秒数'
+        description: '时间间隔转换为时间戳'
     },
 }; 
