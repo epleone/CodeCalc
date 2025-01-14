@@ -12,26 +12,167 @@ class Datestamp {
     }
 }
 
+
+// 类型检查
+function isNumber(value) {
+    return (typeof value === 'number' && !isNaN(value)) || typeof value === 'bigint';
+}
+
+function isString(value) {
+    return typeof value === 'string';
+}
+
+function isDate(value) {
+    return value instanceof Date && !isNaN(value);
+}
+
+// 判断是否是Datestamp
+function isDatestamp(value) {
+    return value instanceof Datestamp;
+}
+
+
 // 类型转换工具
 const Utils = {
-    // 类型检查
-    isNumber(value) {
-        return (typeof value === 'number' && !isNaN(value)) || typeof value === 'bigint';
+    // 将不同的输出格式化成字符串
+    formatToDisplayString(result) {
+
+        // 如果是Datestamp，则返回字符串
+        if(isDatestamp(result)) {
+            if(result.year === 0 && result.month === 0) {
+                return result.timestamp + 'ms';
+            }
+
+            return `${result.year}年${result.month}月 + ${result.timestamp}ms`;
+        }
+
+        // 如果是Date，则返回日期字符串
+        if(isDate(result)) {
+            return {value: result.getTime(), info: Utils.formatDate(result)};
+        }   
+
+        return result;
     },
 
-    isString(value) {
-        return typeof value === 'string';
+    add(x, y) {
+        if (typeof x === 'string' || typeof y === 'string') {
+            return x.toString() + y.toString();
+        }
+        if (typeof x === 'bigint' || typeof y === 'bigint') {
+            return BigInt(x) + BigInt(y);
+        }
+        if (typeof x !== typeof y) {
+            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
+        }
+        if(isDatestamp(x) && isDatestamp(y)) {
+            return new Datestamp(x.year + y.year, x.month + y.month, x.timestamp + y.timestamp);
+        }
+        if(isDate(x) && isDatestamp(y))
+        {
+            const newDate = new Date(x);
+            newDate.setFullYear(newDate.getFullYear() + y.year);
+            newDate.setMonth(newDate.getMonth() + y.month);
+            // 加上毫秒
+            newDate.setMilliseconds(newDate.getMilliseconds() + y.timestamp);
+            return newDate;
+        }
+        if(isDate(y) && isDatestamp(x))
+        {
+            const newDate = new Date(y);
+            newDate.setFullYear(newDate.getFullYear() + x.year);
+            newDate.setMonth(newDate.getMonth() + x.month);
+            // 加上毫秒
+            newDate.setMilliseconds(newDate.getMilliseconds() + x.timestamp);
+            return newDate;
+        }
+        if(isDate(x) && isDate(y))
+        {
+            // 返回错误
+            throw new Error('两个日期类型不能相加');
+        }
+        return x + y;
     },
 
-    // 判断是否是日期
-    isDate(value) {
-        return value instanceof Date && !isNaN(value);
+    subtract(x, y){
+        // 打印x,y的类型
+        console.log(typeof x, typeof y);
+
+        if (typeof x === 'bigint' || typeof y === 'bigint') {
+            return BigInt(x) - BigInt(y);
+        }
+        if(isDatestamp(x))
+        {
+            if(isDatestamp(y))
+            {
+                return new Datestamp(x.year - y.year, x.month - y.month, x.timestamp - y.timestamp);
+            }else if(isDate(y))
+            {
+                throw new Error('时间戳不能减去日期 ')
+            }else{
+                throw new Error('不支持的时间戳减法');
+            }
+        }
+        if(isDate(x))
+        {
+            if(isDatestamp(y)){
+                const newDate = new Date(x);
+                newDate.setFullYear(newDate.getFullYear() - y.year);
+                newDate.setMonth(newDate.getMonth() - y.month);
+                // 减去毫秒
+                newDate.setMilliseconds(newDate.getMilliseconds() - y.timestamp);
+                return newDate;
+            }else if(isDate(y)){
+                const timestamp = x.getTime() - y.getTime();
+                return new Datestamp(0, 0, timestamp);
+            }else{
+                throw new Error('不支持的日期减法');
+            }
+        }
+        return x - y;
     },
 
-    // 判断是否是Datestamp
-    isDatestamp(value) {
-        return value instanceof Datestamp;
+    multiply(x, y) {
+        if (typeof x === 'bigint' || typeof y === 'bigint') {
+            return BigInt(x) * BigInt(y);
+        }
+        return x * y;
     },
+
+    divide(x, y) {
+        if (y === 0 || y === 0n) {
+            throw new Error('除数不能为零');
+        }
+        if (typeof x === 'bigint' || typeof y === 'bigint') {
+            let mod = BigInt(x) % BigInt(y);
+            if (mod !== 0n) {
+                throw new Error('大数除法暂不支持, 请使用整除(//)运算符');
+            }
+            return BigInt(x) / BigInt(y);
+        }
+        return x / y;
+    },
+
+    // 整除
+    floorDivide(x, y) {
+        if (typeof x === 'bigint' || typeof y === 'bigint') {
+            return BigInt(x) / BigInt(y);
+        }
+        return Math.floor(x / y);
+    },
+
+    // 取模
+    mod(x, y) {
+        if (typeof x === 'bigint' || typeof y === 'bigint') {
+            return BigInt(x) % BigInt(y);
+        }
+        return x % y;
+    },
+
+    // 幂运算
+    pow(x, y) {
+        return Math.pow(x.toString(), y.toString());
+    },
+
 
     // 字符串转数字，用于输入时处理
     toNumber(value) {
@@ -175,6 +316,16 @@ const Utils = {
         return degrees;
     },
 
+    // 日期转时间戳
+    dateToTimestamp(x) {
+        const date = new Date(x);
+        if (isNaN(date.getTime())) {
+            throw new Error(`无法将${x}转成日期`);
+        }
+        return date.getTime();
+    },
+
+
     // 时间戳格式化成日期字符串
     formatDate(x) {
         const date = new Date(x);
@@ -184,9 +335,117 @@ const Utils = {
         const hours = date.getHours();
         const minutes = date.getMinutes();
         const seconds = date.getSeconds();
-        
+
+        // 只返回日期
+        if(hours === 0 && minutes === 0 && seconds === 0) {
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        }
+
         return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
+    },
+
+    // 时间戳可视化成时间差
+    formatDateStamp(x) {
+        if(!isDatestamp(x)){
+            throw new Error(`> #: 只能可视化时间戳类型`);
+        }
+
+        const ms = x.timestamp;
+
+        const seconds = Math.floor((ms / 1000) % 60);
+        const minutes = Math.floor((ms / (1000 * 60)) % 60);
+        const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+        const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+        
+        const ts_str = `${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
+
+        if(x.year === 0 && x.month === 0)
+        {
+            return ts_str;
+        }
+
+        return `${x.year}年${x.month}月 + ${ts_str}`;
+    },
+
+    formatDateStamp2Week(x) {
+        if(!isDatestamp(x)){
+            throw new Error(`> #w: 只能可视化时间戳类型`);
+        }
+        const ms = x.timestamp;
+        weeks = ms / (1000 * 60 * 60 * 24 * 7);
+        const ts_str =  weeks.toFixed(2) + '周';
+
+        if(x.year === 0 && x.month === 0)
+        {
+            return ts_str;
+        }
+
+        return `${x.year}年${x.month}月 + ${ts_str}`;
+    },
+
+    formatDateStamp2Day(x) {
+        if(!isDatestamp(x)){
+            throw new Error(`> #d: 只能可视化时间戳类型`);
+        }
+        const ms = x.timestamp;
+        days = ms / (1000 * 60 * 60 * 24);
+        const ts_str =  days.toFixed(2) + '天';
+
+        if(x.year === 0 && x.month === 0)
+        {
+            return ts_str;
+        }
+
+        return `${x.year}年${x.month}月 + ${ts_str}`;
+    },
+
+    formatDateStamp2Hour(x) {
+        if(!isDatestamp(x)){
+            throw new Error(`> #h: 只能可视化时间戳类型`);
+        }
+        const ms = x.timestamp;
+        hours = ms / (1000 * 60 * 60);
+        const ts_str =  hours.toFixed(2) + '小时';
+
+        if(x.year === 0 && x.month === 0)
+        {
+            return ts_str;
+        }
+
+        return `${x.year}年${x.month}月 + ${ts_str}`;
+    },
+
+    formatDateStamp2Minute(x) {
+        if(!isDatestamp(x)){
+            throw new Error(`> #m: 只能可视化时间戳类型`);
+        }
+        const ms = x.timestamp;
+        minutes = ms / (1000 * 60);
+        const ts_str =  minutes.toFixed(2) + '分钟';
+
+        if(x.year === 0 && x.month === 0)
+        {
+            return ts_str;
+        }
+
+        return `${x.year}年${x.month}月 + ${ts_str}`;
+    },
+
+    formatDateStamp2Second(x) {
+        if(!isDatestamp(x)){
+            throw new Error(`> #s: 只能可视化时间戳类型`);
+        }
+        const ms = x.timestamp;
+        seconds = ms / 1000;
+        const ts_str =  seconds.toFixed(2) + '秒';
+
+        if(x.year === 0 && x.month === 0)
+        {
+            return ts_str;
+        }
+
+        return `${x.year}年${x.month}月 + ${ts_str}`;
+    },
 };
 
 

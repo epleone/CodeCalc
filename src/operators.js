@@ -26,18 +26,7 @@ export const OPERATORS = {
     '+': {
         precedence: 2,
         args: 2,
-        func: (x, y) => {
-            if (typeof x === 'string' || typeof y === 'string') {
-                return x.toString() + y.toString();
-            }
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) + BigInt(y);
-            }
-            if (typeof x !== typeof y) {
-                throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-            }
-            return x + y;
-        },
+        func: Utils.add,
         acceptAny: true, // 支持任何类型输入，不转换类型
         position: 'infix',
         description: '加法'
@@ -45,43 +34,22 @@ export const OPERATORS = {
     '-': {
         precedence: 2,
         args: 2,
-        func: (x, y) => {
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) - BigInt(y);
-            }
-            return x - y;
-        },
+        func: Utils.subtract,
+        acceptAny: true,
         position: 'infix',
         description: '减法'
     },
     '*': {
         precedence: 4,
         args: 2,
-        func: (x, y) => {
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) * BigInt(y);
-            }
-            return x * y;
-        },
+        func: Utils.multiply,
         position: 'infix',
         description: '乘法'
     },
     '/': {
         precedence: 4,
         args: 2,
-        func: (x, y) => {
-            if (y === 0 || y === 0n) {
-                throw new Error('除数不能为零');
-            }
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                let mod = BigInt(x) % BigInt(y);
-                if (mod !== 0n) {
-                    throw new Error('大数除法暂不支持, 请使用整除(//)运算符');
-                }
-                return BigInt(x) / BigInt(y);
-            }
-            return x / y;
-        },
+        func: Utils.divide,
         position: 'infix',
         description: '除法'
     },
@@ -90,31 +58,21 @@ export const OPERATORS = {
     '//': {
         precedence: 4,
         args: 2,
-        func: (x, y) => {
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) / BigInt(y);
-            }
-            return Math.floor(x / y);
-        },
+        func: Utils.floorDivide,
         position: 'infix',
         description: '整除'
     },
     '%': {
         precedence: 4,
         args: 2,
-        func: (x, y) => {
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) % BigInt(y);
-            }
-            return x % y;
-        },
+        func: Utils.mod,
         position: 'infix',
         description: '取模'
     },
     '**': {
         precedence: 7,
         args: 2,
-        func: (x, y) => Math.pow(x.toString(), y.toString()),
+        func: Utils.pow,
         position: 'infix',
         description: '幂运算'
     },
@@ -313,110 +271,39 @@ export const OPERATORS = {
         isCompoundAssignment: true
     },
 
-    // 日期操作符
+    // 日期操作符, 返回日期对象的时间戳
     '@': {
         precedence: 1,
         args: 1,
-        func: x => {
-            const date = new Date(x);
-            if (isNaN(date.getTime())) {
-                throw new Error(`无法将字符串${x}转日期`);
-            }
-            return date.getTime();
-        },
+        func: Utils.dateToTimestamp,
         position: 'prefix',
-        acceptAny: true, // 支持任何类型输入，不转换类型
-        description: '字符串转日期'
-    },
-    '@+': {
-        precedence: 0,
-        args: 2,
-        acceptAny: true,
-        func: (x, y) => {
-            //判断y是否是字典
-            if (typeof y === 'object') {
-                const date = new Date(x);
-                if (y.hasOwnProperty('months') || y.hasOwnProperty('months') || y.hasOwnProperty('days')){
-                    const years = y.hasOwnProperty('years') ? y.years : 0;
-                    const months = y.hasOwnProperty('months') ? y.months : 0;
-                    const days = y.hasOwnProperty('days') ? y.days : 0;
-                    date.setFullYear(date.getFullYear() + years);
-                    date.setMonth(date.getMonth() + months);
-                    date.setDate(date.getDate() + days);
-                    return Utils.formatDate(date.getTime());
-                
-                }else{
-                    throw new Error('日期加法：传入不支持的参数');
-                }
-            } else {
-                // x, y 都是时间戳
-                const timestamp = Number(x) + Number(y);
-                return Utils.formatDate(timestamp);
-            }
-            
-        },
-        position: 'infix',
-        description: '日期加法'
-    },
-    '@-': {
-        precedence: 0,
-        args: 2,
-        acceptAny: true,
-        func: (x, y) => {
-            //判断y是否是字典
-            if (typeof y === 'object') {
-                const date = new Date(x);
-                if (y.hasOwnProperty('months') || y.hasOwnProperty('months') || y.hasOwnProperty('days')){
-                    const years = y.hasOwnProperty('years') ? y.years : 0;
-                    const months = y.hasOwnProperty('months') ? y.months : 0;
-                    const days = y.hasOwnProperty('days') ? y.days : 0;
-                    date.setFullYear(date.getFullYear() - years);
-                    date.setMonth(date.getMonth() - months);
-                    date.setDate(date.getDate() - days);
-                    return Utils.formatDate(date.getTime());
-                }else{
-                    throw new Error('日期减法：传入不支持的参数');
-                }
-            } else {
-                // x, y 都是时间戳
-                const timestamp = Number(x) - Number(y);
-                return Utils.formatDate(timestamp);
-            }
-        },
-        position: 'infix',
-        description: '日期减法'
+        acceptAny: true,               // 支持任何类型输入，不转换类型
+        description: '日期转时间戳'     //输出时间戳
     },
     '>@': {
         precedence: 0,
         args: 1,
-        func: x => Utils.formatDate(x),
+        func: Utils.formatDate,
         position: 'postfix',
-        description: '日期可视化'
+        acceptAny: true,
+        description: '时间戳可视化成日期'
     },
 
-    // 时间操作符
+    // 时间戳可视化操作符
     '>#': {
         precedence: 0,
         args: 1,
-        func: ms =>  {
-            const seconds = Math.floor((ms / 1000) % 60);
-            const minutes = Math.floor((ms / (1000 * 60)) % 60);
-            const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-            const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-        
-            return `${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
-        },
+        func: Utils.formatDateStamp,
         position: 'postfix',
+        acceptAny: true,
         description: '时间差可视化'
     },
     '>#week': {
         precedence: 0,
         args: 1,
-        func: ms => {
-            const weeks = ms / (1000 * 60 * 60 * 24 * 7);
-            return weeks.toFixed(2) + '周';
-        },
+        func: Utils.formatDateStamp2Week,
         position: 'postfix',
+        acceptAny: true,
         description: '时间差转成周数'
     },
     '>#w': {
@@ -426,11 +313,9 @@ export const OPERATORS = {
     '>#day': {
         precedence: 0,
         args: 1,
-        func: ms => {
-            const days = ms / (1000 * 60 * 60 * 24);
-            return days.toFixed(2) + '天';
-        },
+        func: Utils.formatDateStamp2Day,
         position: 'postfix',
+        acceptAny: true,
         description: '时间差转成天数'
     },
     '>#d': {
@@ -440,11 +325,9 @@ export const OPERATORS = {
     '>#hour': {
         precedence: 0,
         args: 1,
-        func: ms => {
-            const hours = ms / (1000 * 60 * 60);
-            return hours.toFixed(2) + '小时';
-        },
+        func: Utils.formatDateStamp2Hour,
         position: 'postfix',
+        acceptAny: true,
         description: '时间差转成小时数'
     },
     '>#h': {
@@ -454,11 +337,9 @@ export const OPERATORS = {
     '>#minute': {
         precedence: 0,
         args: 1,
-        func: ms => {
-            const minutes = ms / (1000 * 60);
-            return minutes.toFixed(2) + '分钟';
-        },
+        func: Utils.formatDateStamp2Minute,
         position: 'postfix',
+        acceptAny: true,
         description: '时间差转成分钟数'
     },
     '>#m': {
@@ -468,11 +349,9 @@ export const OPERATORS = {
     '>#second': {
         precedence: 0,
         args: 1,
-        func: ms => {
-            const seconds = ms / 1000;
-            return seconds.toFixed(2) + '秒';
-        },
+        func: Utils.formatDateStamp2Second,
         position: 'postfix',
+        acceptAny: true,
         description: '时间差转成秒数'
     },
     '>#s': {

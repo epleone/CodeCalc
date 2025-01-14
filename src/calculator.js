@@ -13,10 +13,10 @@ import {
     checkVariableName,
     processStringLiterals,
     processDate,
-    processDuration,
+    processTimestamp,
 } from './preprocessUtils.js';
 
-import Utils from './utils.js';
+import { Utils } from './utils.js';
 
 /**
  * 代码标准：
@@ -67,9 +67,9 @@ const Calculator = (function() {
         }
 
         // 先处理时间间隔
-        console.log('processDuration 1: ', normalized);
-        expr = processDuration(normalized);
-        console.log('processDuration 2: ', expr);
+        console.log('processTimestamp 1: ', normalized);
+        expr = processTimestamp(normalized);
+        console.log('processTimestamp 2: ', expr);
         
         // 清除cc 临时系统变量
         ccVariables.clear();
@@ -654,6 +654,27 @@ const Calculator = (function() {
 
     // 5. 格式化输出模块, 添加额外提醒信息info
     function formatOutput(result, ast, operators, functions) {
+
+        // 打印result的类型
+        // console.log('result的类型: ', typeof result);
+        result = Utils.formatToDisplayString(result);
+        
+        // 如果result是对象，则添加info 
+        if(typeof result === 'object' && result !== null)
+        {
+            if(result.info)
+            {
+                addInfo(result.info);
+            }
+
+            if(result.warning)
+            {
+                addWarning(result.warning);
+            }
+            
+            result = result.value;
+        }
+
         // 防御性检查
         if (!ast) {
             return { 

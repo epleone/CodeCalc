@@ -248,23 +248,61 @@ function parseDate(dateString, format) {
 
 // 处理日期, 保存到变量字典中
 function processDate(expr) {
-    // 添加日期常量计数器
     let dateConstantCounter = 0;
 
-    // 匹配日期格式
+    // 修改日期格式的正则表达式，使用更严格的匹配
     const datePatterns = [
-        { regex: /@\s*(\d{4}-\d{1,2}-\d{1,2}\s+\d{2}:\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm:ss' },
-        { regex: /@\s*(\d{4}-\d{1,2}-\d{1,2}\s+\d{2}:\d{2})/, format: 'YYYY-MM-DD HH:mm' },
-        { regex: /@\s*(\d{4}-\d{1,2}-\d{1,2})/, format: 'YYYY-MM-DD' },
-        { regex: /@\s*(\d{1,2}-\d{1,2}\s+\d{2}:\d{2}:\d{2})/, format: 'MM-DD HH:mm:ss' },
-        { regex: /@\s*(\d{1,2}-\d{1,2}\s+\d{2}:\d{2})/, format: 'MM-DD HH:mm' },
-        { regex: /@\s*(\d{4}-\d{2})/, format: 'YYYY-MM' },
-        { regex: /@\s*(\d{1,2}-\d{1,2})/, format: 'MM-DD' },
-        { regex: /@\s*(\d{4})/, format: 'YYYY' },
-        { regex: /#\s*(\d{2}:\d{2}:\d{2})/, format: 'HH:mm:ss' },
-        { regex: /#\s*(\d{2}:\d{2})/, format: 'HH:mm' },
-        { regex: /@\s*now/, format: 'now' },
-        { regex: /@\s*today/, format: 'today' },
+        // 先匹配最长的格式
+        { 
+            regex: /(@)\s*(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/,
+            format: 'YYYY-MM-DD HH:mm:ss',
+            extract: m => `${m[2]}-${m[3].padStart(2,'0')}-${m[4].padStart(2,'0')} ${m[5]}:${m[6]}:${m[7]}`
+        },
+        { 
+            regex: /(@)\s*(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2})/,
+            format: 'YYYY-MM-DD HH:mm',
+            extract: m => `${m[2]}-${m[3].padStart(2,'0')}-${m[4].padStart(2,'0')} ${m[5]}:${m[6]}`
+        },
+        { 
+            regex: /(@)\s*(\d{4})-(\d{1,2})-(\d{1,2})/,
+            format: 'YYYY-MM-DD',
+            extract: m => `${m[2]}-${m[3].padStart(2,'0')}-${m[4].padStart(2,'0')}`
+        },
+        { 
+            regex: /(@)\s*(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/,
+            format: 'MM-DD HH:mm:ss',
+            extract: m => `${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')} ${m[4]}:${m[5]}:${m[6]}`
+        },
+        { 
+            regex: /(@)\s*(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2})/,
+            format: 'MM-DD HH:mm',
+            extract: m => `${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')} ${m[4]}:${m[5]}`
+        },
+        { 
+            regex: /(@)\s*(\d{4})-(\d{1,2})/,
+            format: 'YYYY-MM',
+            extract: m => `${m[2]}-${m[3].padStart(2,'0')}`
+        },
+        { 
+            regex: /(@)\s*(\d{1,2})-(\d{1,2})/,
+            format: 'MM-DD',
+            extract: m => `${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`
+        },
+        { 
+            regex: /(@)\s*(\d{4})/,
+            format: 'YYYY',
+            extract: m => m[2]
+        },
+        { 
+            regex: /(@)\s*(now)/,
+            format: 'now',
+            extract: m => m[2]
+        },
+        { 
+            regex: /(@)\s*(today)/,
+            format: 'today',
+            extract: m => m[2]
+        }
     ];
 
     // 继续处理直到没有更多匹配
@@ -272,57 +310,29 @@ function processDate(expr) {
     do {
         lastExpr = expr;
         // 遍历所有模式并替换为日期常量标识符
-        for (const { regex, format } of datePatterns) {
+        for (const { regex, format, extract } of datePatterns) {
             const match = regex.exec(expr);
             if (match) {
-                const [fullMatch, dateString] = match;
+                const dateString = extract(match);
                 const date = parseDate(dateString, format);
                 if (date) {
                     // 生成日期常量标识符
                     const constName = `_cc_date_i${dateConstantCounter++}`;
-                    // 将时间戳保存到变量字典中
-                    ccVariables.set(constName, date.getTime());
-                    // 只替换当前匹配到的日期
+                    // 将date对象保存到变量字典中
+                    ccVariables.set(constName, date);
+                    // 替换整个匹配
                     expr = expr.substring(0, match.index) + 
                            constName + 
-                           expr.substring(match.index + fullMatch.length);
-                    break; // 找到一个匹配后跳出当前循环，重新开始搜索
+                           expr.substring(match.index + match[0].length);
+                    break;
                 }
             }
         }
-    } while (expr !== lastExpr); // 当没有任何改变时停止循环
+    } while (expr !== lastExpr);
 
     return expr;
 }
 
-
-// 写一个函数，处理 #1y2m3d 这种类型，转换成#y_m_d(1, 2, 3), 年和月必须存在一个
-function processYMD(expr) {
-    let processed = expr;
-    
-    // 匹配模式：#数字y数字m数字d，所有数字部分都是可选的
-    const ymdPattern = /#\s*(\d+y)?(\d+m)?(\d+d)?/g;
-    
-    processed = processed.replace(ymdPattern, (match) => {
-        // 如果只是单独的#，则不处理
-        if (match === '#') return match;
-        
-        // 提取年月日的数值
-        const y = match.match(/(\d+)y/)?.[1] || '0';
-        const m = match.match(/(\d+)m/)?.[1] || '0';
-        const d = match.match(/(\d+)d/)?.[1] || '0';
-        
-        // 检查是否至少有年或月
-        if (y === '0' && m === '0') {
-            return match; // 如果既没有年也没有月，保持原样不变
-        }
-        
-        // 转换成函数调用格式
-        return `#y_m_d(${y}, ${m}, ${d})`;
-    });
-    
-    return processed;
-}
 
 // 写一个函数，处理 #1y2m3w4d5h6mm7s8ms 这种类型, 转换成 #timestamp(1, 2, 3, 4, 5, 6, 7, 8)
 // 年匹配 y,year,years
@@ -394,79 +404,15 @@ function processTimestamp(expr) {
 }
 
 
-// 处理时间间隔, 将语法糖转成函数
-function processDuration(expr) {
-    // 定义所有支持的时间单位，按长度降序排序以避免部分匹配问题
-    const timeUnits = {
-        'milliseconds': 'milliseconds',
-        'millisecond': 'milliseconds', 
-        'ms': 'milliseconds',
-        'minutes': 'minutes',
-        'minute': 'minutes',
-        'mins': 'minutes',   // min 会和函数名冲突
-        'mi': 'minutes',
-        'seconds': 'seconds', 
-        'second': 'seconds',
-        's': 'seconds',
-        'weeks': 'weeks',
-        'week': 'weeks',
-        'w': 'weeks',
-        'hours': 'hours',
-        'hour': 'hours', 
-        'h': 'hours',
-        'days': 'days',
-        'day': 'days',
-        'd': 'days',
-    };
-    
-    let processed = expr;
-
-    // 将时间单位按长度降序排序，避免短单位错误匹配长单位的一部分
-    const sortedUnits = Object.entries(timeUnits).sort((a, b) => b[0].length - a[0].length);
-    
-    // 使用一个函数来处理所有的替换
-    let lastProcessed;
-    do {
-        lastProcessed = processed;
-        
-        // 第一步：处理带括号格式
-        for (const [shortUnit, fullUnit] of sortedUnits) {
-            // 简单匹配 #(任意内容)unit 格式
-            const pattern = new RegExp(`#\\s*\\(([^#]*)\\)\\s*${shortUnit}\\b(?![a-zA-Z])`, 'g');
-            
-            // 将 #(...)unit 替换为 #fullUnit(...)
-            processed = processed.replace(pattern, (match, content) => {
-                return `#${fullUnit}((${content}))`;
-            });
-        }
-        
-        // 第二步：处理无括号格式
-        for (const [shortUnit, fullUnit] of sortedUnits) {
-            // 匹配 #数字unit 格式的正则表达式
-            const noParenPattern = new RegExp(`#\\s*(\\d+(?:\\.\\d+)?)\\s*${shortUnit}\\b(?![a-zA-Z])`, 'g');
-            
-            // 将 #数字unit 替换为 #fullUnit(数字)
-            processed = processed.replace(noParenPattern, (match, number) => {
-                return `#${fullUnit}((${number}))`;
-            });
-        }
-    } while (processed !== lastProcessed); // 继续处理直到没有更多变化
-    
-    // 最后处理年月日语法糖
-    processed = processYMD(processed);
-
-    return processed;
+export {
+    ccVariables,
+    normalizeSymbols,
+    checkParentheses,
+    checkVariableName,
+    processStringLiterals,
+    processDate,
+    processTimestamp
 }
-
-// export {
-//     ccVariables,
-//     normalizeSymbols,
-//     checkParentheses,
-//     checkVariableName,
-//     processStringLiterals,
-//     processDate,
-//     processDuration
-// }
 
 
 // 一个测试函数，测试processTimestamp
@@ -499,6 +445,9 @@ function testProcessTimestamp() {
         // 多个表达式混合
         '#1y2m3w4d5h6mm7s8ms + #1y2m3w',
         '#2m12h + #1y2m3w',
+        '#(7)w + #7d + #(11)h',
+        '#2m + #1d',
+        '#2m - #1d', // 会吞掉负号，能否支持负号#-1d？
 
         // 困难测试
         '#max(1,3)m min(1,3)mm',
@@ -524,4 +473,6 @@ function testProcessTimestamp() {
     });
 }
 
-testProcessTimestamp();
+if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+    testProcessTimestamp();
+}
