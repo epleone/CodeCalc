@@ -342,7 +342,7 @@ const Utils = {
     // 时间戳格式化成日期字符串
     formatDate(x) {
         if(isDatestamp(x)){
-            throw new Error(`无法将时间戳转成日期, 请使用"> #"`);
+            throw new Error(`无法将时间间隔转成日期, 请使用"> #"`);
         }
 
         const date = new Date(x);
@@ -368,7 +368,7 @@ const Utils = {
     // 时间戳可视化成时间差
     formatDateStamp(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #: 只能可视化时间戳类型`);
+            throw new Error(`> #: 只能可视化时间间隔类型`);
         }
 
         const ms = x.timestamp;
@@ -390,7 +390,7 @@ const Utils = {
 
     formatDateStamp2Week(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #w: 只能可视化时间戳类型`);
+            throw new Error(`> #w: 只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const weeks = ms / (1000 * 60 * 60 * 24 * 7);
@@ -406,7 +406,7 @@ const Utils = {
 
     formatDateStamp2Day(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #d: 只能可视化时间戳类型`);
+            throw new Error(`> #d: 只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const days = ms / (1000 * 60 * 60 * 24);
@@ -422,7 +422,7 @@ const Utils = {
 
     formatDateStamp2Hour(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #h: 只能可视化时间戳类型`);
+            throw new Error(`> #h: 只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const hours = ms / (1000 * 60 * 60);
@@ -438,7 +438,7 @@ const Utils = {
 
     formatDateStamp2Minute(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #m: 只能可视化时间戳类型`);
+            throw new Error(`> #m: 只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const minutes = ms / (1000 * 60);
@@ -454,7 +454,7 @@ const Utils = {
 
     formatDateStamp2Second(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #s: 只能可视化时间戳类型`);
+            throw new Error(`> #s: 只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const seconds = ms / 1000;
