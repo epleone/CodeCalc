@@ -611,8 +611,8 @@ export const FUNCTIONS = {
             // year和month必须是非负整数
             const years = Number(year);
             const months = Number(month);
-            if (years < 0 || months < 0) {
-                throw new Error(`年:${years}月:${months}必须是非负整数`);
+            if (!Number.isInteger(years) || !Number.isInteger(months)) {
+                throw new Error(`年:${years} 月:${months} 必须是整数`);
             }
 
             // week, day, hour, minute, second, millisecond 求和，单位ms,

@@ -1,4 +1,5 @@
 # CodeCalc 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 一个支持代码风格计算的 utools 插件。
 

@@ -65,20 +65,30 @@ const Calculator = (function() {
         if (normalized !== expr) {
             addWarning(`格式化: "${normalized}"`);
         }
-
-        // 先处理时间间隔
-        console.log('processTimestamp 1: ', normalized);
-        expr = processTimestamp(normalized);
-        console.log('processTimestamp 2: ', expr);
         
+        expr = normalized;
+
         // 清除cc 临时系统变量
         ccVariables.clear();
 
-        // 再处理日期
+        // 处理日期
+        console.log('processDate 1: ', expr);
         expr = processDate(expr);
+        console.log('processDate 2: ', expr);
 
-        // 先处理字符串字面量
+        // 处理时间间隔
+        console.log('processTimestamp 1: ', expr);
+        expr = processTimestamp(expr);
+        console.log('processTimestamp 2: ', expr);
+
+        // 处理字符串字面量
         expr = processStringLiterals(expr);
+        
+        // 在空格不影响语义之后，清除空格
+        expr = expr.replace(/\s/g, '');
+
+        // TODO: 打印ccVariables
+        // console.log('ccVariables: ', ccVariables);
 
         // ccVariables添加到variables
         for (const [key, value] of ccVariables) {
@@ -114,7 +124,6 @@ const Calculator = (function() {
     function tokenize(expr, operators, functions, constants) {
         const tokens = [];
         let i = 0;
-        expr = expr.replace(/\s/g, '');
 
         // 使用新的 DELIMITERS 和 SEPARATORS
         const delimiters = new Set(Object.keys(DELIMITERS));

@@ -1,3 +1,5 @@
+import { Datestamp } from './utils.js';
+
 // 添加cc临时变量字典
 const ccVariables = new Map();
 
@@ -154,25 +156,30 @@ function checkVariableName(varName, operators, functions, constants) {
 function processStringLiterals(expr) {
     // 将计数器移到函数内部
     let stringConstantCounter = 0;
-    
-    // 匹配字符串字面量的正则表达式
-    const stringLiteralRegex = /(['"])((?:\\.|[^\\])*?)\1/g;
-    
-    // 替换所有字符串字面量为字符串常量标识符
-    const processed = expr.replace(stringLiteralRegex, (match, quote, content) => {
-        // 修改生成的标识符前缀
+
+    // 先处理 str(xxx) 格式
+    const strFunctionRegex = /str\s*\(((?:[^)(]|\([^)(]*\))*)\)/g;
+    let processed = expr.replace(strFunctionRegex, (match, content) => {
         const constName = `_cc_str_i${stringConstantCounter++}`;
-        
-        // 将字符串内容保存到变量字典中
-        // 处理转义字符
-        const processedContent = content.replace(/\\(['"\\])/g, '$1');
-        ccVariables.set(constName, processedContent);
-        
+        // 注意：这里不需要处理转义字符，因为内容将被直接作为字符串
+        ccVariables.set(constName, content.trim());
         return constName;
     });
 
-    // 检查是否有未闭合的字符串
-    const unclosedQuoteRegex = /(['"])[^'"]*$/;
+    // 匹配字符串字面量的正则表达式，添加对反引号的支持
+    const stringLiteralRegex = /(['"`])((?:\\.|[^\\])*?)\1/g;
+
+    // 再处理普通字符串字面量
+    processed = processed.replace(stringLiteralRegex, (match, quote, content) => {
+        const constName = `_cc_str_i${stringConstantCounter++}`;
+        // 处理转义字符，添加对反引号的支持
+        const processedContent = content.replace(/\\(['"\\`])/g, '$1');
+        ccVariables.set(constName, processedContent);
+        return constName;
+    });
+
+    // 检查是否有未闭合的字符串，添加对反引号的检查
+    const unclosedQuoteRegex = /['"`][^'"`]*$/;
     if (unclosedQuoteRegex.test(processed)) {
         throw new Error('未闭合的字符串字面量');
     }
@@ -224,19 +231,19 @@ function parseDate(dateString, format) {
             date = new Date(dateString + '-01-01T00:00:00');
             break;
         case 'HH:mm:ss':
-            // 只转换时分秒为时间戳,不考虑日期
             {
                 const [h, m, s] = dateString.split(':').map(Number);
                 date = new Date(0);
                 date.setUTCHours(h, m, s);
+                return new Datestamp(0, 0, date.getTime()); // 转换为时间戳并返回
             }
             break;
         case 'HH:mm':
-            // 只转换时分秒为时间戳,不考虑日期
             {
                 const [h, m] = dateString.split(':').map(Number);
                 date = new Date(0);
                 date.setUTCHours(h, m, 0);
+                return new Datestamp(0, 0, date.getTime()); // 转换为时间戳并返回
             }
             break;
         default:
@@ -282,6 +289,16 @@ function processDate(expr) {
             regex: /(@)\s*(\d{4})-(\d{1,2})/,
             format: 'YYYY-MM',
             extract: m => `${m[2]}-${m[3].padStart(2,'0')}`
+        },
+        { 
+            regex: /(#)\s*(\d{1,2}):(\d{1,2}):(\d{1,2})/,
+            format: 'HH:mm:ss',
+            extract: m => `${m[2].padStart(2,'0')}:${m[3].padStart(2,'0')}:${m[4].padStart(2,'0')}`
+        },
+        { 
+            regex: /(#)\s*(\d{1,2}):(\d{1,2})/,
+            format: 'HH:mm',
+            extract: m => `${m[2].padStart(2,'0')}:${m[3].padStart(2,'0')}`
         },
         { 
             regex: /(@)\s*(\d{1,2})-(\d{1,2})/,
