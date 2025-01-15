@@ -318,18 +318,21 @@
     color: #aaa;
 }
 
+/* 修改悬停效果，确保颜色变化优先级更高 */
 .snapshot-toggle-btn:hover .snapshot-icon {
-    color: #4CAF50;
+    color: #4CAF50 !important; /* 添加 !important 来确保颜色变化优先级 */
     transform: rotate(-360deg) scale(1.15);
 }
 
+/* 面板打开时的图标样式 */
 body #snapshot-panel.show ~ .snapshot-toggle-btn .snapshot-icon {
     color: #4CAF50;
     transform: rotate(-360deg);
 }
 
+/* 面板打开时的悬停效果 */
 body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
-    color: #f44336 !important;
+    color: #f44336 !important; /* 添加 !important 来确保颜色变化优先级 */
     transform: rotate(-720deg) scale(1.15);
 }
 

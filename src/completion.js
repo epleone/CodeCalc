@@ -273,6 +273,14 @@ function shouldTriggerCompletion(input, key) {
         return false;
     }
     
+    const cursorPos = input.selectionStart;
+    const textBeforeCursor = input.value.substring(0, cursorPos);
+    
+    // 如果光标前有#，不触发任何补全
+    if (textBeforeCursor.includes('#')) {
+        return false;
+    }
+    
     // 只在输入字母或点号时触发补全
     return key.match(/[a-zA-Z]/) || key === '.';
 }
@@ -286,6 +294,11 @@ function checkCompletion(input) {
 
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
+
+    // 如果光标前有#，不进行任何补全
+    if (textBeforeCursor.includes('#')) {
+        return;
+    }
 
     // 检查是否是属性函数补全
     const dotMatch = textBeforeCursor.match(/\.([a-zA-Z]*)$/);

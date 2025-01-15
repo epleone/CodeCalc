@@ -11,7 +11,7 @@
     max-width: 240px;
     max-height: 160px;
     overflow-y: auto;
-    z-index: 1000;
+    z-index: 9999;
     opacity: 0;
     transform: translateY(-2px);
     animation: fadeIn 0.15s ease forwards;
@@ -156,7 +156,6 @@
 /* 确保补全框在其他内容之上的层级控制 */
 .expression-line {
     position: relative;
-    z-index: 1;
 }
 
 .expression-line:hover {
