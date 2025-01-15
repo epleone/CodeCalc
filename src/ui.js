@@ -502,9 +502,33 @@ function clearAll() {
     const container = document.getElementById('expression-container');
     
     // 在清空之前保存历史记录
-    snapshot.takeSnapshot(false);  // 传入 false 表示这是一个历史记录而不是快照
+    snapshot.takeSnapshot(false);
     
-    // 不使用克隆，而是创建新的行
+    // 添加快照图标动画效果
+    const snapshotButton = document.querySelector('.snapshot-toggle-btn');
+    if (snapshotButton) {
+        const snapshotIcon = snapshotButton.querySelector('.snapshot-icon');
+        if (snapshotIcon) {
+            // 设置动画样式
+            snapshotIcon.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            snapshotIcon.style.color = '#4CAF50';
+            snapshotIcon.style.transform = 'rotate(-360deg) scale(1.15)';
+            
+            // 使用 Promise 来处理异步动画
+            const animationPromise = new Promise(resolve => {
+                setTimeout(() => {
+                    snapshotIcon.style.color = '#aaa';
+                    snapshotIcon.style.transform = '';
+                    setTimeout(() => {
+                        snapshotIcon.style.transition = '';
+                        resolve();
+                    }, 600);
+                }, 600);
+            });
+        }
+    }
+    
+    // 清空和重置UI的代码...
     const newLine = document.createElement('div');
     newLine.className = 'expression-line';
     newLine.innerHTML = `
