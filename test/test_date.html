@@ -328,26 +328,39 @@
             // 示例部分保持不变
             const exampleGroups = {
                 '日期格式': [
-                    { expr: "@2020-03-15 14:30:00", desc: "完整日期时间" },
-                    { expr: "@2020-03-15 14:30", desc: "日期时分" },
-                    { expr: "@2020-03-15", desc: "仅日期" },
-                    { expr: "@03-15 14:30:00", desc: "月日时分秒" },
-                    { expr: "@03-15 14:30", desc: "月日时分" },
-                    { expr: "@2020-03", desc: "年月" },
-                    { expr: "@03-15", desc: "月日" },
-                    { expr: "@2020", desc: "年份" },
-                    { expr: "@14:30:00", desc: "时分秒" },
-                    { expr: "@14:30", desc: "时分" },
                     { expr: "@now", desc: "当前时间" },
                     { expr: "@today", desc: "今天" },
                     { expr: "@now - #7d > @", desc: "当前时间减去7天(无括号)" },
+                    { expr: "@now + #1y > @", desc: "当前时间加一年" },
+                    { expr: "@now - #1y > @", desc: "当前时间减一年" },
+                    { expr: "@today + #1m > @", desc: "今天加一个月" },
+                    { expr: "@today - #1m > @", desc: "今天减一个月" }
                 ],
                 
                 '日期计算': [
-                    { expr: "@2077-03-15 - @1990-03-14 > #", desc: "日期相减得到毫秒数" },
-                    { expr: "@now - @today > #", desc: "当前时间减去今天" },
-                    { expr: "@2025-03-15 + 86400000 > @", desc: "日期加上毫秒数" },
-                    { expr: "@today + 86400000 > @", desc: "今天加上一天的毫秒数" }
+                    { expr: "@2020-03-15 14:30:00", desc: "完整日期时间", expect: "1584253800000" },
+                    { expr: "@2020-03-15 14:30", desc: "日期时分", expect: "1584253800000" },
+                    { expr: "@2020-03-15", desc: "仅日期", expect: "1584201600000" },
+                    { expr: "@03-15 14:30:00", desc: "月日时分秒", expect: "1742020200000" },
+                    { expr: "@03-15 14:30", desc: "月日时分", expect: "1742020200000" },
+                    { expr: "@2020-03", desc: "年月", expect: "1582992000000 " },
+                    { expr: "@03-15", desc: "月日", expect: "1741968000000" },
+                    { expr: "@2020", desc: "年份", expect: "1577808000000" },
+                    { expr: "#17:30:00", desc: "时分秒", expect: "63000000ms" },
+                    { expr: "#11:30", desc: "时分", expect: "41400000ms" },
+                    { expr: "@2077-03-15 - @1990-03-14 > #", desc: "日期相减得到毫秒数", expect: "31778天 0小时 0分钟 0秒" },
+                    { expr: "@2077-03-15 + #1y2m3d > @", desc: "日期加上年月日", expect: "2078/05/18" },
+                    { expr: "@2077-03-15 - #1y2m3d > @", desc: "日期减去年月日", expect: "2076-01-12" },
+                    { expr: "@2077-03-15 14:30:00 + #12h30mm > @", desc: "日期加上时分", expect: "2077-03-15 14:30:00" },
+                    { expr: "@2077-03-15 14:30:00 - #12h30mm > @", desc: "日期减去时分", expect: "2077-03-15 14:30:00" },
+                    { expr: "@2077-03-15 + @2077-1-1", desc: "日期减去时分", error: true },
+                    { expr: "#3w4d5h6mm7s8ms > # ", desc: "完整时间组合", expect: "25天 5小时 6分钟 7秒" },
+                    { expr: "#3w4d5h6mm7s8ms > # w ", desc: "完整时间组合", expect: "3.60周" },
+                    { expr: "#3w4d5h6mm7s8ms > # d ", desc: "完整时间组合", expect: "25.21天" },
+                    { expr: "#3w4d5h6mm7s8ms > # h ", desc: "完整时间组合", expect: "605.10小时" },
+                    { expr: "#3w4d5h6mm7s8ms > # m ", desc: "完整时间组合", expect: "36306.12分钟" },
+                    { expr: "#3w4d5h6mm7s8ms > # s ", desc: "完整时间组合", expect: "2178367.01秒" },
+
                 ],
                 
                 '时间间隔语法糖': [
@@ -397,6 +410,8 @@
                     // 混合格式测试
                     { expr: "#1d + #(2)d", desc: "混合格式相加", expect: "259200000" },
                     { expr: "#1.5d + #(1.5)d", desc: "混合小数格式", expect: "259200000" },
+                    { expr: "#1.5d +#(1.5)d", desc: "混合小数格式，不带空格", expect: "259200000" },
+
                     
                     // 复杂表达式测试
                     { expr: "#(1+2)d", desc: "括号内计算", expect: "259200000" },
@@ -501,13 +516,92 @@
                     { expr: "#y", error: true, desc: "缺少数值" },
                     { expr: "#1y2y", error: true, desc: "重复单位" },
                     { expr: "#1x2y", error: true, desc: "非法单位" },
-                    { expr: "#-1y", error: true, desc: "负数年份" },
-                    { expr: "#-1m", error: true, desc: "负数月份" },
+                    { expr: "#-1d-1m", error: true, desc: "负数年份" },
+                    { expr: "#-1m-1y", error: true, desc: "负数月份" },
                 ],
                 
                 '复合时间间隔1': [
                     { expr: "@2025-03-15 + #7w + #7d > @", desc: "年月日和天数混合", expect: "2025-05-10 00:00:00" },
                     { expr: "@2025-03-15 - #7w - #7d > @", desc: "年月日和天数混合减法", expect: "2025-01-18 00:00:00" }
+                ],
+
+                '时间间隔语法糖组合测试': [
+                    { expr: "#1y2m3w4d5h6mm7s8ms", desc: "完整时间组合", expect: "1年2月 + 2178367008ms" },
+                    { expr: "#1year2month3week4day5hour6minute7second8millisecond", desc: "完整单词组合", expect: "1年2月 + 2178367008ms" },
+                    { expr: "#5y", desc: "仅年份", expect: "5年 + 0ms" },
+                    { expr: "#10m", desc: "仅月份", expect: "10月 + 0ms" },
+                    { expr: "#2w", desc: "仅周数", expect: "1209600000" },
+                    { expr: "#3d", desc: "仅天数", expect: "259200000" },
+                ],
+
+                '小数时间间隔测试': [
+                    { expr: "#1.5y", desc: "1.5年", error: true },
+                    { expr: "#2.5m", desc: "2.5月", error: true },
+                    { expr: "#0.5w", desc: "半周", expect: "302400000" },
+                    { expr: "#1.5d", desc: "1.5天", expect: "129600000" }
+                ],
+
+                '空格处理测试': [
+                    { expr: "# 1y 2m 3w", desc: "带空格的组合", expect: "1年2月 + 1814400000ms" },
+                    { expr: "# 1year 2month 3week", desc: "带空格的组合", expect: "1年2月 + 1814400000ms" },
+                    { expr: "# 1years 2months 3weeks", desc: "带空格的组合", expect: "1年2月 + 1814400000ms" },
+                    { expr: "#1y 2m", desc: "部分带空格", expect: "1年2月 + 0ms" },
+                    { expr: "#1year 2month", desc: "部分带空格", expect: "1年2月 + 0ms" },
+                    { expr: "#1years 2months", desc: "部分带空格", expect: "1年2月 + 0ms" },
+                    { expr: "# 1d", desc: "开头带空格", expect: "86400000" },
+                    { expr: "# 1day", desc: "开头带空格", expect: "86400000" },
+                    { expr: "# 1days", desc: "开头带空格", expect: "86400000" }
+                ],
+
+                '组合时间间隔测试': [
+                    { expr: "#1y3d", desc: "年天组合", expect: "1年 + 259200000ms" },
+                    { expr: "#1y3days", desc: "年天组合", expect: "1年 + 259200000ms" },
+                    { expr: "#1y3day", desc: "年天组合", expect: "1年 + 259200000ms" },
+                    { expr: "#1year3days", desc: "年天组合", expect: "1年 + 259200000ms" },
+                    { expr: "#1year3d", desc: "年天组合", expect: "1年 + 259200000ms" },
+                    { expr: "#1years3days", desc: "年天组合", expect: "1年 + 259200000ms" },
+                    { expr: "#2m12h", desc: "月时组合", expect: "2月 + 43200000ms" },
+                    { expr: "#2months12hours", desc: "月时组合", expect: "2月 + 43200000ms" },
+                    { expr: "#2months12hour", desc: "月时组合", expect: "2月 + 43200000ms" },
+                    { expr: "#2months12h", desc: "月时组合", expect: "2月 + 43200000ms" },
+                    { expr: "#2month12h", desc: "月时组合", expect: "2月 + 43200000ms" },
+                    { expr: "#2m12hours", desc: "月时组合", expect: "2月 + 43200000ms" },
+                    { expr: "#1w30mm", desc: "周分组合", expect: "606600000" },
+                    { expr: "#5d100ms", desc: "天毫秒组合", expect: "432000100" }
+                ],
+
+                '复合表达式测试': [
+                    { expr: "#1y0m3w4d5h6mm7s8ms + #0y2m3w", desc: "长组合相加", expect: "1年2月 + 3992767008ms" },
+                    { expr: "#2m12h + #1y2m3w", desc: "混合组合相加", expect: "1年4月 + 1857600000ms" },
+                    { expr: "#2m + #1d", desc: "简单相加", expect: "2月 + 86400000ms" },
+                    { expr: "#2m - #1d", desc: "简单相减", expect: "2月 + -86400000ms" }
+                ],
+
+                '括号表达式测试': [
+                    { expr: "#(1+2)y(3*4)m(5-2)w", desc: "多括号组合", expect: "3年12月 + 1814400000ms" },
+                    { expr: "#(+1)y(-2)m", desc: "变量表达式", expect: "1年-2月 + 0ms" },
+                    { expr: "#(1.5*2)y(6/2)m", desc: "小数运算", expect: "3年3月 + 0ms" },
+                    { expr: "#(foo())y(bar())m", desc: "未知函数", error: true }
+                ],
+
+                '混合括号测试': [
+                    { expr: "#(1+2)y3m(4-1)w", desc: "部分带括号", expect: "3年3月 + 1814400000ms" },
+                    { expr: "#1y(2*3)m4d", desc: "中间带括号", expect: "1年6月 + 345600000ms" },
+                    { expr: "#((1+2)*3)y", desc: "嵌套括号", expect: "9年 + 0ms" }
+                ],
+
+                '错误处理测试': [
+                    { expr: "#y", desc: "缺少数值", error: true },
+                    { expr: "#1ym", desc: "单位连写", error: true },
+                    { expr: "#1y2mw", desc: "非法单位组合", error: true },
+                    { expr: "#((1+2)y", desc: "括号不匹配", error: true },
+                    { expr: "#(1 ,2)y", desc: "表达式错误", error: true }
+                ],
+
+                '负数时间间隔测试': [
+                    { expr: "#-1.5d", desc: "负数天数", expect: "-129600000" },
+                    { expr: "#(0-3)d", desc: "减法形式", expect: "-259200000" },
+                    { expr: "#(-1)y(-2)m", desc: "多个负数", expect: "-1年-2月 + 0ms" }
                 ]
             };
 

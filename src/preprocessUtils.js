@@ -448,78 +448,102 @@ function processTimestamp(expr) {
         return `timestamp(${values.join(', ')})`;
     }
 
+    // 新增一个辅助函数来处理查找时间戳表达式的结束位置
+    function findTimestampEnd(expr, startPos) {
+        let end = startPos;
+        let foundNumber = false;
+        let inWhitespace = false;
+        let parenCount = 0;
+        
+        while (end < expr.length) {
+            const char = expr[end];
+            
+            // 处理括号
+            if (char === '(') {
+                parenCount++;
+                end++;
+                continue;
+            }
+            if (char === ')') {
+                parenCount--;
+                end++;
+                continue;
+            }
+            
+            // 如果在括号内，继续处理直到括号闭合
+            if (parenCount > 0) {
+                end++;
+                continue;
+            }
+            
+            // 处理空白字符
+            if (/\s/.test(char)) {
+                inWhitespace = true;
+                end++;
+                continue;
+            }
+            
+            // 如果之前有空白，现在遇到了非法字符，就停止
+            if (inWhitespace && !/[a-zA-Z0-9\-.(]/.test(char)) {
+                break;
+            }
+            
+            // 如果遇到运算符
+            if (/[+*/>=<]|#/.test(char)) {
+                break;
+            }
+            
+            // 特殊处理减号：只有在已经找到数字且不在括号内时才视为运算符
+            if (char === '-' && foundNumber && parenCount === 0) {
+                break;
+            }
+            
+            // 记录是否找到数字
+            if (/\d/.test(char)) {
+                foundNumber = true;
+                inWhitespace = false;  // 重置空白标记
+            }
+            
+            end++;
+        }
+        
+        return end;
+    }
+
     // 主处理逻辑：找到所有的时间戳表达式并处理
     let result = '';
     let pos = 0;
     
     while (pos < expr.length) {
-        // 检查是否是运算符后面跟着的#
-        if (pos > 0 && expr[pos] === '#' && /[+\-*/>=<]/.test(expr[pos - 1])) {
-            result += expr[pos];
-            pos++;
-            continue;
+        if (pos > 0 && expr[pos] === '#') {
+            // 向前查找最近的非空白字符
+            let prevPos = pos - 1;
+            while (prevPos >= 0 && /\s/.test(expr[prevPos])) {
+                prevPos--;
+            }
+            
+            // 如果最近的非空白字符是 >，则作为操作符处理，不解析后面的时间戳
+            if (prevPos >= 0 && expr[prevPos] === '>') {
+                result += expr[pos];
+                pos++;
+                continue;
+            }
+            
+            // 检查前一个字符
+            const prevChar = prevPos >= 0 ? expr[prevPos] : '';
+            
+            // 如果前一个字符是其他运算符或空白，处理时间戳
+            if (/[+\-*/=<]/.test(prevChar) || /\s/.test(prevChar) || prevChar === '') {
+                const end = findTimestampEnd(expr, pos + 1);
+                const timeExpr = expr.substring(pos, end);
+                result += processSingleTimestamp(timeExpr);
+                pos = end;
+                continue;
+            }
         }
 
         if (expr[pos] === '#') {
-            // 找到这个时间戳表达式的结束位置
-            let end = pos + 1;
-            let foundNumber = false;
-            let inWhitespace = false;  // 标记是否在空白区域
-            let parenCount = 0;  // 添加括号计数
-            
-            while (end < expr.length) {
-                const char = expr[end];
-                
-                // 处理括号
-                if (char === '(') {
-                    parenCount++;
-                    end++;
-                    continue;
-                }
-                if (char === ')') {
-                    parenCount--;
-                    end++;
-                    continue;
-                }
-                
-                // 如果在括号内，继续处理直到括号闭合
-                if (parenCount > 0) {
-                    end++;
-                    continue;
-                }
-                
-                // 处理空白字符
-                if (/\s/.test(char)) {
-                    inWhitespace = true;
-                    end++;
-                    continue;
-                }
-                
-                // 如果之前有空白，现在遇到了非法字符，就停止
-                if (inWhitespace && !/[a-zA-Z0-9\-.(]/.test(char)) {
-                    break;
-                }
-                
-                // 如果遇到运算符
-                if (/[+*/>=<]|#/.test(char)) {
-                    break;
-                }
-                
-                // 特殊处理减号：只有在已经找到数字且不在括号内时才视为运算符
-                if (char === '-' && foundNumber && parenCount === 0) {
-                    break;
-                }
-                
-                // 记录是否找到数字
-                if (/\d/.test(char)) {
-                    foundNumber = true;
-                    inWhitespace = false;  // 重置空白标记
-                }
-                
-                end++;
-            }
-            
-            // 处理这个时间戳表达式
+            const end = findTimestampEnd(expr, pos + 1);
             const timeExpr = expr.substring(pos, end);
             result += processSingleTimestamp(timeExpr);
             pos = end;
@@ -541,68 +565,4 @@ export {
     processStringLiterals,
     processDate,
     processTimestamp
-}
-
-
-// 一个测试函数，测试processTimestamp
-function testProcessTimestamp() {
-    const tests = [
-        '#1y2m3w4d5h6mm7s8ms',
-        '#1year2month3week4day5hour6minute7second8millisecond',
-        '#5y', '#10m', '#2w', '#3d', '#12h', '#30mm', '#45s', '#100ms',
-
-        '#1.5y', '#2.5m', '#0.5w', '#1.5d',
-
-        // 测试空格
-        '# 1y 2m 3w', 
-        
-        // 测试组合
-        '#1y3d', '#2m12h', '#1w30mm', '#5d100ms',
-        
-        // 多个表达式混合
-        '#1y2m3w4d5h6mm7s8ms + #1y2m3w',
-        '#2m12h + #1y2m3w',
-        '#2m + #1d',
-        '#2m - #1d', // 会吞掉负号，能否支持负号#-1d？
-        '@now + #1y2m3w >@',
-        '@now - #1y2m3w >#w',
-        '#-1.5d',
-
-        //添加括号测试
-        '#(1+2)y(3x4)m(5-2w)w',
-
-        // 空白报错
-        '#y','#1ym','#1y2mw',
-
-        // 括号测试
-        '#(1+2)y(3*4)m(5-2)w',
-        '#(x+1)y(y*2)m',
-        '#(a+b)d(c*d)h',
-        '#(1.5*2)y(3/2)m',
-        '#(foo())y(bar())m',
-        
-        // 混合测试
-        '#(1+2)y3m(4-1)w',
-        '#1y(2*3)m4d',
-    ];
-    
-    // 执行测试并输出结果
-    tests.forEach((expr, index) => {
-        try {
-            const result = processTimestamp(expr);
-            console.log(`Test ${index + 1} passed:`, {
-                input: expr,
-                output: result
-            });
-        } catch (error) {
-            console.error(`Test ${index + 1} failed:`, {
-                input: expr,
-                error: error.message
-            });
-        }
-    });
-}
-
-if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-    testProcessTimestamp();
 }

@@ -42,13 +42,21 @@ const Utils = {
             if(result.year === 0 && result.month === 0) {
                 return result.timestamp + 'ms';
             }
+            else if(result.year === 0)
+            {
+                return `${result.month}月 + ${result.timestamp}ms`;
+            }
+            else if(result.month === 0)
+            {
+                return `${result.year}年 + ${result.timestamp}ms`;
+            }
 
             return `${result.year}年${result.month}月 + ${result.timestamp}ms`;
         }
 
         // 如果是Date，则返回日期字符串
         if(isDate(result)) {
-            return {value: result.getTime(), info: Utils.formatDate(result)};
+            return {value: result.getTime(), info: "时间戳对应日期："+Utils.formatDate(result)};
         }   
 
         return result;
@@ -385,7 +393,7 @@ const Utils = {
             throw new Error(`> #w: 只能可视化时间戳类型`);
         }
         const ms = x.timestamp;
-        weeks = ms / (1000 * 60 * 60 * 24 * 7);
+        const weeks = ms / (1000 * 60 * 60 * 24 * 7);
         const ts_str =  weeks.toFixed(2) + '周';
 
         if(x.year === 0 && x.month === 0)
@@ -401,7 +409,7 @@ const Utils = {
             throw new Error(`> #d: 只能可视化时间戳类型`);
         }
         const ms = x.timestamp;
-        days = ms / (1000 * 60 * 60 * 24);
+        const days = ms / (1000 * 60 * 60 * 24);
         const ts_str =  days.toFixed(2) + '天';
 
         if(x.year === 0 && x.month === 0)
@@ -417,7 +425,7 @@ const Utils = {
             throw new Error(`> #h: 只能可视化时间戳类型`);
         }
         const ms = x.timestamp;
-        hours = ms / (1000 * 60 * 60);
+        const hours = ms / (1000 * 60 * 60);
         const ts_str =  hours.toFixed(2) + '小时';
 
         if(x.year === 0 && x.month === 0)
@@ -433,7 +441,7 @@ const Utils = {
             throw new Error(`> #m: 只能可视化时间戳类型`);
         }
         const ms = x.timestamp;
-        minutes = ms / (1000 * 60);
+        const minutes = ms / (1000 * 60);
         const ts_str =  minutes.toFixed(2) + '分钟';
 
         if(x.year === 0 && x.month === 0)
@@ -449,7 +457,7 @@ const Utils = {
             throw new Error(`> #s: 只能可视化时间戳类型`);
         }
         const ms = x.timestamp;
-        seconds = ms / 1000;
+        const seconds = ms / 1000;
         const ts_str =  seconds.toFixed(2) + '秒';
 
         if(x.year === 0 && x.month === 0)
