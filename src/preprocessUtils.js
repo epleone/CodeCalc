@@ -351,210 +351,268 @@ function processDate(expr) {
 }
 
 
-// 写一个函数，处理 #1y2m3w4d5h6mm7s8ms 这种类型, 转换成 #timestamp(1, 2, 3, 4, 5, 6, 7, 8)
-// 年匹配 y,year,years
-// 月匹配 m,month,months
-// 周匹配 w,week,weeks
-// 天匹配 d,day,days
-// 小时匹配 h,hour,hours
-// 分钟匹配 mm,minute,minutes
-// 秒匹配 s,second,seconds
-// 毫秒匹配 ms,millisecond,milliseconds
-
+// 将语法糖`#1y2m3w4d5h6mm7s8ms` 转换成 `timestamp(1, 2, 3, 4, 5, 6, 7, 8)`
 function processTimestamp(expr) {
-    // 定义时间单位的匹配模式，按顺序排列
-    const patterns = [
-        { units: ['years?', 'y(?![a-z])'], index: 0 },  // 年
-        { units: ['months?', 'm(?![a-z])'], index: 1 },  // 月
-        { units: ['weeks?', 'w(?![a-z])'], index: 2 },  // 周
-        { units: ['days?', 'd(?![a-z])'], index: 3 },  // 天
-        { units: ['hours?', 'h(?![a-z])'], index: 4 },  // 小时
-        { units: ['minutes?', 'mm'], index: 5 }, // 分钟
-        { units: ['seconds?', 's(?![a-z])'], index: 6 },  // 秒
-        { units: ['milliseconds?', 'ms'], index: 7 }  // 毫秒
-    ];
-
-    // 在 patterns 定义后添加一个新的辅助函数
-    function extractParenthesesContent(str) {
-        if (!str.startsWith('(')) return null;
-        let count = 0;
-        let end = -1;
-        
-        for (let i = 0; i < str.length; i++) {
-            if (str[i] === '(') count++;
-            if (str[i] === ')') count--;
-            if (count === 0) {
-                end = i;
-                break;
-            }
-        }
-        
-        if (end === -1) return null;
-        return {
-            content: str.substring(1, end),
-            length: end + 1
-        };
-    }
-
-    // 修改 processSingleTimestamp 函数中的相关部分
-    function processSingleTimestamp(expr) {
-        if (expr === '#') return expr;
-        if (/^#\s*$/.test(expr)) return expr;
-
-        // 移除开头的#
-        let remaining = expr.slice(1).trim();
-        const values = new Array(8).fill('0');
-
-        // 依次处理每个时间单位
-        for (const { units, index } of patterns) {
-            remaining = remaining.trim();
-            
-            // 先检查是否有括号
-            if (remaining.startsWith('(')) {
-                const result = extractParenthesesContent(remaining);
-                if (result) {
-                    // 检查括号后是否跟着正确的单位
-                    const unitPattern = new RegExp(`^\\s*(${units.join('|')})`, 'i');
-                    const afterParens = remaining.substring(result.length).trim();
-                    const unitMatch = afterParens.match(unitPattern);
-                    
-                    if (unitMatch) {
-                        values[index] = result.content; // 保存括号内的表达式
-                        remaining = afterParens.substring(unitMatch[0].length);
-                        continue;
-                    }
-                }
-            }
-
-            // 如果没有括号，使用原来的匹配逻辑
-            const pattern = new RegExp(
-                `^(-?\\d*\\.?\\d+)\\s*(${units.join('|')})`,
-                'i'
-            );
-            const match = remaining.match(pattern);
-            
-            if (match) {
-                values[index] = match[1];
-                remaining = remaining.slice(match[0].length);
-            }
-        }
-
-        // 如果还有剩余内容，报错
-        remaining = remaining.trim();
-        if (remaining) {
-            throw new Error(`无法识别的时间格式: ${remaining}`);
-        }
-
-        return `timestamp(${values.join(', ')})`;
-    }
-
-    // 新增一个辅助函数来处理查找时间戳表达式的结束位置
-    function findTimestampEnd(expr, startPos) {
-        let end = startPos;
-        let foundNumber = false;
-        let inWhitespace = false;
-        let parenCount = 0;
-        
-        while (end < expr.length) {
-            const char = expr[end];
-            
-            // 处理括号
-            if (char === '(') {
-                parenCount++;
-                end++;
-                continue;
-            }
-            if (char === ')') {
-                parenCount--;
-                end++;
-                continue;
-            }
-            
-            // 如果在括号内，继续处理直到括号闭合
-            if (parenCount > 0) {
-                end++;
-                continue;
-            }
-            
-            // 处理空白字符
-            if (/\s/.test(char)) {
-                inWhitespace = true;
-                end++;
-                continue;
-            }
-            
-            // 如果之前有空白，现在遇到了非法字符，就停止
-            if (inWhitespace && !/[a-zA-Z0-9\-.(]/.test(char)) {
-                break;
-            }
-            
-            // 如果遇到运算符
-            if (/[+*/>=<]|#/.test(char)) {
-                break;
-            }
-            
-            // 特殊处理减号：只有在已经找到数字且不在括号内时才视为运算符
-            if (char === '-' && foundNumber && parenCount === 0) {
-                break;
-            }
-            
-            // 记录是否找到数字
-            if (/\d/.test(char)) {
-                foundNumber = true;
-                inWhitespace = false;  // 重置空白标记
-            }
-            
-            end++;
-        }
-        
-        return end;
-    }
-
-    // 主处理逻辑：找到所有的时间戳表达式并处理
-    let result = '';
-    let pos = 0;
+    // 规范化时间字符串，给数字加括号
+    function normalizeTimeString(timeStr) {
+        // 定义所有可能的时间单位
+        const units = [
+            'years?', 'y',
+            'months?', 'm',
+            'weeks?', 'w',
+            'days?', 'd',
+            'hours?', 'h',
+            'minutes?', 'mm',
+            'seconds?', 's',
+            'milliseconds?', 'ms'
+        ].join('|');
     
-    while (pos < expr.length) {
-        if (pos > 0 && expr[pos] === '#') {
-            // 向前查找最近的非空白字符
-            let prevPos = pos - 1;
-            while (prevPos >= 0 && /\s/.test(expr[prevPos])) {
-                prevPos--;
-            }
-            
-            // 如果最近的非空白字符是 >，则作为操作符处理，不解析后面的时间戳
-            if (prevPos >= 0 && expr[prevPos] === '>') {
-                result += expr[pos];
-                pos++;
-                continue;
-            }
-            
-            // 检查前一个字符
-            const prevChar = prevPos >= 0 ? expr[prevPos] : '';
-            
-            // 如果前一个字符是其他运算符或空白，处理时间戳
-            if (/[+\-*/=<]/.test(prevChar) || /\s/.test(prevChar) || prevChar === '') {
-                const end = findTimestampEnd(expr, pos + 1);
-                const timeExpr = expr.substring(pos, end);
-                result += processSingleTimestamp(timeExpr);
-                pos = end;
-                continue;
-            }
+        // 先将数字加上括号
+        const pattern = new RegExp(`([+-]?\\d+\\.?\\d*)(${units})`, 'gi');
+        const normalized = timeStr.replace(pattern, '($1)$2');
+
+        return normalized;
+    }
+
+    /**
+     * 用状态机FSM解析时间字符串, 格式为 (value)unit, 
+     * 转成 timestamp(year, month, week, day, hour, minute, second, millisecond)
+     * graph LR
+     *   START -- "空格" --> START
+     *   START -- "(" --> IN_BRACKETS
+     *   START -- "其他字符" --> ERROR["抛出错误: 时间值必须在括号内"]
+     *   
+     *   IN_BRACKETS -- "(" --> IN_BRACKETS["嵌套括号"]
+     *   IN_BRACKETS -- ")" --> EXPECT_UNIT["括号计数为0"]
+     *   IN_BRACKETS -- ")" --> IN_BRACKETS["括号计数>0"]
+     *   IN_BRACKETS -- "其他字符" --> IN_BRACKETS["累积currentValue"]
+     *   
+     *   EXPECT_UNIT -- "匹配到单位" --> EXPECT_OPEN["更新result和lastMatchedPos"]
+     *   EXPECT_UNIT -- "未匹配到单位" --> EXPECT_OPEN
+     *   
+     *   EXPECT_OPEN -- "(" --> IN_BRACKETS
+     *   EXPECT_OPEN -- "空格/+/-" --> EXPECT_OPEN
+     *   EXPECT_OPEN -- "其他字符" --> END["结束解析"]
+     */
+    function parseTimeString(timeStr) {
+        console.log('输入:', timeStr);
+
+        if(timeStr.trim() === ''){
+            return timeStr;
         }
 
-        if (expr[pos] === '#') {
-            const end = findTimestampEnd(expr, pos + 1);
-            const timeExpr = expr.substring(pos, end);
-            result += processSingleTimestamp(timeExpr);
-            pos = end;
-        } else {
-            result += expr[pos];
+        // 定义时间单位及其标识符
+        const timeUnits = {
+            years: ['y', 'year', 'years'],
+            months: ['m', 'month', 'months'],
+            weeks: ['w', 'week', 'weeks'],
+            days: ['d', 'day', 'days'],
+            hours: ['h', 'hour', 'hours'],
+            minutes: ['mm', 'minute', 'minutes'],
+            seconds: ['s', 'second', 'seconds'],
+            milliseconds: ['ms', 'millisecond', 'milliseconds']
+        };
+
+        // 简化状态枚举
+        const State = {
+            START: 'START',           
+            EXPECT_OPEN: 'EXPECT_OPEN',   
+            IN_BRACKETS: 'IN_BRACKETS',    // 改名以更好地表达状态含义
+            EXPECT_UNIT: 'EXPECT_UNIT',
+            END: 'END'
+        };
+
+        let state = State.START;
+        let pos = 0;
+        let currentValue = '';
+        let bracketCount = 0;
+        let result = {
+            years: '0',
+            months: '0',
+            weeks: '0',
+            days: '0',
+            hours: '0',
+            minutes: '0',
+            seconds: '0',
+            milliseconds: '0'
+        };
+        let unitOrder = Object.keys(timeUnits);
+        let currentUnitIndex = 0;
+        let lastMatchedPos = 0;  // 记录最后一次成功匹配的位置
+
+        // 首先定义一个按首字母分组的时间单位映射
+        const unitsByFirstChar = {
+            'y': ['years', 'year', 'y'],
+            'm': ['milliseconds', 'millisecond', 'minutes', 'months', 'minute', 'month', 'mins', 'min', 'mm', 'ms', 'm'],
+            'w': ['weeks', 'week', 'w'],
+            'd': ['days', 'day', 'd'],
+            'h': ['hours', 'hour', 'h'],
+            's': ['seconds', 'second', 's']
+        };
+
+        while (pos < timeStr.length && state !== State.END) {
+            const char = timeStr[pos];
+
+            switch (state) {
+                case State.START:
+                    if (char === '(') {
+                        state = State.IN_BRACKETS;
+                        bracketCount = 1;
+                        currentValue = '';
+                    } else if (!char.trim()) {
+                        // 允许空格，保持START状态
+                    // 如果是unitsByFirstChar的单个字符，报错
+                    } else if (unitsByFirstChar[char]) {
+                        throw new Error(`时间单位:${timeStr.slice(pos, pos+5) + "..."} 没有值`);
+                    } else {
+                        // 必须匹配到括号，否则抛出错误
+                        throw new Error('时间值必须在括号内');
+                    }
+                    break;
+
+                case State.EXPECT_OPEN:
+                    if (char === '(') {
+                        state = State.IN_BRACKETS;
+                        bracketCount = 1;
+                        currentValue = '';
+                    } else if (!char.trim() || char === '+' || char === '-') {
+                        // 允许空格和运算符
+                    } else {
+                        if (lastMatchedPos === 0) {
+                            lastMatchedPos = pos;
+                        }
+                        state = State.END;
+                    }
+                    break;
+
+                case State.IN_BRACKETS:
+                    if (char === '(') {
+                        bracketCount++;
+                        currentValue += char;
+                    } else if (char === ')') {
+                        bracketCount--;
+                        if (bracketCount === 0) {
+                            // 检查括号内是否为空
+                            if (!currentValue.trim()) {
+                                throw new Error('括号内不能为空');
+                            }
+                            state = State.EXPECT_UNIT;
+                        } else {
+                            currentValue += char;
+                        }
+                    } else {
+                        currentValue += char;
+                    }
+                    break;
+
+                case State.EXPECT_UNIT:
+                    let unitStartPos = pos;    // 记录单位开始位置
+                    let bestMatch = {
+                        length: 0,
+                        unitKey: '',
+                        value: currentValue,
+                        endPos: pos
+                    };
+
+                    // 修改匹配逻辑
+                    const firstChar = timeStr[pos].toLowerCase();
+                    if (unitsByFirstChar[firstChar]) {
+                        // 获取这个首字母对应的所有可能单位
+                        const possibleUnits = unitsByFirstChar[firstChar];
+                        
+                        // 尝试匹配每个可能的单位
+                        for (const unit of possibleUnits) {
+                            const potentialMatch = timeStr.slice(pos, pos + unit.length).toLowerCase();
+                            if (potentialMatch === unit) {
+                                // 找到匹配的单位，确定其对应的unitKey
+                                let matchedUnitKey;
+                                for (const [key, aliases] of Object.entries(timeUnits)) {
+                                    if (aliases.includes(unit)) {
+                                        // 检查这个单位是否已经被使用过
+                                        if (result[key] !== '0') {
+                                            throw new Error(`时间单位:${key} 重复赋值`);
+                                        }
+                                        matchedUnitKey = key;
+                                        break;
+                                    }
+                                }
+                                
+                                if (matchedUnitKey) {
+                                    bestMatch = {
+                                        length: unit.length,
+                                        unitKey: matchedUnitKey,
+                                        value: currentValue,
+                                        endPos: pos + unit.length - 1
+                                    };
+                                    pos += unit.length - 1;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // 如果找到匹配
+                    if (bestMatch.length > 0) {
+                        result[bestMatch.unitKey] = bestMatch.value;
+                        pos = bestMatch.endPos;
+                        lastMatchedPos = pos + 1;  // 恢复这行，更新到单位结束后的位置
+                        currentUnitIndex = unitOrder.indexOf(bestMatch.unitKey) + 1;
+                        state = State.EXPECT_OPEN;
+                    } else {
+                        pos = unitStartPos;
+                        state = State.EXPECT_OPEN;
+                    }
+                    break;
+            }
             pos++;
         }
+
+        // 构建timestamp字符串
+        const timestampArgs = [
+            result.years || '0',
+            result.months || '0',
+            result.weeks || '0',
+            result.days || '0',
+            result.hours || '0',
+            result.minutes || '0',
+            result.seconds || '0',
+            result.milliseconds || '0'
+        ];
+
+        let finalResult = `timestamp(${timestampArgs.join(', ')})`;
+        
+        // 如果还有未匹配的部分，直接拼接到结果后面
+        if (lastMatchedPos < timeStr.length) {
+            const remaining = timeStr.substring(lastMatchedPos).trim();
+            if (remaining) {
+                finalResult += ' ' + remaining;
+            }
+        }
+
+        console.log('输出:', finalResult);
+        return finalResult;
     }
 
+    // 用正则表达式将 `>#` 替换为 `>timestamp`
+    expr = expr.replace(/>\s*#/g, '>timestamp');
+
+    const timeStrs = expr.split('#');
+    console.log('timeStrs:', timeStrs);
+
+    let result = timeStrs[0];
+    for(let i = 1; i < timeStrs.length; i++){
+        console.log('输入:', timeStrs[i]);
+        const normalized = normalizeTimeString(timeStrs[i]);
+        console.log('Normalize 输出:', normalized);
+        result += parseTimeString(normalized);
+    }
+
+    // 将 `>timestamp` 替换回 `>#`  
+    result = result.replace(/>timestamp/g, '>#');
     return result;
 }
+
+
 
 
 export {
