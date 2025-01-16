@@ -10,6 +10,29 @@ class Datestamp {
         this.month = month;
         this.timestamp = timestamp;
     }
+
+    // 将Datestamp转换为字符串
+    getYMString() {
+        let ym = "";
+        if(this.year !== 0) {
+            ym += this.year + '年';
+        }
+        if(this.month !== 0) {
+            ym += this.month + '月';
+        }
+
+        if(ym != "") {
+            ym += "+";
+        }
+
+        return ym;
+    }
+
+    toString() {
+        let ts = this.getYMString() + this.timestamp + 'ms';
+        return ts;
+    }
+
 }
 
 
@@ -39,24 +62,12 @@ const Utils = {
 
         // 如果是Datestamp，则返回字符串
         if(isDatestamp(result)) {
-            if(result.year === 0 && result.month === 0) {
-                return result.timestamp + 'ms';
-            }
-            else if(result.year === 0)
-            {
-                return `${result.month}月 + ${result.timestamp}ms`;
-            }
-            else if(result.month === 0)
-            {
-                return `${result.year}年 + ${result.timestamp}ms`;
-            }
-
-            return `${result.year}年${result.month}月 + ${result.timestamp}ms`;
+            return {value: result.toString(), info: "时间间隔：" + Utils.formatDateStamp(result)};
         }
 
         // 如果是Date，则返回日期字符串
         if(isDate(result)) {
-            return {value: result.getTime(), info: "时间戳对应日期："+Utils.formatDate(result)};
+            return {value: result.getTime(), info: "时间戳对应日期：" + Utils.formatDate(result)};
         }   
 
         return result;
@@ -368,7 +379,7 @@ const Utils = {
     // 时间戳可视化成时间差
     formatDateStamp(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #: 只能可视化时间间隔类型`);
+            throw new Error(`"> #"只能可视化时间间隔类型`);
         }
 
         const ms = x.timestamp;
@@ -380,92 +391,62 @@ const Utils = {
         
         const ts_str = `${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
 
-        if(x.year === 0 && x.month === 0)
-        {
-            return ts_str;
-        }
-
-        return `${x.year}年${x.month}月 + ${ts_str}`;
+        return x.getYMString() + ts_str;
     },
 
     formatDateStamp2Week(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #w: 只能可视化时间间隔类型`);
+            throw new Error(`"> #w"只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const weeks = ms / (1000 * 60 * 60 * 24 * 7);
         const ts_str =  weeks.toFixed(2) + '周';
 
-        if(x.year === 0 && x.month === 0)
-        {
-            return ts_str;
-        }
-
-        return `${x.year}年${x.month}月 + ${ts_str}`;
+        return x.getYMString() + ts_str;
     },
 
     formatDateStamp2Day(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #d: 只能可视化时间间隔类型`);
+            throw new Error(`"> #d"只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const days = ms / (1000 * 60 * 60 * 24);
         const ts_str =  days.toFixed(2) + '天';
 
-        if(x.year === 0 && x.month === 0)
-        {
-            return ts_str;
-        }
-
-        return `${x.year}年${x.month}月 + ${ts_str}`;
+        return x.getYMString() + ts_str;
     },
 
     formatDateStamp2Hour(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #h: 只能可视化时间间隔类型`);
+            throw new Error(`"> #h"只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const hours = ms / (1000 * 60 * 60);
         const ts_str =  hours.toFixed(2) + '小时';
 
-        if(x.year === 0 && x.month === 0)
-        {
-            return ts_str;
-        }
-
-        return `${x.year}年${x.month}月 + ${ts_str}`;
+        return x.getYMString() + ts_str;
     },
 
     formatDateStamp2Minute(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #m: 只能可视化时间间隔类型`);
+            throw new Error(`"> #m"只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const minutes = ms / (1000 * 60);
         const ts_str =  minutes.toFixed(2) + '分钟';
 
-        if(x.year === 0 && x.month === 0)
-        {
-            return ts_str;
-        }
-
-        return `${x.year}年${x.month}月 + ${ts_str}`;
+        return x.getYMString() + ts_str;
     },
 
     formatDateStamp2Second(x) {
         if(!isDatestamp(x)){
-            throw new Error(`> #s: 只能可视化时间间隔类型`);
+            throw new Error(`"> #s"只能可视化时间间隔类型`);
         }
         const ms = x.timestamp;
         const seconds = ms / 1000;
         const ts_str =  seconds.toFixed(2) + '秒';
 
-        if(x.year === 0 && x.month === 0)
-        {
-            return ts_str;
-        }
-
-        return `${x.year}年${x.month}月 + ${ts_str}`;
+        return x.getYMString() + ts_str;
     },
 };
 
