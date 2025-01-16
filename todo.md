@@ -1,31 +1,4 @@
 # TODO
-- 不再使用内部变量，预处理时改成函数封装。
-- 变量改成字典形式，内部存储类型？
-
-#1w3d3h2mins1s10ms
--->
-(#1w + #3d + #2h + #2mins + #1s + #10ms)
-转成ms
-# 转成时间戳
-
-@1y2m3d3h2mi1s10ms
--->
-(@1y + @2m + @3d + @3h + @2mi + @1s + @10ms)
-转成字典 {y: 1, m: 2, d: 3, h: 3, mi: 2, s: 1, ms: 10}
-@  表示日期
-```
-// 日期 - 日期 = 时间间隔, 日期计算，日期应该以对象形式保存？
-@today - @1990-1-1
-
-// 日期 + 日期间隔datestamp = 日期
-@today + 1y2m3d3h2mi1s10ms: 显示日期 
-
-// 时间间隔timestamp，最简单，转成ms就行
-#today - 12w3d3h2mi1s10ms: 显示时间戳，只有一个参数，从开始计数，刚好表达时间
-```
-
-日期间隔相比时间间隔，多两个参数，一个是年，一个是月。这两项不能准确的转成ms，需要特殊处理。
-
 
 
 ## 自定义函数
@@ -47,11 +20,7 @@
 
 
 ## 补全
-- 补全的按键逻辑应该写在补全函数中，而不是在UI主函数中
-- 出现补全框时，只能用 Tab 和上下方向键以及匹配到的字符，其它的按键和鼠标操作都会退出补全框
-- 出现补全框时，Enter 键只能用于退出补全，不能用于执行其它操作(这个待定)
-- 出现补全框时，Escape 键用于退出补全框，而不是丢失焦点
-- 补全的匹配不对， 第二第三个字符会不匹配
+- 定时隐藏补全框
 
 
 ## 底层计算库
@@ -63,43 +32,34 @@
 
 
 
-
 ## 数组和矩阵
-在矩阵运算中，有许多常用的操作和概念。以下是一些基本的矩阵操作：
-1. 矩阵加法（Matrix Addition）：
-两个矩阵的加法是将对应位置的元素相加。要求两个矩阵的维度相同。
-2. 矩阵减法（Matrix Subtraction）：
-类似于矩阵加法，将对应位置的元素相减。要求两个矩阵的维度相同。
-3. 标量乘法（Scalar Multiplication）：
-将矩阵中的每个元素乘以一个标量（常数）。
-4. 矩阵乘法（Matrix Multiplication）：
-矩阵乘法不是逐元素相乘，而是行列相乘。第一个矩阵的列数必须等于第二个矩阵的行数。
-5. 转置（Transpose）：
-将矩阵的行和列互换。
-6. 行列式（Determinant）：
-一个方阵的标量值，常用于判断矩阵是否可逆。
-7. 逆矩阵（Inverse Matrix）：
-只有方阵（行数等于列数）才可能有逆矩阵。矩阵A的逆矩阵是A的一个矩阵，使得A乘以A的逆矩阵等于单位矩阵。
-8. 迹（Trace）：
-矩阵对角线元素的和。仅适用于方阵。
-9. 特征值和特征向量（Eigenvalues and Eigenvectors）：
-特征值是一个标量，特征向量是一个向量，满足矩阵乘以特征向量等于特征值乘以特征向量。
-10. 矩阵分解（Matrix Decomposition）：
+- 矩阵加法（Matrix Addition）
+- 矩阵减法（Matrix Subtraction）
+- 标量乘法（Scalar Multiplication）
+- 矩阵乘法（Matrix Multiplication）：点乘和叉乘
+- 转置（Transpose）
+- 行列式（Determinant）
+- 逆矩阵（Inverse Matrix）
+- 伪逆矩阵（Pseudoinverse Matrix）
+- 伴随矩阵（Adjoint Matrix）
+- 特征值和特征向量（Eigenvalues and Eigenvectors）
+- 迹（Trace）
+- 矩阵分解（Matrix Decomposition）
+
 包括LU分解、QR分解、奇异值分解（SVD）等，用于简化矩阵运算。
 这些操作在数学、物理、计算机科学等领域中有广泛的应用，尤其是在图像处理、机器学习和数据分析中。
 
 ## 特殊矩阵
-1. 对角矩阵（Diagonal Matrix）：
+- 对角矩阵（Diagonal Matrix）：
 只有对角线（从左上到右下）上有非零元素的方阵。
-2. 单位矩阵（Identity Matrix）：
+- 单位矩阵（Identity Matrix）：
 对角线上的元素全为1，其余元素全为0的方阵，通常用 I 表示。
-3. 零矩阵（Zero Matrix）：
-所有元素均为零的矩阵
-
-使用 [ml-matrix](https://www.npmjs.com/package/ml-matrix) 库
-使用 Rollup 打包 ml-matrix
-
-
+- 全1矩阵（All Ones Matrix）：
+所有元素均为1的矩阵
+- 全0矩阵（All Zeros Matrix）：
+所有元素均为0的矩阵
+- 稀疏矩阵（Sparse Matrix）：
+大部分元素为0的矩阵
 
 ## 添加性能监控
 计算超时返回 throw new Error('计算超时');
