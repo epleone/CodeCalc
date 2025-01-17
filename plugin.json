@@ -13,15 +13,49 @@
       "code": "calculator",
       "explain": "计算算式",
       "icon": "logo.png",
+      "mainPush": true,
       "cmds": [
         {
           "type": "regex",
           "label": "快速计算",
-          "match": "/^(?:\\(*-?\\d+(\\.\\d+)?\\)* ?[+\\-*/%^] ?)+\\(*-?\\d+(\\.\\d+)?\\)*$/"
+          "match": "/^(?:\\(*[+-]?\\d+(\\.\\d+)?\\)* ?[+\\-*x/÷%^] ?)+\\(*[+-]?\\d+(\\.\\d+)?\\)*$/"
+        }
+      ]
+    },
+    {
+      "code": "timestamp",
+      "explain": "计算时间戳",
+      "icon": "logo.png",
+      "mainPush": true,
+      "cmds": [
+        {
+          "type": "regex",
+          "label": "时间戳@YYYY-MM-DD HH:mm:ss",
+          "match": "/(@)?\\d{4}-\\d{1,2}-\\d{1,2}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}$/"
+        },
+        {
+          "type": "regex",
+          "label": "时间戳@YYYY-MM-DD HH:mm",
+          "match": "/(@)?\\d{4}-\\d{1,2}-\\d{1,2}\\s+\\d{1,2}:\\d{1,2}$/"
+        },
+        {
+          "type": "regex",
+          "label": "时间戳@YYYY-MM-DD",
+          "match": "/(@)?\\d{4}-\\d{1,2}-\\d{1,2}$/"
+        },
+        {
+          "type": "regex",
+          "label": "时间戳@YYYY-MM",
+          "match": "/(@)?\\d{4}-\\d{1,2}$/"
+        },
+        {
+          "type": "regex",
+          "label": "时间戳@YYYY",
+          "match": "/(@)?\\d{4}$/"
         }
       ]
     }
   ],
-  "version": "1.0.1",
+  "version": "2.1.1",
   "description": "一个可以运行代码的计算器"
 } 

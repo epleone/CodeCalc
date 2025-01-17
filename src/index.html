@@ -127,6 +127,9 @@
 
         // 将函数添加到全局作用域(window对象)
         Object.assign(window, UI);
+
+        import Calculator from './calculator.js';
+        window.calculator = Calculator.calculate;
     </script>
 
     <script>
@@ -156,6 +159,40 @@
                 clearAll();
             }
         });
+
+        utools.onMainPush(
+            ({ code, type, payload }) => {
+                if(type == "regex") {
+                    let value = "";
+                    let title = payload;
+                    try {
+                        const rslt = window.calculator(payload);
+                        value = rslt.value;
+                        if( code == "timestamp") {
+                            title = rslt.info;
+                        }
+                        // utools.showNotification(value);
+                    } catch (error) {
+                        value = "error: " + error.message; 
+                    }
+
+                    return [
+                        {
+                            icon: "logo-equal.png",
+                            text: value.toString(),
+                            title: title,
+                        }, //...
+                    ];
+                }
+            },
+            ({ code, type, payload, option }) => {
+                // if (option.text == "进入插件") {
+                //     return true;  // 返回 true 表示需要进入插件应用处理
+                // }
+                // 不进入插件应用 "执行粘贴文本"
+                utools.hideMainWindowPasteText(option.text);
+            }
+        );
     </script>
 </body>
 </html> 
