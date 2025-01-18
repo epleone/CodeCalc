@@ -169,17 +169,16 @@ a + b       // 输出: "helloworld"
 > `#(表达式)y(表达式)m(表达式)w(表达式)d(表达式)h(表达式)mm(表达式)s(表达式)ms`
 
 其中:
-
-| 单位 | 完整写法 | 简写 |
-| --- | --- | --- |
-| 年 | years | y |
-| 月 | months | m |
-| 周 | weeks | w |
-| 天 | days | d |
-| 小时 | hours | h |
-| 分钟 | minutes | mm |
-| 秒 | seconds | s |
-| 毫秒 | milliseconds | ms |
+| 单位 | 完整写法 | 简写 | 其他 |
+| --- | --- | --- | --- |
+| 年 | years | y | year |
+| 月 | months | m | month |
+| 周 | weeks | w | week |
+| 天 | days | d | day |
+| 小时 | hours | h | hour |
+| 分钟 | minutes | mm | minute |
+| 秒 | seconds | s | second |
+| 毫秒 | milliseconds | ms | millisecond |
 
 
 - 表达式是可以选的, 不用写完整
