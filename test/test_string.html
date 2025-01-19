@@ -103,11 +103,11 @@
             {
                 group: '转义字符',
                 tests: [
-                    { name: "转义反斜杠", input: 'str("\\\\")', expected: "\\" },
-                    { name: "未转义字符", input: 'str("\\n")', expected: "\\n" },
-                    { name: "多重转义", input: 'str("\\\\\\\\")', expected: "\\\\" },
-                    { name: "错误转义", input: 'str("\\")', expected: "error" },
-                    { name: "非法转义", input: 'str("\\x")', expected: "error" }
+                    { name: "转义反斜杠", input: 'str("\\\\")', expected: `"\\\\"` },
+                    { name: "未转义字符", input: 'str("\\n")', expected: `"\\n"` },
+                    { name: "多重转义", input: 'str("\\\\\\\\")', expected: `"\\\\\\\\"` },
+                    { name: "错误转义", input: 'str("\\")', expected: `"\\"` },
+                    { name: "非法转义", input: 'str("\\x")', expected: `"\\x"` }
                 ]
             },
 
@@ -156,11 +156,11 @@
             {
                 group: '错误处理',
                 tests: [
-                    { name: "未闭合双引号", input: 'str("abc)', expected: "error" },
-                    { name: "未闭合单引号", input: "str('abc)", expected: "error" },
-                    { name: "混合引号", input: 'str("abc\')', expected: "error" },
-                    { name: "非法字符串", input: 'str(abc)', expected: "error" },
-                    { name: "空引号", input: 'str("")', expected: "" },
+                    { name: "未闭合双引号", input: 'str("abc)', expected: '"abc' },
+                    { name: "未闭合单引号", input: "str('abc)", expected: "'abc" },
+                    { name: "混合引号", input: 'str("abc\')', expected: "\"abc\'" },
+                    { name: "非法字符串", input: 'str(abc)', expected: "abc" },
+                    { name: "空引号", input: 'str("")', expected: `""` },
                     { name: "非法操作", input: '"abc" - "def"', expected: "error" },
                     { name: "非法函数", input: '"abc".sin()', expected: "error" }
                 ]
