@@ -21,14 +21,15 @@
 - 对数指数：`log`, `ln`, `exp`, `pow`, `sqrt`
 - 其他：`abs`, `max`, `min`
 
+### 角度转换：
+- 角度转弧度：`rad(45)` 或 `45°` 或 `.rad`
+- 弧度转角度：`deg(PI)` 或 `.deg`
+
+
 ### 字符串操作：
 - 字符串：`s = "Hello"`, 支持 `+` 连接，如 `"Hello" + "World"`
 - 字符串属性：`.length`, `.upper`, `.lower`
 - base64 编解码：`base64(s)` 或 `.base64`, `unbase64(s)` 或  `.unbase64`
-
-### 角度转换：
-- 度数：`deg(45)` 或 `45°` 或 `.deg`
-- 弧度：`rad(PI)` 或 `.rad`
 
 ### 进制转换：
 - 输入：`0b`(二进制), `0o`(八进制), `0x`(十六进制)
@@ -38,6 +39,17 @@
 - `PI`: 3.14159...
 - `e`: 2.71828...
 
+### 时间戳：
+- `@now`: 当前时间戳
+- `@today`: 今天日期
+- `@2000-06-01 11:30:01`: 指定日期时间
+- `@now + #1w2d3h`: 当前时间加1周2天3小时
+- `@now - #1y2m3d5h7s`: 当前时间减1年2月3天5小时7秒
 
-### 备注
+
+> [!TIP] 
+> 详细文档请参考 [CodeCalc 文档](https://epleone.github.io/codecalc-doc/)
+
+
+## Credits
 灵感来源：[itribs/rcalculator](https://github.com/itribs/rcalculator)
