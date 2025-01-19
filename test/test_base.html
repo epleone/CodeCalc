@@ -221,8 +221,8 @@
             { group: '数学函数', name: "最小值", input: "min(1,5,3)", expected: "1" },
 
             // 角度转换测试
-            { group: '角度转换', name: "度数转弧度", input: "45.deg", expected: "0.785398" },
-            { group: '角度转换', name: "弧度转度数", input: "(PI/4).rad", expected: "45" },
+            { group: '角度转换', name: "度数转弧度", input: "45.rad", expected: "0.785398" },
+            { group: '角度转换', name: "弧度转度数", input: "(PI/4).deg", expected: "45" },
             { group: '角度转换', name: "度数符号", input: "45°", expected: "0.785398" },
 
             // 错误处理测试
@@ -342,7 +342,7 @@
             // 全角符号测试
             { group: '不规则符号', name: "全角符号", input: "（１＋２）÷３", expected: "1" },
             { group: '不规则符号', name: "全角符号", input: "max（1，5，3）", expected: "5" },
-            { group: '不规则符号', name: "全角符号", input: "max（1，5，3）。deg", expected: "0.08726646259971647" },
+            { group: '不规则符号', name: "全角符号", input: "max（1，5，3）。rad", expected: "0.08726646259971647" },
 
             // 大数运算测试
             { group: '大数运算', name: "大整数加法", input: "12345678901234567890 + 98765432109876543210", expected: "111111111011111111100" },
