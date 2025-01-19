@@ -516,8 +516,8 @@
                     { expr: "#y", error: true, desc: "缺少数值" },
                     { expr: "#1y2y", error: true, desc: "重复单位" },
                     { expr: "#1x2y", error: true, desc: "非法单位" },
-                    { expr: "#-1d-1m", error: true, desc: "负数年份" },
-                    { expr: "#-1m-1y", error: true, desc: "负数月份" },
+                    { expr: "#0-1d0-1m", error: true, desc: "负数年份" },
+                    { expr: "#0-1m0-1y", error: true, desc: "负数月份" },
                 ],
                 
                 '复合时间间隔1': [
