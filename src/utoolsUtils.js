@@ -33,21 +33,29 @@ utools.onMainPush(
     ({ code, type, payload }) => {
         if(type == "regex") {
             let value = "";
-            if( code == "timestamp"){
-                if (!payload.startsWith('@')) {
-                    payload = '@' + payload;
-                }
+            let expr = payload.trim();
 
-                payload = payload.replace(/\//g, '-');
+            if( code == "quickcalc"){
+                if (expr.startsWith('>')){
+                    expr = expr.substring(1);
+                }
+            }else if( code == "timestamp"){
+                if (!expr.startsWith('@')) {
+                    expr = '@' + expr;
+                }
+                expr = expr.replace(/\//g, '-');
             }
-            let title = payload;
+
+            let title = expr;
+            
             try {
-                const rslt = Calculator.calculate(payload);
+                const rslt = Calculator.calculate(expr);
                 value = rslt.value;
+                // utools.showNotification(value);
                 if( code == "timestamp") {
                     title = rslt.info;
                 }
-                // utools.showNotification(value);
+
             } catch (error) {
                 value = "error: " + error.message; 
             }
