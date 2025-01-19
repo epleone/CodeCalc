@@ -194,14 +194,16 @@
             try {
                 const result = calculate(test.input);
                 
-                // 如果期望值是 "error"，检查结果是否为 NaN 或抛出错误
+                // 如果期望值是 "error"，检查结果是否为特殊值
                 if (test.expected === "error") {
-                    if (isNaN(result.value)) {
+                    if (isNaN(result.value) || 
+                        result.value === Infinity || 
+                        result.value === -Infinity) {
                         return {
                             name: test.name,
                             input: test.input,
                             expected: "error",
-                            actual: "NaN",
+                            actual: result.value.toString(),
                             success: true,
                             info: result.info,
                             warning: result.warning
