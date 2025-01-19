@@ -383,13 +383,14 @@ const Utils = {
         }
 
         const ms = x.timestamp;
+        const absMs = Math.abs(ms);
 
-        const seconds = Math.floor((ms / 1000) % 60);
-        const minutes = Math.floor((ms / (1000 * 60)) % 60);
-        const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-        const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+        const seconds = Math.floor((absMs / 1000) % 60);
+        const minutes = Math.floor((absMs / (1000 * 60)) % 60);
+        const hours = Math.floor((absMs / (1000 * 60 * 60)) % 24);
+        const days = Math.floor(absMs / (1000 * 60 * 60 * 24));
         
-        const ts_str = `${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
+        const ts_str = `${ms < 0 ? '-' : ''}${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
 
         return x.getYMString() + ts_str;
     },
