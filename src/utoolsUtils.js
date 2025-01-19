@@ -1,3 +1,5 @@
+import Calculator from './calculator.js';
+
 // utools 相关代码保持不变
 utools.onPluginEnter(({ code, type, payload }) => {
     if(type == "regex") {
@@ -40,7 +42,7 @@ utools.onMainPush(
             }
             let title = payload;
             try {
-                const rslt = window.calculator(payload);
+                const rslt = Calculator.calculate(payload);
                 value = rslt.value;
                 if( code == "timestamp") {
                     title = rslt.info;

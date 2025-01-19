@@ -128,14 +128,11 @@
     <script type="module">
         // 导入所有函数
         import * as UI from './ui.js';
+        import './utoolsUtils.js';          // 只需要导入执行，不需要命名导入
 
         // 将函数添加到全局作用域(window对象)
         Object.assign(window, UI);
-
-        import Calculator from './calculator.js';
-        window.calculator = Calculator.calculate;
     </script>
 
-    <script src="utoolsUtils.js"></script>
 </body>
 </html> 
