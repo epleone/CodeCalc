@@ -2,10 +2,11 @@ import Calculator from './calculator.js';
 
 // utools 相关代码保持不变
 utools.onPluginEnter(({ code, type, payload }) => {
+
+    const inputs = document.querySelectorAll('.input');
+    const lastInput = inputs[inputs.length - 1];  // 获取最后一个输入框
+
     if(type == "regex") {
-        const inputs = document.querySelectorAll('.input');
-        const lastInput = inputs[inputs.length - 1];  // 获取最后一个输入框
-        
         // 如果最后一行不为空，则新增一行
         if (lastInput.value.trim() !== '') {
             addNewLine();
@@ -18,6 +19,9 @@ utools.onPluginEnter(({ code, type, payload }) => {
             lastInput.value = payload || "";
             lastInput.dispatchEvent(new Event('input'));
         }
+    }else{
+        // 将焦点聚焦到输入框
+        lastInput.focus();
     }
 });
 
