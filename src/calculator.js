@@ -128,6 +128,10 @@ const Calculator = (function() {
             if (tokens.length === 0) return true;
             
             const [type, value] = tokens[tokens.length - 1];
+
+            // 在后缀操作符中，%和‰后，必须是减法
+            if (value === '%' || value === '‰')
+                return false;
             
             // 只有在这些情况下是二元运算符，其他都是一元运算符
             return !(
@@ -138,7 +142,7 @@ const Calculator = (function() {
                 type === 'identifier' ||       // 标识符后
                 (type === 'operator' && value.startsWith('.'))  // 属性访问运算符后
             );
-        }
+        }  
 
         function collectString() {
             let str = '';
@@ -284,6 +288,9 @@ const Calculator = (function() {
                         } else {
                             tokens.push(['operator', '-']);
                         }
+                    } else if (op === '%') {
+                        // 先统一标记为%，后面根据情况判断是百分号还是取模
+                        tokens.push(['operator', '%']);  
                     } else {
                         // 其他操作符的处理
                         if (separators.has(op)) {
@@ -468,6 +475,31 @@ const Calculator = (function() {
             
             while (current < tokens.length) {
                 const [type, value] = tokens[current];
+                
+                if (type === 'operator' && value === '%') {
+                    // 看下一个token来判断是百分号还是取模
+                    const nextToken = tokens[current + 1];
+                    
+                    // 判断是否是取模运算符 - 后面必须是可以作为操作数的token
+                    const isModulo = nextToken && (
+                        nextToken[0] === 'string' ||  // 数字或变量
+                        nextToken[0] === 'constant' || // 常量
+                        nextToken[0] === 'function' || // 函数
+                        (nextToken[0] === 'delimiter' && nextToken[1] === '(') // 左括号
+                        // 移除一元运算符的判断，让它走百分号的逻辑
+                    );
+
+                    current++;
+                    if (isModulo) {
+                        // 作为取模运算符处理
+                        const right = parseExpression(OPERATORS['%'].precedence + 1);
+                        left = createNode('%', [left, right], 'operator');
+                    } else {
+                        // 作为百分号处理
+                        left = createNode('unary%', [left], 'operator');
+                    }
+                    continue;
+                }
                 
                 // 处理后缀运算符
                 if (type === 'operator' && 

@@ -437,7 +437,57 @@
             { group: '科学计数法错误', name: "e前缺数字", input: "e2", expected: "error" },
             { group: '科学计数法错误', name: "符号后缺数字", input: "1.5e+", expected: "error" },
             { group: '科学计数法错误', name: "多个小数点", input: "1.5.e2", expected: "error" },
-            { group: '科学计数法错误', name: "指数小数", input: "1.5e2.5", expected: "error" }
+            { group: '科学计数法错误', name: "指数小数", input: "1.5e2.5", expected: "error" },
+
+            // 在 tests 数组中添加新的测试组
+            { group: '百分号运算', name: "基本百分号", input: "50%", expected: "0.5" },
+            { group: '百分号运算', name: "负数百分号", input: "-50%", expected: "-0.5" },
+            { group: '百分号运算', name: "小数百分号", input: "12.5%", expected: "0.125" },
+            { group: '百分号运算', name: "括号后百分号", input: "(100+20)%", expected: "1.2" },
+            { group: '百分号运算', name: "常量百分号", input: "PI%", expected: "0.031416" },
+            { group: '百分号运算', name: "复合运算1", input: "50% + 25%", expected: "0.75" },
+            { group: '百分号运算', name: "复合运算2", input: "200% * 50%", expected: "1" },
+            { group: '百分号运算', name: "复合运算3", input: "-50% * 200%", expected: "-1" },
+            { group: '百分号运算', name: "百分号操作", input: "5 %", expected: "0.05" },
+            { group: '百分号运算', name: "百分号操作", input: "+5 % - 3  %", expected: "0.02" },
+
+            { group: '取模运算', name: "基本取模", input: "7 % 3", expected: "1" },
+            { group: '取模运算', name: "负数取模", input: "-7 % 3", expected: "-1" },
+            { group: '取模运算', name: "零取模", input: "0 % 5", expected: "0" },
+            { group: '取模运算', name: "大数取模", input: "100 % 30", expected: "10" },
+            { group: '取模运算', name: "表达式取模", input: "(10+5) % 3", expected: "0" },
+            { group: '取模运算', name: "复合运算1", input: "7 % 3 + 2", expected: "3" },
+            { group: '取模运算', name: "复合运算2", input: "10 % (3 + 2)", expected: "0" },
+
+            // 错误情况测试
+            { group: '百分号错误', name: "连续百分号", input: "50%%", expected: "error" },
+            { group: '百分号错误', name: "孤立百分号", input: "%", expected: "error" },
+            { group: '百分号错误', name: "百分号开头", input: "%50", expected: "error" },
+
+            { group: '取模错误', name: "除数为零", input: "5 % 0", expected: "error" },
+            { group: '取模错误', name: "缺少左操作数", input: "% 5", expected: "error" },
+            { group: '取模错误', name: "非数字取模", input: "'abc' % 2", expected: "error" },
+
+            // 在 tests 数组中添加千分号测试组
+            { group: '千分号运算', name: "基本千分号", input: "1‰", expected: "0.001" },
+            { group: '千分号运算', name: "负数千分号", input: "-50‰", expected: "-0.05" },
+            { group: '千分号运算', name: "小数千分号", input: "12.5‰", expected: "0.0125" },
+            { group: '千分号运算', name: "括号后千分号", input: "(100+20)‰", expected: "0.12" },
+            { group: '千分号运算', name: "常量千分号", input: "PI‰", expected: "0.003142" },
+            { group: '千分号运算', name: "复合运算1", input: "50‰ + 25‰", expected: "0.075" },
+            { group: '千分号运算', name: "复合运算2", input: "200‰ * 50‰", expected: "0.01" },
+            { group: '千分号运算', name: "复合运算3", input: "-50‰ * 200‰", expected: "-0.01" },
+            { group: '千分号运算', name: "混合百分号1", input: "50% + 25‰", expected: "0.525" },
+            { group: '千分号运算', name: "混合百分号2", input: "200‰ * 50%", expected: "0.1" },
+
+            // 千分号错误情况测试
+            { group: '千分号错误', name: "连续千分号", input: "50‰‰", expected: "error" },
+            { group: '千分号错误', name: "孤立千分号", input: "‰", expected: "error" },
+            { group: '千分号错误', name: "千分号开头", input: "‰50", expected: "error" },
+
+            // 不推荐，但是正确的做法
+            { group: '百分号千分号混合', name: "混合", input: "50‰%", expected: "0.0005" },
+            { group: '百分号千分号混合', name: "混合2", input: "50%‰", expected: "0.0005" },
         ];
 
         function runTest(test) {

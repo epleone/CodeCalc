@@ -96,6 +96,23 @@ export const OPERATORS = {
         position: 'prefix',
         description: '正号'
     },
+    'unary%': {
+        precedence: 5,
+        args: 1,
+        func: x => x * 0.01,
+        position: 'postfix',
+        preventSelfReference: true,
+        description: '百分号'
+    },
+    '‰': {
+        precedence: 5,
+        args: 1,
+        func: x => x * 0.001,
+        position: 'postfix',
+        preventSelfReference: true,
+        description: '千分号'
+    },
+    
     // 位运算符
     '&': {
         precedence: 1,
@@ -298,7 +315,7 @@ export const OPERATORS = {
         acceptAny: true,
         description: '时间差可视化'
     },
-    '>#week': {
+    '>#w': {
         precedence: 0,
         args: 1,
         func: Utils.formatDateStamp2Week,
@@ -306,11 +323,11 @@ export const OPERATORS = {
         acceptAny: true,
         description: '时间差转成周数'
     },
-    '>#w': {
-        alias: '>#week',
+    '>#W': {
+        alias: '>#w',
         description: '时间差转成周数'
     },
-    '>#day': {
+    '>#d': {
         precedence: 0,
         args: 1,
         func: Utils.formatDateStamp2Day,
@@ -318,11 +335,11 @@ export const OPERATORS = {
         acceptAny: true,
         description: '时间差转成天数'
     },
-    '>#d': {
-        alias: '>#day',
+    '>#D': {
+        alias: '>#d',
         description: '时间差转成天数'
     },
-    '>#hour': {
+    '>#h': {
         precedence: 0,
         args: 1,
         func: Utils.formatDateStamp2Hour,
@@ -330,11 +347,11 @@ export const OPERATORS = {
         acceptAny: true,
         description: '时间差转成小时数'
     },
-    '>#h': {
-        alias: '>#hour',
+    '>#H': {
+        alias: '>#h',
         description: '时间差转成小时数'
     },
-    '>#minute': {
+    '>#m': {
         precedence: 0,
         args: 1,
         func: Utils.formatDateStamp2Minute,
@@ -342,11 +359,11 @@ export const OPERATORS = {
         acceptAny: true,
         description: '时间差转成分钟数'
     },
-    '>#m': {
-        alias: '>#minute',
+    '>#M': {
+        alias: '>#m',
         description: '时间差转成分钟数'
     },
-    '>#second': {
+    '>#s': {
         precedence: 0,
         args: 1,
         func: Utils.formatDateStamp2Second,
@@ -354,8 +371,8 @@ export const OPERATORS = {
         acceptAny: true,
         description: '时间差转成秒数'
     },
-    '>#s': {
-        alias: '>#second',
+    '>#S': {
+        alias: '>#s',
         description: '时间差转成秒数'
     }
 };
