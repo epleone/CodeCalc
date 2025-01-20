@@ -388,8 +388,8 @@
             { group: '大数混合运算', name: "大数复合运算6", input: "lg(1234567890123457689) + lb(9876543210987653214)", expected: "81.19022687223763" },
 
             { group: '大数边界测试', name: "超大整数", input: "999999999999999999999999999999", expected: "1e+30" },
-            { group: '大数边界测试', name: "超大浮点数", input: "1.23456789e+30", expected: "1.234568e+30" },
-            { group: '大数边界测试', name: "超小浮点数", input: "1.23456789e-30", expected: "1.234568e-30" },
+            { group: '大数边界测试', name: "超大浮点数", input: "1.23456789e+30", expected: "1.23456789e+30" },
+            { group: '大数边界测试', name: "超小浮点数", input: "1.23456789e-30", expected: "1.23456789e-30" },
             { group: '大数边界测试', name: "大数精度", input: "0.123456789012345678901234567890", expected: "0.123456789012345678901234567890" },
             { group: '大数边界测试', name: "大数舍入", input: "9.999999999999999999999999", expected: "10" },
 
@@ -400,7 +400,44 @@
             { group: '错误处理', name: "lg零", input: "lg(0)", expected: "error" },
             { group: '错误处理', name: "log以零为底", input: "log(0, 1)", expected: "error" },
             { group: '错误处理', name: "log零", input: "log(100, 0)", expected: "error" },
-            { group: '错误处理', name: "lb零", input: "lb(0)", expected: "error" }
+            { group: '错误处理', name: "lb零", input: "lb(0)", expected: "error" },
+
+            // 在 tests 数组中添加新的科学计数法测试组
+            { group: '科学计数法', name: "基本格式", input: "1.5e2", expected: "150" },
+            { group: '科学计数法', name: "带正号", input: "1.5e+2", expected: "150" },
+            { group: '科学计数法', name: "带负号", input: "1.5e-2", expected: "0.015" },
+            { group: '科学计数法', name: "大写E", input: "1.5E2", expected: "150" },
+            { group: '科学计数法', name: "大写E带正号", input: "1.5E+2", expected: "150" },
+            { group: '科学计数法', name: "大写E带负号", input: "1.5E-2", expected: "0.015" },
+            { group: '科学计数法', name: "整数部分", input: "15e2", expected: "1500" },
+            { group: '科学计数法', name: "小数部分", input: ".5e2", expected: "50" },
+            { group: '科学计数法', name: "多位指数", input: "1.5e10", expected: "15000000000" },
+            { group: '科学计数法', name: "负指数多位", input: "1.5e-10", expected: "1.5e-10" },
+            { group: '科学计数法', name: "零指数", input: "1.5e0", expected: "1.5" },
+            { group: '科学计数法', name: "多位小数", input: "1.23456e3", expected: "1234.56" },
+            { group: '科学计数法', name: "运算1", input: "1.5e2 + 2", expected: "152" },
+            { group: '科学计数法', name: "运算2", input: "1.5e2 * 2", expected: "300" },
+            { group: '科学计数法', name: "运算3", input: "1.5e2 - 1.5e1", expected: "135" },
+            { group: '科学计数法', name: "运算4", input: "1.5e2 / 1.5e1", expected: "10" },
+            { group: '科学计数法', name: "负数", input: "-1.5e2", expected: "-150" },
+            { group: '科学计数法', name: "负数带正指数", input: "-1.5e+2", expected: "-150" },
+            { group: '科学计数法', name: "负数带负指数", input: "-1.5e-2", expected: "-0.015" },
+            { group: '科学计数法', name: "边界1", input: "9.9999e2", expected: "999.99" },
+            { group: '科学计数法', name: "边界2", input: "1e-15", expected: "1e-15" },
+            { group: '科学计数法', name: "边界3", input: "1e+15", expected: "1000000000000000" },
+            { group: '科学计数法', name: "正负号", input: "-1.5e2", expected: "-150" },
+            { group: '科学计数法', name: "正负号", input: "+1.5e2", expected: "150" },
+            { group: '科学计数法', name: "正负号", input: "-------1.5e-2", expected: "-0.015" },
+            { group: '科学计数法', name: "正负号", input: "+++++--1.5e-2", expected: "0.015" },
+
+            // 错误情况测试
+            { group: '科学计数法错误', name: "缺少指数", input: "1.5e", expected: "error" },
+            { group: '科学计数法错误', name: "指数非数字", input: "1.5ea", expected: "error" },
+            { group: '科学计数法错误', name: "多个e", input: "1.5e2e3", expected: "error" },
+            { group: '科学计数法错误', name: "e前缺数字", input: "e2", expected: "error" },
+            { group: '科学计数法错误', name: "符号后缺数字", input: "1.5e+", expected: "error" },
+            { group: '科学计数法错误', name: "多个小数点", input: "1.5.e2", expected: "error" },
+            { group: '科学计数法错误', name: "指数小数", input: "1.5e2.5", expected: "error" }
         ];
 
         function runTest(test) {

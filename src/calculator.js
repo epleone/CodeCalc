@@ -122,15 +122,6 @@ const Calculator = (function() {
 
     // 2. 词法分析模块
     function tokenize(expr, operators, functions, constants) {
-        const tokens = [];
-        let i = 0;
-
-        // 使用新的 DELIMITERS 和 SEPARATORS
-        const delimiters = new Set(Object.keys(DELIMITERS));
-        const separators = new Set(Object.keys(SEPARATORS));
-
-        const sortedOperators = [...operators].sort((a, b) => b.length - a.length);
-        let lastTokenType = null;  // 添加上一个 token 的类型记录
 
         // 检查区分正号+和加号+，负号-和减号-
         function shouldBeUnaryOperator() {
@@ -162,6 +153,27 @@ const Calculator = (function() {
                     continue;
                 }
 
+                // 处理科学计数法
+                // 1. 检查是否是有效的数字部分
+                if (/^\d+\.?\d*$/.test(str)) {
+                    // 2. 检查是否遇到科学计数法标记 e/E
+                    if (char === 'e' || char === 'E') {
+                        str += char;
+                        i++;
+                        // 3. 检查指数部分的符号
+                        if (i < expr.length && (expr[i] === '+' || expr[i] === '-')) {
+                            str += expr[i];
+                            i++;
+                        }
+                        // 4. 收集指数部分的数字
+                        while (i < expr.length && /\d/.test(expr[i])) {
+                            str += expr[i];
+                            i++;
+                        }
+                        continue;
+                    }
+                }
+
                 // 检查是否是分隔符或定界符
                 if (delimiters.has(char) || separators.has(char)) {
                     break;
@@ -182,6 +194,66 @@ const Calculator = (function() {
             }
             return str;
         }
+
+        // 在返回tokens之前添加后处理
+        function postProcessTokens(tokens) {
+            // 检查是否存在变量x
+            const hasXVariable = tokens.some(token => 
+                (token[0] === 'identifier' || token[0] === 'string') && 
+                token[1] === 'x'
+            );
+
+            if (!hasXVariable && !variables.has('x')) {
+                // 如果没有x变量，处理所有的字符串token
+                for (let i = 0; i < tokens.length; i++) {
+                    if (tokens[i][0] === 'string') {
+                        // 跳过16进制数的处理
+                        if (tokens[i][1].startsWith('0x')) {
+                            continue;
+                        }
+
+                        // 检查是否是变量名,如果是则跳过处理
+                        if (variables.has(tokens[i][1])) {
+                            continue;
+                        }
+                        
+                        const parts = tokens[i][1].split('x');
+                        if (parts.length > 1) {
+                            // 重构tokens数组
+                            const newTokens = [];
+                            for (let j = 0; j < parts.length; j++) {
+                                if (parts[j]) {
+                                    // 保持原始token类型
+                                    if (constants.has(parts[j])) {
+                                        newTokens.push(['constant', parts[j]]);
+                                    } else {
+                                        newTokens.push(['string', parts[j]]);
+                                    }
+                                }
+                                if (j < parts.length - 1) {
+                                    newTokens.push(['operator', '*']);
+                                    addWarning('使用x作为乘法符号');
+                                }
+                            }
+                            // 替换原来的token
+                            tokens.splice(i, 1, ...newTokens);
+                            i += newTokens.length - 1; // 调整索引
+                        }
+                    }
+                }
+            }
+            return tokens;
+        }
+
+        const tokens = [];
+        let i = 0;
+
+        // 使用新的 DELIMITERS 和 SEPARATORS
+        const delimiters = new Set(Object.keys(DELIMITERS));
+        const separators = new Set(Object.keys(SEPARATORS));
+
+        const sortedOperators = [...operators].sort((a, b) => b.length - a.length);
+        let lastTokenType = null;  // 添加上一个 token 的类型记录
 
         while (i < expr.length) {
             const char = expr[i];
@@ -265,56 +337,6 @@ const Calculator = (function() {
                     }
                 }
             }
-        }
-
-        // 在返回tokens之前添加后处理
-        function postProcessTokens(tokens) {
-            // 检查是否存在变量x
-            const hasXVariable = tokens.some(token => 
-                (token[0] === 'identifier' || token[0] === 'string') && 
-                token[1] === 'x'
-            );
-
-            if (!hasXVariable && !variables.has('x')) {
-                // 如果没有x变量，处理所有的字符串token
-                for (let i = 0; i < tokens.length; i++) {
-                    if (tokens[i][0] === 'string') {
-                        // 跳过16进制数的处理
-                        if (tokens[i][1].startsWith('0x')) {
-                            continue;
-                        }
-
-                        // 检查是否是变量名,如果是则跳过处理
-                        if (variables.has(tokens[i][1])) {
-                            continue;
-                        }
-                        
-                        const parts = tokens[i][1].split('x');
-                        if (parts.length > 1) {
-                            // 重构tokens数组
-                            const newTokens = [];
-                            for (let j = 0; j < parts.length; j++) {
-                                if (parts[j]) {
-                                    // 保持原始token类型
-                                    if (constants.has(parts[j])) {
-                                        newTokens.push(['constant', parts[j]]);
-                                    } else {
-                                        newTokens.push(['string', parts[j]]);
-                                    }
-                                }
-                                if (j < parts.length - 1) {
-                                    newTokens.push(['operator', '*']);
-                                    addWarning('使用x作为乘法符号');
-                                }
-                            }
-                            // 替换原来的token
-                            tokens.splice(i, 1, ...newTokens);
-                            i += newTokens.length - 1; // 调整索引
-                        }
-                    }
-                }
-            }
-            return tokens;
         }
 
         const processedTokens = postProcessTokens(tokens);
