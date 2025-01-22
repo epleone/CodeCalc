@@ -1,7 +1,7 @@
 {
   "name": "CodeCalc",
   "pluginName": "Code Calculator",
-  "main": "src/index.html",
+  "main": "index.html",
   "logo": "logo.png",
   "features": [
     {
@@ -51,6 +51,6 @@
       ]
     }
   ],
-  "version": "2.1.1",
+  "version": "3.0.0",
   "description": "一个可以运行代码的计算器"
 } 
