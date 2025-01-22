@@ -28,7 +28,7 @@ export const OPERATORS = {
         precedence: 2,
         args: 2,
         func: Utils.add,
-        acceptAny: true, // 支持任何类型输入，不转换类型
+        argTypes: 'any', // 支持任何类型输入，不转换类型
         position: 'infix',
         description: '加法'
     },
@@ -36,7 +36,7 @@ export const OPERATORS = {
         precedence: 2,
         args: 2,
         func: Utils.subtract,
-        acceptAny: true,
+        argTypes: 'any',
         position: 'infix',
         description: '减法'
     },
@@ -118,8 +118,13 @@ export const OPERATORS = {
     '&': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x & y,
+        func: (x, y) => {
+            //打印x和y的类型
+            console.log(typeof x, typeof y);
+            return x & y;
+        },
         position: 'infix',
+        argTypes: 'bigint',
         description: '按位与'
     },
     'and': {
@@ -131,6 +136,7 @@ export const OPERATORS = {
         args: 2,
         func: (x, y) => x | y,
         position: 'infix',
+        argTypes: 'bigint',
         description: '按位或'
     },
     'or': {
@@ -142,6 +148,7 @@ export const OPERATORS = {
         args: 2,
         func: (x, y) => x ^ y,
         position: 'infix',
+        argTypes: 'bigint',
         description: '按位异或'
     },
     '~': {
@@ -149,6 +156,7 @@ export const OPERATORS = {
         args: 1,
         func: x => ~x,
         position: 'prefix',
+        argTypes: 'bigint',
         description: '按位取反'
     },
     "not":{
@@ -158,37 +166,25 @@ export const OPERATORS = {
     '<<': {
         precedence: 3,
         args: 2,
-        func: (x, y) => {
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) << BigInt(y);
-            }
-            return x << y;
-        },
+        func: (x, y) => x << y,
         position: 'infix',
+        argTypes: 'bigint',
         description: '左移'
     },
     '>>': {
         precedence: 3,
         args: 2,
-        func: (x, y) => {
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) >> BigInt(y);
-            }
-            return x >> y;
-        },
+        func: (x, y) => x >> y,
         position: 'infix',
+        argTypes: 'bigint',
         description: '右移'
     },
     '>>>': {
         precedence: 3,
         args: 2,
-        func: (x, y) => {
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                return BigInt(x) >>> BigInt(y);
-            }
-            return x >>> y;
-        },
+        func: (x, y) => x >>> y,
         position: 'infix',
+        argTypes: 'number',
         description: '无符号右移'
     },
 
@@ -198,14 +194,14 @@ export const OPERATORS = {
         args: 2,
         func: (a, b) => b,
         position: 'infix',
-        acceptAny: true,
+        argTypes: 'any',
         isCompoundAssignment: true,
         description: '赋值'
     },
     '+=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => Utils.toNumber(oldValue) + Utils.toNumber(rightValue),
+        func: (oldValue, rightValue) => oldValue.add(rightValue),
         position: 'infix',
         description: '加法赋值',
         isCompoundAssignment: true
@@ -213,7 +209,7 @@ export const OPERATORS = {
     '-=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => Utils.toNumber(oldValue) - Utils.toNumber(rightValue),
+        func: (oldValue, rightValue) => oldValue.sub(rightValue),
         position: 'infix',
         description: '减法赋值',
         isCompoundAssignment: true
@@ -221,7 +217,7 @@ export const OPERATORS = {
     '*=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => Utils.toNumber(oldValue) * Utils.toNumber(rightValue),
+        func: (oldValue, rightValue) => oldValue.mul(rightValue),
         position: 'infix',
         description: '乘法赋值',
         isCompoundAssignment: true
@@ -229,13 +225,7 @@ export const OPERATORS = {
     '/=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => {
-            const divisor = Utils.toNumber(rightValue);
-            if (divisor === 0) {
-                throw new Error('除数不能为零');
-            }
-            return Utils.toNumber(oldValue) / divisor;
-        },
+        func: (oldValue, rightValue) => oldValue.div(rightValue),
         position: 'infix',
         description: '除法赋值',
         isCompoundAssignment: true
@@ -245,6 +235,7 @@ export const OPERATORS = {
         args: 2,
         func: (oldValue, rightValue) => oldValue & rightValue,
         position: 'infix',
+        argTypes: 'bigint',
         description: '按位与赋值',
         isCompoundAssignment: true
     },
@@ -253,6 +244,7 @@ export const OPERATORS = {
         args: 2,
         func: (oldValue, rightValue) => oldValue | rightValue,
         position: 'infix',
+        argTypes: 'bigint',
         description: '按位或赋值',
         isCompoundAssignment: true
     },
@@ -261,6 +253,7 @@ export const OPERATORS = {
         args: 2,
         func: (oldValue, rightValue) => oldValue ^ rightValue,
         position: 'infix',
+        argTypes: 'bigint',
         description: '按位异或赋值',
         isCompoundAssignment: true
     },
@@ -269,6 +262,7 @@ export const OPERATORS = {
         args: 2,
         func: (oldValue, rightValue) => oldValue << rightValue,
         position: 'infix',
+        argTypes: 'bigint',
         description: '左移赋值',
         isCompoundAssignment: true
     },
@@ -277,6 +271,7 @@ export const OPERATORS = {
         args: 2,
         func: (oldValue, rightValue) => oldValue >> rightValue,
         position: 'infix',
+        argTypes: 'bigint',
         description: '右移赋值',
         isCompoundAssignment: true
     },
@@ -285,6 +280,7 @@ export const OPERATORS = {
         args: 2,
         func: (oldValue, rightValue) => oldValue >>> rightValue,
         position: 'infix',
+        argTypes: 'bigint',
         description: '无符号右移赋值',
         isCompoundAssignment: true
     },
@@ -295,7 +291,7 @@ export const OPERATORS = {
         args: 1,
         func: Utils.dateToTimestamp,
         position: 'prefix',
-        acceptAny: true,               // 支持任何类型输入，不转换类型
+        argTypes: 'any',               // 支持任何类型输入，不转换类型
         description: '日期转时间戳'     //输出时间戳
     },
     '>@': {
@@ -303,7 +299,7 @@ export const OPERATORS = {
         args: 1,
         func: Utils.formatDate,
         position: 'postfix',
-        acceptAny: true,
+        argTypes: 'any',
         description: '时间戳可视化成日期'
     },
 
@@ -313,7 +309,7 @@ export const OPERATORS = {
         args: 1,
         func: Utils.formatDateStamp,
         position: 'postfix',
-        acceptAny: true,
+        argTypes: 'any',
         description: '时间差可视化'
     },
     '>#w': {
@@ -321,7 +317,7 @@ export const OPERATORS = {
         args: 1,
         func: Utils.formatDateStamp2Week,
         position: 'postfix',
-        acceptAny: true,
+        argTypes: 'any',
         description: '时间差转成周数'
     },
     '>#W': {
@@ -333,7 +329,7 @@ export const OPERATORS = {
         args: 1,
         func: Utils.formatDateStamp2Day,
         position: 'postfix',
-        acceptAny: true,
+        argTypes: 'any',
         description: '时间差转成天数'
     },
     '>#D': {
@@ -345,7 +341,7 @@ export const OPERATORS = {
         args: 1,
         func: Utils.formatDateStamp2Hour,
         position: 'postfix',
-        acceptAny: true,
+        argTypes: 'any',
         description: '时间差转成小时数'
     },
     '>#H': {
@@ -357,7 +353,7 @@ export const OPERATORS = {
         args: 1,
         func: Utils.formatDateStamp2Minute,
         position: 'postfix',
-        acceptAny: true,
+        argTypes: 'any',
         description: '时间差转成分钟数'
     },
     '>#M': {
@@ -369,7 +365,7 @@ export const OPERATORS = {
         args: 1,
         func: Utils.formatDateStamp2Second,
         position: 'postfix',
-        acceptAny: true,
+        argTypes: 'any',
         description: '时间差转成秒数'
     },
     '>#S': {
@@ -384,7 +380,7 @@ export const FUNCTIONS = {
     'str': {
         func: x => x.toString(),
         args: 1,
-        acceptAny: true,
+        argTypes: 'any',
         description: '转换为字符串'
     },
     'num': {
@@ -395,12 +391,12 @@ export const FUNCTIONS = {
 
     // 数学函数
     'max': {
-        func: Math.max,
+        func: (...args) => Decimal.max(...args),
         args: -1,
         description: '求最大值'
     },
     'min': {
-        func: Math.min,
+        func: (...args) => Decimal.min(...args),
         args: -1,
         description: '求最小值'
     },
@@ -487,7 +483,7 @@ export const FUNCTIONS = {
         description: '平方根'
     },
     'pow': {
-        func: (x, y) => x.pow(y),
+        func: Utils.pow,
         args: 2,
         description: '幂函数'
     },
@@ -518,41 +514,44 @@ export const FUNCTIONS = {
     'upper': {
         args: 1,
         func: x => x.toUpperCase(),
-        acceptAny: true,
+        argTypes: 'any',
         asProperty: true,
         description: '转换为大写'
     },
     'lower': {
         args: 1,
         func: x => x.toLowerCase(),
-        acceptAny: true,
+        argTypes: 'any',
         asProperty: true,
         description: '转换为小写'
     },
     'length': {
         args: 1,
         func: x => x.length,
-        acceptAny: true,
+        argTypes: 'any',
         asProperty: true,
         description: '字符串长度'
     },
     // 进制转换函数
     'bin': {
         args: 1,
-        func: x => "0b" + BigInt(x).toString(2),
+        func: x => "0b" + x.toString(2),
         asProperty: true,
+        argTypes: 'bigint',
         description: '十进制转二进制'
     },
     'oct': {
         args: 1,
-        func: x => "0o" + BigInt(x).toString(8),
+        func: x => "0o" + x.toString(8),
         asProperty: true,
+        argTypes: 'bigint',
         description: '十进制转八进制'
     },
     'hex': {
         args: 1,
-        func: x => "0x" + BigInt(x).toString(16),
+        func: x => "0x" + x.toString(16),
         asProperty: true,
+        argTypes: 'bigint',
         description: '十进制转十六进制'
     },
 
@@ -571,7 +570,7 @@ export const FUNCTIONS = {
             }
         },
         description: 'Base64编码',
-        acceptAny: true,
+        argTypes: 'any',
         asProperty: true
     },
 
@@ -590,7 +589,7 @@ export const FUNCTIONS = {
             }
         },
         description: 'Base64解码',
-        acceptAny: true,
+        argTypes: 'any',
         asProperty: true
     },
     // 日期函数

@@ -38,13 +38,23 @@ const M_CONST = {
     'e': Decimal.exp(1),         // e
 };
 
-// 判断是否是数字
+
 function isNumber(value) {
     return typeof value === 'number';
 }
 
+function isBigInt(value) {
+    return typeof value === 'bigint';
+}
+    
 function isDecimal(value) {
     return value instanceof Decimal;
+}
+
+
+// 判断是否是数字类型，可以相互转换
+function isDigital(value) {
+    return isNumber(value) || isBigInt(value) || isDecimal(value);
 }
 
 function isString(value) {
@@ -63,6 +73,31 @@ function isDatestamp(value) {
 
 // 类型转换工具
 const Utils = {
+
+    // 字符串转数字，用于输入时处理
+    // type: 目标类型 {decimal, number, bigint, string, any}
+    convertTypes(value, type='decimal') {
+        // console.log("convertTypes: ", value.toString(), type);
+
+        if(type === 'decimal') {
+            return new Decimal(value.toString());
+        }  
+        if(type === 'number') {
+            return Number(value.toString());
+        }
+        if(type === 'bigint') {
+            return BigInt(value.toString());
+        }
+        if(type === 'string') {
+            return value.toString();
+        }
+        if(type === 'any') {
+            return value;
+        }
+
+        throw new Error(`无法将 ${value} 转换为 ${type} 类型`);
+    },
+
     // 将不同的输出格式化成字符串
     formatToDisplayString(result) {
 
@@ -74,7 +109,7 @@ const Utils = {
         // 如果是Date，则返回日期字符串
         if(isDate(result)) {
             return {value: result.getTime(), info: "时间戳对应日期：" + Utils.formatDate(result)};
-        }   
+        }  
 
         return result.toString();     // 可以定义输出格式
         // return result.toNumber();  // 会损失精度
@@ -212,16 +247,6 @@ const Utils = {
     },
 
 
-    // 字符串转数字，用于输入时处理
-    toNumber(value) {
-        try {
-            return new Decimal(value);
-        } catch (error) {
-        // console.log(error.message); 
-        throw new Error(`无法将 ${value} 转换为数字类型`);
-        }
-    },
-
     toFixed(value, precision) {
         const decimal = isDecimal(value) ? value : new Decimal(value);
         return decimal.toFixed(precision).toString();
@@ -273,6 +298,7 @@ const Utils = {
         return degrees;
     },
 
+    // 时间和日期计算依旧使用默认的Math库
     // 日期转时间戳
     dateToTimestamp(x) {
         const date = new Date(x);
@@ -281,7 +307,6 @@ const Utils = {
         }
         return date.getTime();
     },
-
 
     // 时间戳格式化成日期字符串
     formatDate(x) {

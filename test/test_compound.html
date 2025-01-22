@@ -154,7 +154,7 @@
             { group: '位运算复合', name: "与或组合", input: "(12 & 5) | (8 & 3)", expected: "4" },
             { group: '位运算复合', name: "移位组合", input: "(8 << 2) >> 1", expected: "16" },
             { group: '位运算复合', name: "复杂位运算", input: "~(15 & (8 | 4)) << 2", expected: "-52" },
-            { group: '位运算复合', name: "位运算进制", input: "(0xFF & 0xF0).hex", expected: "0xf0" },
+            { group: '位运算复合', name: "位运算进制", input: "(0xFF & 0xEF).hex", expected: "0xef" },
             { group: '位运算复合', name: "移位链式", input: "(1 << 4 << 2).bin", expected: "0b10000000" },
 
             // 类型转换复合测试

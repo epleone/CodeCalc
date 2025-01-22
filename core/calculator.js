@@ -107,7 +107,7 @@ const Calculator = (function() {
                     args: 1,
                     func: func.func,
                     position: 'postfix',
-                    ...(func.acceptAny && { acceptAny: true }),
+                    ...(func.argTypes && { argTypes: func.argTypes }),
                     ...(func.repr && { repr: func.repr }),
                     ...(func.preventSelfReference && { preventSelfReference: func.preventSelfReference })
                 };
@@ -580,12 +580,15 @@ const Calculator = (function() {
     }
 
     // 在 evaluate 函数之前添加参数转换函数
-    function convertArguments(args, acceptAny, nodeArgs, context) {
+    function convertArguments(args, argTypes, nodeArgs, context) {
         const { name, type } = context;
-        if (!acceptAny) {
-            return args.map(arg => Utils.toNumber(arg));
+        console.log("convertArguments1: ", argTypes);
+        if (!argTypes) {
+            console.log("convertArguments2: 默认参数");
+            return args.map(arg => Utils.convertTypes(arg));
         }
-        return args;
+
+        return args.map(arg => Utils.convertTypes(arg, argTypes));
     }
 
     // 4. 求值模块
@@ -596,13 +599,14 @@ const Calculator = (function() {
 
         if (!node) return 0;
 
-        // 处理字符串节点 - 可能是变量名
+        // 处理单独的字符串节点：a = 1 中的 1
+        // 也可能是变量名
         if (node.type === 'string') {
             if (variables.has(node.value)) {
                 return variables.get(node.value);
             }
             // 如果不是变量，则转换为数字
-            return Utils.toNumber(node.value);
+            return Utils.convertTypes(node.value);
 
             // return node.value;
         }
@@ -676,7 +680,7 @@ const Calculator = (function() {
             }
 
             // 其他运算符的处理
-            const convertedArgs = convertArguments(args, op.acceptAny, node.args, {
+            const convertedArgs = convertArguments(args, op.argTypes, node.args, {
                 name: node.value,
                 type: '运算符'
             });
