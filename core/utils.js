@@ -252,6 +252,30 @@ const Utils = {
         return decimal.toFixed(precision).toString();
     },
 
+
+    sin(value) {
+        // 修复Decimal的bug
+        if(value.abs().floor() > 10000000000) {
+            return Math.sin(value.toString());
+        }
+        return Decimal.sin(value);
+    },
+
+    cos(value) {
+        if(value.abs().floor() > 10000000000) {
+            return Math.cos(value.toString());
+        }
+
+        return Decimal.cos(value);
+    },
+
+    tan(value) {
+        if(value.abs().floor() > 10000000000) {
+            return Math.tan(value.toString());
+        }
+        return Decimal.tan(value);
+    },
+
     // 辅助函数：尝试弧度数字转换为 π 的倍数或分数形式
     radianToPi(value) {
         const ratio = isDecimal(value) ? value : new Decimal(value);

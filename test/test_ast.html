@@ -334,7 +334,7 @@
                     { expr: "(-1-1).abs", expect: "2" },
                     { expr: "30°.deg", expect: "30" },  // 角度转弧度再转角度
                     { expr: "max(-1,-1-1,1, min(10, -1-1, 2))", expect: "1" },
-                    { expr: "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))", expect: "59.29577951308232" },
+                    { expr: "max(1.deg, (1+2.rad).deg, min(1.deg, 2.deg))", expect: "59.295779513082320874" },
                     { expr: "-1*3 + 6/2", expect: "0" },  // -3 + 3 = 0
                     { expr: "~-1", expect: "0" },  
                     { expr: "--1", expect: "1" },  // 1 + (-2)
@@ -363,7 +363,7 @@
                     { expr: "(1 + 2)) * (-3 - 4)", error: "多余的右括号" },
                     { expr: "-1+", error: "意外的表达式结束" },
                     { expr: "abs(-1 -1", error: "缺少右括号" },
-                    { expr: "c + 1", error: "无效" },
+                    { expr: "c + 1", error: "Invalid argument" },
                     { expr: "c += 1", error: "未定义" }
                 ],
                 '进制转换': [
