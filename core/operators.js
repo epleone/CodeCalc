@@ -609,6 +609,7 @@ export const FUNCTIONS = {
             // 返回Datestamp对象
             return new Datestamp(years, months, totalMilliseconds);
         },
+        argTypes: 'number',
         description: '时间间隔转换为时间戳'
     },
 }; 
