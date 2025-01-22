@@ -1,0 +1,24 @@
+{
+  "name": "codecalculator",
+  "version": "3.0.0",
+  "type": "module",
+  "main": "calculator.js",
+  "scripts": {
+    "start": "node calculator.js",
+    "build": "rollup -c"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "decimal.js": "^10.4.3",
+    "ml-matrix": "^6.12.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-node-resolve": "^15.3.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.12.0"
+  }
+}

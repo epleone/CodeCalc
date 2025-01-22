@@ -1,5 +1,4 @@
-import Calculator from './calculator.js';
-import './utoolsUtils.js';          // 只需要导入执行，不需要命名导入
+import { Calculator } from './calculator.min.js';
 import * as Copy from './copy.js';
 import * as Tag from './tag.js';
 import { Settings } from './settings.js';
@@ -635,3 +634,5 @@ export {
     handleContainerClick,
     initializeUI
 };
+
+console.log('ui.js 执行完成');

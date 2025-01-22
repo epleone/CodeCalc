@@ -1,4 +1,4 @@
-import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
+import { OPERATORS, FUNCTIONS, CONSTANTS } from './calculator.min.js';
 
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {
