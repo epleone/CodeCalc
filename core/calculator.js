@@ -860,3 +860,6 @@ const Calculator = (function() {
 
 // 添加 ES6 导出
 export default Calculator; 
+
+// 导出 OPERATORS, FUNCTIONS, CONSTANTS
+export { OPERATORS, FUNCTIONS, CONSTANTS };

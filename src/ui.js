@@ -1,5 +1,5 @@
 import Calculator from './calculator.js';
-import { OPERATORS, FUNCTIONS, CONSTANTS } from './operators.js';
+import './utoolsUtils.js';          // 只需要导入执行，不需要命名导入
 import * as Copy from './copy.js';
 import * as Tag from './tag.js';
 import { Settings } from './settings.js';
