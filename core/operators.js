@@ -242,7 +242,12 @@ export const OPERATORS = {
     '|=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => oldValue | rightValue,
+        func: (oldValue, rightValue) => {
+            console.log("|=", oldValue, rightValue);
+            console.log("oldValue的类型:", typeof oldValue);
+            console.log("rightValue的类型:", typeof rightValue);
+            return oldValue | rightValue;
+        },
         position: 'infix',
         argTypes: 'bigint',
         description: '按位或赋值',
@@ -280,7 +285,7 @@ export const OPERATORS = {
         args: 2,
         func: (oldValue, rightValue) => oldValue >>> rightValue,
         position: 'infix',
-        argTypes: 'bigint',
+        argTypes: 'number',
         description: '无符号右移赋值',
         isCompoundAssignment: true
     },

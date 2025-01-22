@@ -77,7 +77,7 @@ const Utils = {
     // 字符串转数字，用于输入时处理
     // type: 目标类型 {decimal, number, bigint, string, any}
     convertTypes(value, type='decimal') {
-        // console.log("convertTypes: ", value.toString(), type);
+        console.log("convertTypes: ", value.toString(), type);
 
         if(type === 'decimal') {
             return new Decimal(value.toString());
@@ -155,6 +155,11 @@ const Utils = {
             throw new Error('两个日期类型不能相加');
         }
 
+        if(isDigital(x) && isDigital(y)) {
+            return Decimal(x.toString()).plus(Decimal(y.toString()));
+        }
+
+
         if (typeof x !== typeof y) {
             throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
         }
@@ -195,6 +200,10 @@ const Utils = {
             }else{
                 throw new Error('不支持的日期减法');
             }
+        }
+
+        if(isDigital(x) && isDigital(y)) {
+            return Decimal(x.toString()).minus(Decimal(y.toString()));
         }
 
         if (typeof x !== typeof y) {

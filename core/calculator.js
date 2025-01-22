@@ -580,11 +580,10 @@ const Calculator = (function() {
     }
 
     // 在 evaluate 函数之前添加参数转换函数
-    function convertArguments(args, argTypes, nodeArgs, context) {
-        const { name, type } = context;
-        // console.log("convertArguments1: ", argTypes);
+    function convertArguments(args, argTypes) {
+        console.log("convertArguments1: ", argTypes);
         if (!argTypes) {
-            // console.log("convertArguments2: 默认参数");
+            console.log("convertArguments2: 默认参数");
             return args.map(arg => Utils.convertTypes(arg));
         }
 
@@ -670,8 +669,10 @@ const Calculator = (function() {
                         throw new Error(`变量 "${left.value}" 未定义`);
                     }
                     
-                    const oldValue = variables.get(left.value);
-                    const result = op.func(oldValue, rightValue);
+                    let oldValue = variables.get(left.value);
+                    // 转换参数类型
+                    const convertedArgs = convertArguments([oldValue, rightValue], op.argTypes);
+                    const result = op.func(...convertedArgs);
                     
                     // 更新变量的值
                     variables.set(left.value, result);
@@ -680,10 +681,7 @@ const Calculator = (function() {
             }
 
             // 其他运算符的处理
-            const convertedArgs = convertArguments(args, op.argTypes, node.args, {
-                name: node.value,
-                type: '运算符'
-            });
+            const convertedArgs = convertArguments(args, op.argTypes);
             
             return op.func(...convertedArgs);
         }
@@ -708,10 +706,7 @@ const Calculator = (function() {
             }
             
             // 检查并转换参数
-            const convertedArgs = convertArguments(args, func.argTypes, node.args, {
-                name: node.value,
-                type: '函数'
-            });
+            const convertedArgs = convertArguments(args, func.argTypes);
             
             return func.func(...convertedArgs);
         }
