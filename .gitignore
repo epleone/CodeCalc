@@ -4,4 +4,3 @@ release/
 node_modules/
 math/
 package-lock.json
-calculator.min.js.map

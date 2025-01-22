@@ -8,7 +8,8 @@ export default {
     file: '../src/calculator.min.js',
     format: 'esm',
     exports: 'named',
-    name: 'Calculator'
+    name: 'Calculator',
+    sourcemap: false
   },
   plugins: [
     resolve({
