@@ -72,14 +72,14 @@ const Calculator = (function() {
         ccVariables.clear();
 
         // 处理日期
-        console.log('processDate 1: ', expr);
+        // console.log('processDate 1: ', expr);
         expr = processDate(expr);
-        console.log('processDate 2: ', expr);
+        // console.log('processDate 2: ', expr);
 
         // 处理时间间隔
-        console.log('processTimestamp 1: ', expr);
+        // console.log('processTimestamp 1: ', expr);
         expr = processTimestamp(expr);
-        console.log('processTimestamp 2: ', expr);
+        // console.log('processTimestamp 2: ', expr);
 
         // 处理字符串字面量
         expr = processStringLiterals(expr);
@@ -718,10 +718,9 @@ const Calculator = (function() {
     // 5. 格式化输出模块, 添加额外提醒信息info
     function formatOutput(result, ast, operators, functions) {
 
-        // 打印result的类型
         // console.log('result的类型: ', typeof result);
         result = Utils.formatToDisplayString(result);
-        
+
         // 如果result是对象，则添加info 
         if(typeof result === 'object' && result !== null)
         {
@@ -768,14 +767,16 @@ const Calculator = (function() {
             // 如果找到了 repr 方法就调用它
             if (typeof repr === 'function') {
                 try {
+                    console.log('result: ', result);
                     const formattedResult = repr(result);
+                    console.log('formattedResult: ', formattedResult);
                     // 确保 repr 返回了有效值, 并添加到INFO中
                     if (formattedResult !== undefined) {
                         // result = formattedResult;
                         addInfo(formattedResult);
                     }
                 } catch (error) {
-                    throw new Error(`格式化输出时发生错误: ${error.message}`);
+                    throw new Error(`${error.message}`);
                 }
             }
 

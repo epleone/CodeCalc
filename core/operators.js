@@ -1,12 +1,13 @@
-import { Utils, Datestamp } from './utils.js';
+import Decimal from 'decimal.js';
+import { Utils, Datestamp, M_CONST } from './utils.js';
 
 // 常数定义
 export const CONSTANTS = {
-    'π': Math.PI,
-    'PI': Math.PI,
-    'pi': Math.PI,
-    'e': Math.E,
-    'E': Math.E,
+    'π': M_CONST.pi,
+    'PI': M_CONST.pi,
+    'pi': M_CONST.pi,
+    'e': M_CONST.e,
+    'E': M_CONST.e,
 };
 
 // 定界符定义
@@ -85,21 +86,21 @@ export const OPERATORS = {
     'unary-': {
         precedence: 5,
         args: 1,
-        func: x => -x,
+        func: x => x.neg(),
         position: 'prefix',
         description: '负号'
     },
     'unary+': {
         precedence: 5,
         args: 1,
-        func: x => +x,
+        func: x => x,
         position: 'prefix',
         description: '正号'
     },
     'unary%': {
         precedence: 5,
         args: 1,
-        func: x => x * 0.01,
+        func: x => x.times(0.01),
         position: 'postfix',
         preventSelfReference: true,
         description: '百分号'
@@ -107,7 +108,7 @@ export const OPERATORS = {
     '‰': {
         precedence: 5,
         args: 1,
-        func: x => x * 0.001,
+        func: x => x.times(0.001),
         position: 'postfix',
         preventSelfReference: true,
         description: '千分号'
@@ -404,90 +405,61 @@ export const FUNCTIONS = {
         description: '求最小值'
     },
     'lg': {
-        func: x => {
-            if (typeof x === 'bigint') {
-                // 对于 BigInt,先转换为字符串,再转换为数字计算对数
-                return Math.log10(Number(x.toString()));
-            }
-            return Math.log10(x);
-        },
+        func: x => Decimal.log10(x),
         args: 1,
         description: '以10为底的对数'
     },
     'lb': {
-        func: x => {
-            if (typeof x === 'bigint') {
-                // 对于 BigInt,先转换为字符串,再转换为数字计算对数
-                return Math.log2(Number(x.toString()));
-            }
-            return Math.log2(x);
-        },
+        func: x => Decimal.log2(x),
         args: 1,
         description: '以2为底的对数'
     },
     'log': {
-        func: (x, y) => {
-            if (x <= 0 || y <= 0) {
-                throw new Error('对数底数和真数必须为正数');
-            }
-
-            if (typeof x === 'bigint' || typeof y === 'bigint') {
-                // 对于 BigInt,先转换为字符串,再转换为数字计算对数
-                return Math.log(Number(y.toString())) / Math.log(Number(x.toString()));
-            }
-
-            return Math.log(y) / Math.log(x);
-        },
+        func: (x, y) => Decimal.log(y, x),
         args: 2,
         description: '以x为底的y对数'
     },
     'ln': {
-        func: x => {
-            if (typeof x === 'bigint') {
-                // 对于 BigInt,先转换为字符串,再转换为数字计算对数
-                return Math.log(Number(x.toString()));
-            }
-            return Math.log(x);
-        },
+        func: x => Decimal.ln(x),
         args: 1,
         description: '自然对数'
     },
     'exp': {
-        func: Math.exp,
+        func: x => Decimal.exp(x),
         args: 1,
         description: 'e的指数'
     },
 
     // 三角函数
     'sin': {
-        func: x => Math.sin(x.toString()),
+        func: x => Decimal.sin(x),
         args: 1,
         description: '正弦函数'
     },
     'cos': {
-        func: x => Math.cos(x.toString()),
+        func: x => Decimal.cos(x),
         args: 1,
         description: '余弦函数'
     },
     'tan': {
-        func: x => Math.tan(x.toString()),
+        func: x => Decimal.tan(x),
         args: 1,
         description: '正切函数'
     },
     'asin': {
-        func: x => Math.asin(x.toString()),
+        func: x => Decimal.asin(x),
         args: 1,
         repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反正弦函数'
     },
     'acos': {
-        func: x => Math.acos(x.toString()),
+        func: x => Decimal.acos(x),
         args: 1,
         repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反余弦函数'
     },
     'atan': {
-        func: x => Math.atan(x.toString()),
+        func: x => Decimal.atan(x),
         args: 1,
         repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
         description: '反正切函数'
@@ -495,39 +467,39 @@ export const FUNCTIONS = {
 
     // 双曲函数
     'sinh': {
-        func: x => Math.sinh(x.toString()),
+        func: x => Decimal.sinh(x),
         args: 1,
         description: '双曲正弦'
     },
     'cosh': {
-        func: x => Math.cosh(x.toString()),
+        func: x => Decimal.cosh(x),
         args: 1,
         description: '双曲余弦'
     },
     'tanh': {
-        func: x => Math.tanh(x.toString()),
+        func: x => Decimal.tanh(x),
         args: 1,
         description: '双曲正切'
     },
     'sqrt': {
-        func: x => Math.sqrt(x.toString()),
+        func: x => x.sqrt(),
         args: 1,
         description: '平方根'
     },
     'pow': {
-        func: (x, y) => Math.pow(x.toString(), y.toString()),
+        func: (x, y) => x.pow(y),
         args: 2,
         description: '幂函数'
     },
     'abs': {
         args: 1,
-        func: x => Math.abs(x.toString()),
+        func: x => x.abs(),
         asProperty: true,
         description: '绝对值'
     },
     'rad': {
         args: 1,
-        func: x => x * CONSTANTS.PI / 180,
+        func: x => x.times(M_CONST.pi).div(180),
         asProperty: true,
         preventSelfReference: true,       // 禁止自引用
         repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
@@ -538,7 +510,7 @@ export const FUNCTIONS = {
         func: Utils.radianToDeg,
         asProperty: true,
         preventSelfReference: true,
-        repr: x => '角度: ' + x.toFixed(3) + '°',  // 格式化输出函数
+        repr: x => '角度: ' + Utils.toFixed(x, 3) + '°',  // 格式化输出函数
         description: '弧度转换为度数'
     },
 

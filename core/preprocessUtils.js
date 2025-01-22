@@ -395,7 +395,7 @@ function processTimestamp(expr) {
      *   EXPECT_OPEN -- "其他字符" --> END["结束解析"]
      */
     function parseTimeString(timeStr) {
-        console.log('输入:', timeStr);
+        // console.log('输入:', timeStr);
 
         if(timeStr.trim() === ''){
             return timeStr;
@@ -589,7 +589,7 @@ function processTimestamp(expr) {
             }
         }
 
-        console.log('输出:', finalResult);
+        // console.log('输出:', finalResult);
         return finalResult;
     }
 
@@ -597,13 +597,13 @@ function processTimestamp(expr) {
     expr = expr.replace(/>\s*#/g, '>timestamp');
 
     const timeStrs = expr.split('#');
-    console.log('timeStrs:', timeStrs);
+    // console.log('timeStrs:', timeStrs);
 
     let result = timeStrs[0];
     for(let i = 1; i < timeStrs.length; i++){
-        console.log('输入:', timeStrs[i]);
+        // console.log('输入:', timeStrs[i]);
         const normalized = normalizeTimeString(timeStrs[i]);
-        console.log('Normalize 输出:', normalized);
+        // console.log('Normalize 输出:', normalized);
         result += parseTimeString(normalized);
     }
 
