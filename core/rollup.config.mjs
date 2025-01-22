@@ -5,7 +5,7 @@ import commonjs from '@rollup/plugin-commonjs';
 export default {
   input: 'calculator.js',
   output: {
-    file: '../src/calculator.min.js',
+    file: '../app/src/calculator.min.js',
     format: 'esm',
     exports: 'named',
     name: 'Calculator',

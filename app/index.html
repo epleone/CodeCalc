@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Code Calc</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
     <div id="snapshot-panel" class="snapshot-panel">
@@ -129,8 +129,8 @@
 
     <script type="module">
         // 导入所有函数
-        import * as UI from './ui.js';
-        import './utoolsUtils.js';
+        import * as UI from './src/ui.js';
+        import './src/utoolsUtils.js';
 
         // 将函数添加到全局作用域(window对象)
         Object.assign(window, UI);

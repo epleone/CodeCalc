@@ -42,10 +42,7 @@
     <div id="results"></div>
 
     <script type="module">
-        import Calculator from '../src/calculator.js';
-        
-        // 添加到全局作用域
-        // window.Calculator = Calculator;
+        import { Calculator } from '../app/src/calculator.min.js';
         
         // 将 calculate 函数添加到全局作用域
         window.calculate = Calculator.calculate;
