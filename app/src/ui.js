@@ -634,5 +634,3 @@ export {
     handleContainerClick,
     initializeUI
 };
-
-console.log('ui.js 执行完成');

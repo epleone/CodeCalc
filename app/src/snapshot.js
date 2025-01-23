@@ -10,7 +10,7 @@ export class Snapshot {
     constructor() {
         this.storage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
         // 打印使用的存储适配器
-        console.log('使用的存储适配器:', this.storage);
+        // console.log('使用的存储适配器:', this.storage);
         this.panel = document.getElementById('snapshot-panel');
         this.list = this.panel.querySelector('.snapshot-list');
         this.isPanelVisible = false;
