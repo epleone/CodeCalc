@@ -766,9 +766,9 @@ const Calculator = (function() {
             // 如果找到了 repr 方法就调用它
             if (typeof repr === 'function') {
                 try {
-                    console.log('result: ', result);
+                    // console.log('result: ', result);
                     const formattedResult = repr(result);
-                    console.log('formattedResult: ', formattedResult);
+                    // console.log('formattedResult: ', formattedResult);
                     // 确保 repr 返回了有效值, 并添加到INFO中
                     if (formattedResult !== undefined) {
                         // result = formattedResult;
