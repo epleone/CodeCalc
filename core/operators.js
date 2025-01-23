@@ -1,5 +1,5 @@
-import Decimal from 'decimal.js';
 import { Utils, Datestamp, M_CONST } from './utils.js';
+import Decimal from 'decimal.js';
 
 // 常数定义
 export const CONSTANTS = {
@@ -450,19 +450,19 @@ export const FUNCTIONS = {
     'asin': {
         func: x => Decimal.asin(x),
         args: 1,
-        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
+        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°', // 格式化输出函数
         description: '反正弦函数'
     },
     'acos': {
         func: x => Decimal.acos(x),
         args: 1,
-        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
+        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°', // 格式化输出函数
         description: '反余弦函数'
     },
     'atan': {
         func: x => Decimal.atan(x),
         args: 1,
-        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
+        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°', // 格式化输出函数
         description: '反正切函数'
     },
 
@@ -503,7 +503,7 @@ export const FUNCTIONS = {
         func: x => x.times(M_CONST.pi).div(180),
         asProperty: true,
         preventSelfReference: true,       // 禁止自引用
-        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.radianToDeg(x).toFixed(3) + '°', // 格式化输出函数
+        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°', // 格式化输出函数
         description: '度数转换为弧度'
     },
     'deg': {

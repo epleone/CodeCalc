@@ -77,7 +77,7 @@ const Utils = {
     // 字符串转数字，用于输入时处理
     // type: 目标类型 {decimal, number, bigint, string, any}
     convertTypes(value, type='decimal') {
-        console.log("convertTypes: ", value.toString(), type);
+        // console.log("convertTypes: ", value.toString(), type);
 
         if(type === 'decimal') {
             return new Decimal(value.toString());
@@ -109,10 +109,19 @@ const Utils = {
         // 如果是Date，则返回日期字符串
         if(isDate(result)) {
             return {value: result.getTime(), info: "时间戳对应日期：" + Utils.formatDate(result)};
-        }  
+        } 
 
-        return result.toString();     // 可以定义输出格式
-        // return result.toNumber();  // 会损失精度
+        if(isDecimal(result)) {
+            // 如果是整数，直接返回
+            if(result.isInteger()) {
+                return result.toString();
+            }
+
+            // 显示16位有效数字，并去掉末尾的0
+            return result.toFixed(16).replace(/\.?0+$/, '');
+        }
+        
+        return result.toString();
     },
 
     add(x, y) {
@@ -258,7 +267,13 @@ const Utils = {
 
     toFixed(value, precision) {
         const decimal = isDecimal(value) ? value : new Decimal(value);
-        return decimal.toFixed(precision).toString();
+        // 如果是整数，直接返回
+        if(decimal.isInteger()) {
+            return decimal.toString();
+        }
+
+        // 显示`precision`位有效数字，并去掉末尾的0
+        return decimal.toFixed(precision).replace(/\.?0+$/, '');
     },
 
 

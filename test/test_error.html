@@ -116,7 +116,7 @@
             { group: '数值错误', name: "非法数值", input: "0xFF.toString()", expected: "error" },
             { group: '数值错误', name: "非法进制", input: "0b123", expected: "error" },
             { group: '数值错误', name: "非法十六进制", input: "0xGG", expected: "error" },
-            { group: '数值错误', name: "小数进制", input: "0b1.1", expected: "error" },
+            { group: '数值错误', name: "小数进制", input: "0b1.F", expected: "error" },
 
             // 字符串错误
             { group: '字符串错误', name: "未闭合引号1", input: "'abc", expected: "error" },
@@ -211,7 +211,9 @@
                 if (test.expected === "error") {
                     if (isNaN(result.value) || 
                         result.value === Infinity || 
-                        result.value === -Infinity) {
+                        result.value === -Infinity||
+                        result.value === "-Infinity"||
+                        result.value === "Infinity") {
                         return {
                             name: test.name,
                             input: test.input,

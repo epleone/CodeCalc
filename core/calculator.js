@@ -581,9 +581,9 @@ const Calculator = (function() {
 
     // 在 evaluate 函数之前添加参数转换函数
     function convertArguments(args, argTypes) {
-        console.log("convertArguments1: ", argTypes);
+        // console.log("convertArguments1: ", argTypes);
         if (!argTypes) {
-            console.log("convertArguments2: 默认参数");
+            // console.log("convertArguments2: 默认参数");
             return args.map(arg => Utils.convertTypes(arg));
         }
 
