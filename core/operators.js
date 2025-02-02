@@ -433,17 +433,17 @@ export const FUNCTIONS = {
 
     // 三角函数
     'sin': {
-        func: Utils.sin,
+        func: x => Decimal.sin(x),
         args: 1,
         description: '正弦函数'
     },
     'cos': {
-        func: Utils.cos,
+        func: x => Decimal.cos(x),
         args: 1,
         description: '余弦函数'
     },
     'tan': {
-        func: Utils.tan,
+        func: x => Decimal.tan(x),
         args: 1,
         description: '正切函数'
     },

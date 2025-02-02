@@ -1,6 +1,17 @@
 // 工具类
 import Decimal from 'decimal.js';
 
+Decimal.set({
+    precision: 21,
+    // toExpNeg: -7,        // 小于 1e-7 时使用科学记数法，在函数formatToDisplayString中会被格式化覆盖
+    // toExpPos: 20,        // 大于 1e20 时使用科学记数法，默认21
+});
+
+// 打印Decimal的配置
+// console.log("Decimal toExpPos: ", Decimal.precision);
+// console.log("Decimal toExpPos: ", Decimal.toExpNeg);
+// console.log("Decimal toExpPos: ", Decimal.toExpPos);
+
 // 类 datestamp, 包含三个属性，year, month, timestamp
 class Datestamp {
     constructor(year, month, timestamp) {
@@ -100,7 +111,6 @@ const Utils = {
 
     // 将不同的输出格式化成字符串
     formatToDisplayString(result) {
-
         // 如果是Datestamp，则返回字符串
         if(isDatestamp(result)) {
             return {value: result.toString(), info: "时间间隔：" + Utils.formatDateStamp(result)};
@@ -112,6 +122,12 @@ const Utils = {
         } 
 
         if(isDecimal(result)) {
+            // 检查result.toString()中含有e 
+            if(result.toString().includes('e+') || result.toString().includes('e-')) {
+                // 使用toExponential并限制5位小数
+                return result.toExponential(16).toString().replace(/\.?0+$/, '');
+            }
+
             // 如果是整数，直接返回
             if(result.isInteger()) {
                 return result.toString();
@@ -274,30 +290,6 @@ const Utils = {
 
         // 显示`precision`位有效数字，并去掉末尾的0
         return decimal.toFixed(precision).replace(/\.?0+$/, '');
-    },
-
-
-    sin(value) {
-        // 修复Decimal的bug
-        if(value.abs().floor() > 10000000000) {
-            return Math.sin(value.toString());
-        }
-        return Decimal.sin(value);
-    },
-
-    cos(value) {
-        if(value.abs().floor() > 10000000000) {
-            return Math.cos(value.toString());
-        }
-
-        return Decimal.cos(value);
-    },
-
-    tan(value) {
-        if(value.abs().floor() > 10000000000) {
-            return Math.tan(value.toString());
-        }
-        return Decimal.tan(value);
     },
 
     // 辅助函数：尝试弧度数字转换为 π 的倍数或分数形式
