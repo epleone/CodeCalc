@@ -431,6 +431,37 @@ export const FUNCTIONS = {
         description: 'e的指数'
     },
 
+    // 取整函数
+    'round': {
+        func: x => Decimal.round(x),
+        args: 1,
+        description: '四舍五入取整'
+    },
+    'floor': {
+        func: x => Decimal.floor(x),
+        args: 1,
+        description: '向下取整'
+    },
+    'ceil': {
+        func: x => Decimal.ceil(x),
+        args: 1,
+        description: '向上取整'
+    },
+
+    // 取值范围函数
+    'clamp': {
+        func: (x, y, z) => Decimal.clamp(x, y, z),
+        args: 3,
+        description: '设置数值范围'
+    },
+
+    // 随机数函数
+    'random': {
+        func: () => Decimal.random(),
+        args: 0,
+        description: '随机数生成0~1'
+    },
+
     // 三角函数
     'sin': {
         func: x => Decimal.sin(x),

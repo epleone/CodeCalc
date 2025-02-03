@@ -105,7 +105,7 @@ function checkParentheses(expr, MAX_DEPTH = 1000) {
         { pattern: /,\s*\)/, message: '逗号后直接跟右括号' },
         { pattern: /\(\s*,/, message: '左括号后直接跟逗号' },
         // 检查连续的括号对（允许函数调用）
-        { pattern: /\(\s*\)(?!\s*[.,)\]}])/, message: '独立的空括号对' }
+        // { pattern: /\(\s*\)(?!\s*[.,)\]}])/, message: '独立的空括号对' }
     ];
     
     for (const {pattern, message} of invalidPatterns) {

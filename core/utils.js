@@ -124,8 +124,12 @@ const Utils = {
         if(isDecimal(result)) {
             // 检查result.toString()中含有e 
             if(result.toString().includes('e+') || result.toString().includes('e-')) {
-                // 使用toExponential并限制5位小数
-                return result.toExponential(16).toString().replace(/\.?0+$/, '');
+                // 保留16位小数
+                let str = result.toExponential(16);
+                let [coefficient, exponent] = str.split('e');
+                // 去掉末尾的0
+                coefficient = coefficient.replace(/\.?0+$/, '');
+                return coefficient + 'e' + exponent;
             }
 
             // 如果是整数，直接返回
