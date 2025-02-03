@@ -324,12 +324,18 @@ function recalculateAllLines() {
     });
 }
 
-function isLastExpression(line) {
+function isLastExpression() {
     const container = document.getElementById('expression-container');
     const lines = container.querySelectorAll('.expression-line');
     
-    // 获取当前行的索引
-    const currentIndex = Array.from(lines).indexOf(line);
+    // 获取当前活动的input所在行
+    const activeInput = document.activeElement;
+    if (!activeInput || !activeInput.classList.contains('input')) {
+        return false;
+    }
+    
+    const currentLine = activeInput.closest('.expression-line');
+    const currentIndex = Array.from(lines).indexOf(currentLine);
     
     // 检查后面的行是否都没有输入内容
     for (let i = currentIndex + 1; i < lines.length; i++) {
