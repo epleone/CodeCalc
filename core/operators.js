@@ -444,10 +444,8 @@ export const FUNCTIONS = {
             if(n < 0) {
                 n = x.decimalPlaces() + n;
             }
-
-            if(n < 0) {
-                throw new Error("错误的参数n:" + n);
-            }
+            // 小于0，则为0
+            n = Math.max(0, n);
             return x.toDecimalPlaces(n);
         },
         args: 2,
