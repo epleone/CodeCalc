@@ -9,10 +9,10 @@ if (isUtoolsEnv) {
     utools.onPluginEnter(({ code, type, payload }) => {
         //utools.isDarkColors
         if(utools.isDarkColors()) {
-            console.log("dark");
+            // console.log("dark");
             document.documentElement.setAttribute('data-theme', 'dark');
         } else {
-            console.log("light");
+            // console.log("light");
             document.documentElement.setAttribute('data-theme', 'light');
         }
 
