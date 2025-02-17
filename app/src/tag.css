@@ -42,13 +42,13 @@
     width: 20px;
     height: 20px;
     border: none;
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: var(--tag-bg);
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #8e8e93;
+    color: var(--tag-color);
     font-size: 12px;
     transition: all 0.2s ease;
     backdrop-filter: blur(8px);
@@ -56,8 +56,8 @@
 }
 
 .tag-button:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-    color: #636366;
+    background-color: var(--tag-hover-bg);
+    color: var(--tag-hover-color);
 }
 
 .tag {
@@ -299,5 +299,16 @@
 
     .tag:hover {
         border-left-color: var(--tag-hover-border-color);
+    }
+
+    .tag-button {
+        background-color: var(--tag-bg);
+        color: var(--tag-color);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .tag-button:hover {
+        background-color: var(--tag-hover-bg);
+        color: var(--tag-hover-color);
     }
 } 
