@@ -1,9 +1,50 @@
+/* 定义主题变量 */
+:root {
+    --completion-bg: rgba(255, 255, 255, 0.98);
+    --completion-border: rgba(0, 0, 0, 0.08);
+    --completion-item-color: #555;
+    --completion-item-hover: rgba(0, 0, 0, 0.04);
+    --completion-item-selected: rgba(0, 0, 0, 0.05);
+    --completion-border-color: #4CAF50;
+    --completion-selected-color: #000;
+    --completion-scrollbar: rgba(0, 0, 0, 0.1);
+    --completion-scrollbar-hover: rgba(0, 0, 0, 0.15);
+    --completion-function-color: #000;
+    --completion-function-selected: #1565C0;
+    --completion-property-color: #607d8b;
+    --completion-property-selected: #455a64;
+    --completion-constant-color: #795548;
+    --completion-constant-selected: #5d4037;
+    --completion-description: #999;
+    --completion-description-selected: #666;
+}
+
+:root[data-theme="dark"] {
+    --completion-bg: rgba(40, 40, 40, 0.98);
+    --completion-border: rgba(255, 255, 255, 0.1);
+    --completion-item-color: #ddd;
+    --completion-item-hover: rgba(255, 255, 255, 0.1);
+    --completion-item-selected: rgba(255, 255, 255, 0.15);
+    --completion-border-color: #00e676;
+    --completion-selected-color: #fff;
+    --completion-scrollbar: rgba(255, 255, 255, 0.1);
+    --completion-scrollbar-hover: rgba(255, 255, 255, 0.15);
+    --completion-function-color: #e0e0e0;
+    --completion-function-selected: #64b5f6;
+    --completion-property-color: #90a4ae;
+    --completion-property-selected: #b0bec5;
+    --completion-constant-color: #bcaaa4;
+    --completion-constant-selected: #d7ccc8;
+    --completion-description: #888;
+    --completion-description-selected: #aaa;
+}
+
 /* 补全提示框基础样式 */
 .completion-hint {
     position: fixed;
-    background: rgba(255, 255, 255, 0.98);
+    background: var(--completion-bg);
     backdrop-filter: blur(4px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--completion-border);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05),
                 0 1px 3px rgba(0, 0, 0, 0.02);
@@ -37,7 +78,7 @@
 .completion-item {
     padding: 6px 16px;
     cursor: pointer;
-    color: #555;
+    color: var(--completion-item-color);
     font-family: "Consolas", "Monaco", "Menlo", monospace;
     font-size: 14px;
     line-height: 1.4;
@@ -48,14 +89,14 @@
 }
 
 .completion-item:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--completion-item-hover);
 }
 
 .completion-item.selected {
-    background: rgba(0, 0, 0, 0.05);
-    border-left: 3px solid #4CAF50;
+    background: var(--completion-item-selected);
+    border-left: 3px solid var(--completion-border-color);
+    color: var(--completion-selected-color);
     padding-left: 13px;
-    color: #000;
     font-weight: 500;
 }
 
@@ -70,37 +111,37 @@
 }
 
 .completion-hint::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--completion-scrollbar);
     border-radius: 3px;
 }
 
 .completion-hint::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--completion-scrollbar-hover);
 }
 
 /* 不同类型补全项的样式 */
 .completion-item[data-type="function"] {
-    color: #000;
+    color: var(--completion-function-color);
 }
 
 .completion-item[data-type="function"].selected {
-    color: #1565C0;
+    color: var(--completion-function-selected);
 }
 
 .completion-item[data-type="property"] {
-    color: #607d8b;
+    color: var(--completion-property-color);
 }
 
 .completion-item[data-type="property"].selected {
-    color: #455a64;
+    color: var(--completion-property-selected);
 }
 
 .completion-item[data-type="constant"] {
-    color: #795548;
+    color: var(--completion-constant-color);
 }
 
 .completion-item[data-type="constant"].selected {
-    color: #5d4037;
+    color: var(--completion-constant-selected);
 }
 
 /* 补全项文本和描述样式 */
@@ -113,7 +154,7 @@
 
 .completion-item .description {
     font-size: 12px;
-    color: #999;
+    color: var(--completion-description);
     margin-left: 12px;
     opacity: 0;
     transition: opacity 0.2s ease;
@@ -126,31 +167,7 @@
 }
 
 .completion-item.selected .description {
-    color: #666;
-}
-
-/* 暗色主题支持 */
-@media (prefers-color-scheme: dark) {
-    .completion-hint {
-        background: rgba(40, 40, 40, 0.98);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .completion-item {
-        color: #ddd;
-    }
-    
-    .completion-item .description {
-        color: #888;
-    }
-    
-    .completion-item:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .completion-item.selected {
-        background: rgba(255, 255, 255, 0.15);
-    }
+    color: var(--completion-description-selected);
 }
 
 /* 确保补全框在其他内容之上的层级控制 */

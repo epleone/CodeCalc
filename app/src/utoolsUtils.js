@@ -7,6 +7,14 @@ if (isUtoolsEnv) {
 
     // utools 相关代码保持不变
     utools.onPluginEnter(({ code, type, payload }) => {
+        //utools.isDarkColors
+        if(utools.isDarkColors()) {
+            console.log("dark");
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            console.log("light");
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
 
         const inputs = document.querySelectorAll('.input');
         const lastInput = inputs[inputs.length - 1];  // 获取最后一个输入框

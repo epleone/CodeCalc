@@ -1,3 +1,28 @@
+/* 定义主题变量 */
+:root {
+    --settings-bg: #f5f7fa;
+    --settings-item-bg: #ffffff;
+    --settings-text: #333333;
+    --settings-title: #212121;
+    --settings-border: #e0e0e0;
+    --settings-shadow: rgba(0, 0, 0, 0.15);
+    --settings-shortcut-bg: #f5f5f5;
+    --settings-shortcut-text: #666666;
+    --settings-hover-bg: rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="dark"] {
+    --settings-bg: #1f1f1f;
+    --settings-item-bg: #2d2d2d;
+    --settings-text: #e0e0e0;
+    --settings-title: #ffffff;
+    --settings-border: #404040;
+    --settings-shadow: rgba(0, 0, 0, 0.3);
+    --settings-shortcut-bg: #333333;
+    --settings-shortcut-text: #a0a0a0;
+    --settings-hover-bg: rgba(255, 255, 255, 0.1);
+}
+
 /* 设置面板基础样式 */
 .settings-panel {
     position: fixed;
@@ -5,8 +30,8 @@
     top: 0;
     width: 300px;
     height: 100vh;
-    background: #f5f7fa;
-    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+    background: var(--settings-bg);
+    box-shadow: -2px 0 8px var(--settings-shadow);
     transition: right 0.3s ease;
     z-index: 1001;
     display: flex;
@@ -20,15 +45,15 @@
 /* 设置面板头部 */
 .settings-header {
     padding: 10px 16px;
-    border-bottom: 1px solid #e0e0e0;
-    background: white;
+    border-bottom: 1px solid var(--settings-border);
+    background: var(--settings-item-bg);
 }
 
 .settings-header h3 {
     margin: 0;
     font-weight: 600;
     font-size: 0.95rem;
-    color: #212121;
+    color: var(--settings-title);
     text-align: center;
 }
 
@@ -45,11 +70,11 @@
 
 /* 设置分组 */
 .settings-section {
-    background: white;
+    background: var(--settings-item-bg);
     border-radius: 8px;
     padding: 12px;
     margin: 0 0 6px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    box-shadow: 0 1px 3px var(--settings-shadow);
     box-sizing: border-box;
     flex: 0 0 auto;
 }
@@ -57,7 +82,7 @@
 .settings-section h4 {
     margin: 0 0 12px 0;
     font-size: 14px;
-    color: #666;
+    color: var(--settings-text);
     font-weight: 500;
 }
 
@@ -71,7 +96,7 @@
 
 .setting-label {
     font-size: 14px;
-    color: #333;
+    color: var(--settings-text);
 }
 
 /* 快捷键项样式 */
@@ -84,10 +109,10 @@
 
 .shortcut-key {
     padding: 4px 8px;
-    background: #f5f5f5;
+    background: var(--settings-shortcut-bg);
     border-radius: 4px;
     font-size: 12px;
-    color: #666;
+    color: var(--settings-shortcut-text);
     font-family: monospace;
 }
 
@@ -116,7 +141,7 @@
     border: none;
     padding: 4px;
     cursor: pointer;
-    color: #666;
+    color: var(--settings-text);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -127,7 +152,7 @@
 
 .tooltip-settings-btn:hover {
     opacity: 1;
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: var(--settings-hover-bg);
     transform: rotate(30deg);
 }
 
