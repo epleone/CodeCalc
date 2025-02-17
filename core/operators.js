@@ -437,6 +437,22 @@ export const FUNCTIONS = {
         args: 1,
         description: '四舍五入取整'
     },
+    'roundfix': {
+        func: (x, n) => {
+            n = n.toNumber();
+            // 如果n为负数，-1表示最后一位，-2表示倒数第二位，以此类推
+            if(n < 0) {
+                n = x.decimalPlaces() + n;
+            }
+
+            if(n < 0) {
+                throw new Error("错误的参数n:" + n);
+            }
+            return x.toDecimalPlaces(n);
+        },
+        args: 2,
+        description: '指定小数位数, 四舍五入取整'
+    },
     'floor': {
         func: x => Decimal.floor(x),
         args: 1,
