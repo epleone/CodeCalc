@@ -35,18 +35,18 @@
     --bg-expression-even: #404040;
     --text-primary: #e0e0e0;
     --border-color: #4a4a4a;
-    --shadow-color: rgba(0,0,0,0.3);
+    --shadow-color: #0000004d;
     --text-secondary: #9ca3af;
     --warning-color: #ffc107;
     --error-color: #b70303;
     --tooltip-bg: #666666;
-    --tooltip-hover-bg: #00e676;
+    --tooltip-hover-bg: #2c9d66;
     --tooltip-text-bg: #2d2d2d;
     --tooltip-text-color: #ffffff;
     --button-text: #e0e0e0;
     --switch-bg: #666666;
     --switch-handle: #e0e0e0;
-    --switch-active: #00e676;
+    --switch-active: rgb(4, 145, 77);
     --link-color: #DA70D6;
     --link-hover-color: #DDA0DD;
 }
