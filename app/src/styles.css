@@ -113,6 +113,17 @@ body {
     position: relative;
     z-index: 1;
     box-sizing: border-box;
+    resize: none;
+    overflow: hidden;
+    min-height: 24px;
+    line-height: 24px;
+    padding: 0 8px;
+    transition: font-size 0.2s ease;
+}
+
+.input.multiline {
+    font-size: 1.2rem;  /* 多行时字体变小 */
+    line-height: 1.4;   /* 调整行间距 */
 }
 
 .result {

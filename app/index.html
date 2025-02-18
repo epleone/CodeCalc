@@ -33,9 +33,11 @@
                         <span class="tag-icon">#</span>
                     </button>
                 </div>
-                <input type="text" class="input" placeholder="输入表达式，例如: a = 1 + 2 * 3" 
-                       oninput="handleInput(event)"
-                       onkeydown="handleKeyDown(event, this)">
+                <textarea class="input" 
+                          placeholder="输入表达式，例如: a = 1 + 2 * 3" 
+                          rows="1"
+                          oninput="handleInput(event); autoResize(this)"
+                          onkeydown="handleKeyDown(event, this)"></textarea>
                 <div class="result-container">
                     <div class="result">
                         <span class="result-value"></span>

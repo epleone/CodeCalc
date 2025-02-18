@@ -601,6 +601,43 @@ function handleContainerClick(event) {
     }
 }
 
+function autoResize(textarea) {
+    // 重置高度以获取正确的 scrollHeight
+    textarea.style.height = 'auto';
+    
+    // 获取文本内容的宽度
+    const textWidth = getTextWidth(textarea.value, getComputedStyle(textarea));
+    const containerWidth = textarea.clientWidth;
+    
+    // 检查是否需要换行
+    const needsNewline = textarea.scrollHeight > 24;
+    
+    // 检查是否需要缩小字体（仅在未换行时检查）
+    if (!needsNewline && !textarea.classList.contains('multiline')) {
+        const shouldShrink = textWidth > (containerWidth * 0.95);
+        if (shouldShrink) {
+            textarea.classList.add('multiline');
+        }
+    } else if (needsNewline) {
+        // 如果已经换行，保持字体缩小状态
+        textarea.classList.add('multiline');
+    }
+    
+    // 设置新的高度
+    textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+// 辅助函数：计算文本宽度
+function getTextWidth(text, style) {
+    const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+    const context = canvas.getContext("2d");
+    context.font = `${style.fontSize} ${style.fontFamily}`;
+    return context.measureText(text).width;
+}
+
+// 将函数添加到全局作用域
+window.autoResize = autoResize;
+
 // 将所有需要的函数添加到全局作用域
 Object.assign(window, {
     // UI 事件处理函数
