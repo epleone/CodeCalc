@@ -14,6 +14,8 @@
     --snapshot-tab-inactive: rgba(0, 0, 0, 0.6);
     --snapshot-tab-hover: rgba(0, 0, 0, 0.04);
     --snapshot-tab-line: rgba(0, 0, 0, 0.41);
+    --snapshot-tag-text: rgb(231, 231, 231);
+    --snapshot-tag-bg: rgb(146, 146, 222);
 }
 
 :root[data-theme="dark"] {
@@ -31,6 +33,8 @@
     --snapshot-tab-inactive: rgba(255, 255, 255, 0.6);
     --snapshot-tab-hover: rgba(255, 255, 255, 0.04);
     --snapshot-tab-line: rgba(255, 255, 255, 0.41);
+    --snapshot-tag-text: rgb(200, 200, 200);
+    --snapshot-tag-bg: rgb(125, 125, 207, 0.8);
 }
 
 /* 蒙版样式 */
@@ -382,10 +386,10 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
 }
 
 .snapshot-tag {
-    color: #666;
+    color: var(--snapshot-tag-text);
     font-size: 12px;
     padding: 2px 6px;
-    background: #f0f0f0;
+    background: var(--snapshot-tag-bg);
     border-radius: 3px;
     flex-shrink: 0;
 }
