@@ -35,15 +35,17 @@ function addNewLine() {
     
     // 确保行之间有正确的间距
     if (lines.length > 0) {
-        newLine.style.marginTop = '10px';  // 或者其他合适的值
+        newLine.style.marginTop = '10px';
     }
     
     newLine.innerHTML = `
         ${Tag.createTagContainerHTML()}
-        <input type="text" class="input" placeholder="输入表达式" 
-               oninput="handleInput(event)"
-               onkeydown="handleKeyDown(event, this)"
-               onclick="removeCompletionHint(this)">
+        <textarea class="input" 
+                  placeholder="输入表达式" 
+                  rows="1"
+                  oninput="handleInput(event); autoResize(this)"
+                  onkeydown="handleKeyDown(event, this)"
+                  onclick="removeCompletionHint(this)"></textarea>
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>
@@ -62,7 +64,7 @@ function addNewLine() {
     const result = newLine.querySelector('.result');
     addResultClickHandler(result);
     
-    const input = newLine.querySelector('.input');
+    const input = newLine.querySelector('.textarea');
     input.focus();
 }
 
@@ -252,10 +254,12 @@ function insertNewLine(currentLine) {
     newLine.className = 'expression-line';
     newLine.innerHTML = `
         ${Tag.createTagContainerHTML()}
-        <input type="text" class="input" placeholder="输入表达式" 
-               oninput="handleInput(event)"
-               onkeydown="handleKeyDown(event, this)"
-               onclick="removeCompletionHint(this)">
+        <textarea class="input" 
+                  placeholder="输入表达式" 
+                  rows="1"
+                  oninput="handleInput(event); autoResize(this)"
+                  onkeydown="handleKeyDown(event, this)"
+                  onclick="removeCompletionHint(this)"></textarea>
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>
@@ -538,10 +542,12 @@ function clearAll() {
     newLine.className = 'expression-line';
     newLine.innerHTML = `
         ${Tag.createTagContainerHTML()}
-        <input type="text" class="input" placeholder="输入表达式" 
-               oninput="handleInput(event)"
-               onkeydown="handleKeyDown(event, this)"
-               onclick="removeCompletionHint(this)">
+        <textarea class="input" 
+                  placeholder="输入表达式" 
+                  rows="1"
+                  oninput="handleInput(event); autoResize(this)"
+                  onkeydown="handleKeyDown(event, this)"
+                  onclick="removeCompletionHint(this)"></textarea>
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>
