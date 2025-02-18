@@ -103,7 +103,7 @@ body {
 .input {
     flex: 1;
     font-size: 1.5rem;
-    font-family: "Consolas", "Monaco", "Menlo", monospace;
+    font-family: "Consolas", "Menlo", "Andale Mono", "Monaco", monospace;
     border: none;
     background: transparent;
     outline: none;
@@ -117,7 +117,7 @@ body {
 
 .result {
     font-size: 1.5rem;
-    font-family: "Consolas", "Monaco", "Menlo", monospace;
+    font-family: "Consolas", "Menlo", "Andale Mono", "Monaco", monospace;
     padding-left: 0.625rem;
     border-left: 0.0625rem solid var(--border-color);
     min-width: 18rem;
