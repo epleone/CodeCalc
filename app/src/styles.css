@@ -119,6 +119,10 @@ body {
     line-height: 24px;
     padding: 0 8px;
     transition: font-size 0.2s ease;
+    width: 100%;
+    word-break: break-all;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 }
 
 .input.multiline {
@@ -380,8 +384,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    min-width: 21rem;
-    max-width: 50%;
+    width: 43%;
     flex-shrink: 0;
     position: relative;
     padding-right: 1.5rem;

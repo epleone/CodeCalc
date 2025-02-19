@@ -118,52 +118,68 @@ function positionCompletionHint(input, hint) {
     
     // 获取输入框的位置信息
     const inputRect = input.getBoundingClientRect();
+    const computedStyle = window.getComputedStyle(input);
+    const paddingLeft = parseFloat(computedStyle.paddingLeft);
     
-    // 创建临时span计算光标位置
-    const span = document.createElement('span');
-    span.style.cssText = `
-        position: fixed;
-        top: -9999px;
-        left: -9999px;
-        font: ${window.getComputedStyle(input).font};
-        letter-spacing: ${window.getComputedStyle(input).letterSpacing};
-        white-space: pre;
-    `;
-    span.textContent = textBeforeCursor;
-    document.body.appendChild(span);
-
-    // 获取输入框的宽度
-    const inputWidth = input.clientWidth;
-
-    // 计算光标位置
-    const paddingLeft = parseFloat(window.getComputedStyle(input).paddingLeft);
-
-    // 多行放到开头
-    const offsetWidth = span.offsetWidth > inputWidth ? 0 : span.offsetWidth;
-
-    // 根据文字长度计算多行的位置，有问题
-    // const offsetWidth = span.offsetWidth % inputWidth;
-
-    const cursorX = inputRect.left + offsetWidth + paddingLeft - input.scrollLeft;
-    const cursorY = inputRect.bottom + 2;
+    // 创建 canvas 来测量文本
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = computedStyle.font;
     
-    document.body.removeChild(span);
+    // 获取当前行的文本
+    const lines = textBeforeCursor.split('\n');
+    const currentLine = lines[lines.length - 1];
+    
+    // 计算当前行之前的换行次数
+    const explicitLineBreaks = lines.length - 1;
+    
+    // 计算文本宽度和换行
+    let remainingText = currentLine;
+    let wrappedLines = 0;
+    let finalLineWidth = 0;
+    const maxWidth = input.clientWidth - (paddingLeft * 2);
+    
+    while (remainingText.length > 0) {
+        let testWidth = ctx.measureText(remainingText).width;
+        if (testWidth <= maxWidth) {
+            finalLineWidth = testWidth;
+            break;
+        }
+        
+        // 找到合适的断行点
+        let breakPoint = remainingText.length;
+        while (breakPoint > 0) {
+            breakPoint--;
+            if (ctx.measureText(remainingText.substring(0, breakPoint)).width <= maxWidth) {
+                wrappedLines++;
+                remainingText = remainingText.substring(breakPoint);
+                break;
+            }
+        }
+    }
+    
+    // 计算总行数和最终位置
+    const totalLines = explicitLineBreaks + wrappedLines;
+    const lineHeight = parseFloat(computedStyle.lineHeight);
+    
+    const cursorX = inputRect.left + paddingLeft + finalLineWidth;
+    const cursorY = inputRect.top + (totalLines * lineHeight);
     
     // 获取提示框尺寸
     const hintRect = hint.getBoundingClientRect();
     
     // 计算最终位置
     let left = cursorX;
-    let top = cursorY;
+    let top = cursorY + lineHeight;
     
     // 处理右边界溢出
     if (left + hintRect.width > window.innerWidth) {
-        left = cursorX - hintRect.width;
+        left = Math.max(0, cursorX - hintRect.width);
     }
     
     // 处理底部溢出
     if (top + hintRect.height > window.innerHeight) {
-        top = inputRect.top - hintRect.height - 2;
+        top = cursorY - hintRect.height - 2;
     }
     
     // 设置位置
