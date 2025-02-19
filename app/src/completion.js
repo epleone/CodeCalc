@@ -131,10 +131,20 @@ function positionCompletionHint(input, hint) {
     `;
     span.textContent = textBeforeCursor;
     document.body.appendChild(span);
-    
+
+    // 获取输入框的宽度
+    const inputWidth = input.clientWidth;
+
     // 计算光标位置
     const paddingLeft = parseFloat(window.getComputedStyle(input).paddingLeft);
-    const cursorX = inputRect.left + span.offsetWidth + paddingLeft - input.scrollLeft;
+
+    // 多行放到开头
+    const offsetWidth = span.offsetWidth > inputWidth ? 0 : span.offsetWidth;
+
+    // 根据文字长度计算多行的位置，有问题
+    // const offsetWidth = span.offsetWidth % inputWidth;
+
+    const cursorX = inputRect.left + offsetWidth + paddingLeft - input.scrollLeft;
     const cursorY = inputRect.bottom + 2;
     
     document.body.removeChild(span);

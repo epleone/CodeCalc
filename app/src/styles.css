@@ -380,11 +380,11 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    min-width: 20rem;
+    min-width: 21rem;
+    max-width: 50%;
     flex-shrink: 0;
     position: relative;
     padding-right: 1.5rem;
-    max-width: 50%;
     box-sizing: border-box;
 }
 
