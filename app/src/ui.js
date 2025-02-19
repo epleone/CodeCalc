@@ -27,25 +27,53 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
 });
 
-function addNewLine() {
-    const container = document.getElementById('expression-container');
-    const lines = document.querySelectorAll('.expression-line');
-    const newLine = document.createElement('div');
-    newLine.className = 'expression-line';
+
+// 防抖函数
+const debounce = (fn, delay) => {
+    let timer = null;
+    return function(...args) {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+};
+
+// 实际的 resize 处理函数
+function handleResize(textarea) {
+    // 重置高度以获取正确的 scrollHeight
+    textarea.style.height = 'auto';
     
-    // 确保行之间有正确的间距
-    if (lines.length > 0) {
-        newLine.style.marginTop = '10px';
+    // 文本长度阈值常量
+    const TEXT_LENGTH_THRESHOLD = 25;
+
+    // 获取输入的字符数
+    const textLength = textarea.value.length;
+    
+    // 根据字符数判断是否需要缩小字体
+    if (textLength > TEXT_LENGTH_THRESHOLD) {
+        textarea.classList.add('multiline');
+    } else {
+        textarea.classList.remove('multiline');
     }
     
+    // 设置新的高度
+    textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+// 使用防抖包装的 autoResize 函数
+const autoResize = debounce(handleResize, 16);  // 约等于一帧的时间
+
+function CreateNewLine() {
+    // 创建新行
+    const newLine = document.createElement('div');
+    newLine.className = 'expression-line';
     newLine.innerHTML = `
         ${Tag.createTagContainerHTML()}
         <textarea class="input" 
-                  placeholder="输入表达式" 
-                  rows="1"
-                  oninput="handleInput(event); autoResize(this)"
-                  onkeydown="handleKeyDown(event, this)"
-                  onclick="removeCompletionHint(this)"></textarea>
+                    placeholder="输入表达式" 
+                    rows="1"
+                    oninput="handleInput(event); autoResize(this)"
+                    onkeydown="handleKeyDown(event, this)"
+                    onclick="removeCompletionHint(this)"></textarea>
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>
@@ -55,6 +83,21 @@ function addNewLine() {
             </div>
         </div>
     `;
+
+    return newLine;
+}
+
+function addNewLine() {
+    const container = document.getElementById('expression-container');
+    const lines = document.querySelectorAll('.expression-line');
+    
+    const newLine = CreateNewLine();
+
+    // 确保行之间有正确的间距
+    if (lines.length > 0) {
+        newLine.style.marginTop = '10px';
+    }
+    
     container.appendChild(newLine);
     
     // 初始化标签功能
@@ -64,9 +107,61 @@ function addNewLine() {
     const result = newLine.querySelector('.result');
     addResultClickHandler(result);
     
-    const input = newLine.querySelector('.textarea');
+    const input = newLine.querySelector('.input');
     input.focus();
 }
+
+function insertNewLine(currentLine) {
+    const container = document.getElementById('expression-container');
+    const lines = document.querySelectorAll('.expression-line');
+    const currentIndex = Array.from(lines).indexOf(currentLine);
+    
+    const newLine = CreateNewLine();
+    
+    // 如果是最后一行，直接添加
+    if (currentIndex === lines.length - 1) {
+        container.appendChild(newLine);
+    } else {
+        // 否则，将当前行后面的所有行下移
+        const tempValues = [];
+        // 保存所有需要下移的行的内容
+        for (let i = currentIndex + 1; i < lines.length; i++) {
+            tempValues.push({
+                value: lines[i].querySelector('.input').value,
+                index: i
+            });
+        }
+        
+        // 插入新行
+        currentLine.insertAdjacentElement('afterend', newLine);
+        
+        // 恢复下移的行的内容并重新计算结果
+        const newLines = document.querySelectorAll('.expression-line');
+        tempValues.forEach((item) => {
+            const input = newLines[item.index + 1].querySelector('.input');
+            input.value = item.value;
+            calculateLine(input);
+        });
+    }
+    
+    // 为新行的结果添加点击处理
+    const result = newLine.querySelector('.result');
+    addResultClickHandler(result);
+    
+    // 聚焦到新行
+    const newInput = newLine.querySelector('.input');
+    newInput.focus();
+    
+    // 重新计算所有行的结果
+    const allLines = document.querySelectorAll('.expression-line');
+    allLines.forEach(line => {
+        const input = line.querySelector('.input');
+        if (input.value) {
+            calculateLine(input);
+        }
+    });
+}
+
 
 function handleLineDelete(input) {
     const lines = document.querySelectorAll('.expression-line');
@@ -115,9 +210,9 @@ function handleKeyDown(event, input) {
     // 处理其他键盘事件
     switch (event.key) {
         case 'Enter':
+            event.preventDefault();  // 阻止在当前行换行
             handleEnterKey(event, input);
             return;
-
         case 'Backspace':
             if (input.value === '') {
                 event.preventDefault();
@@ -242,76 +337,6 @@ function handleEnterKey(event, input) {
             }
         }
     }
-}
-
-function insertNewLine(currentLine) {
-    const container = document.getElementById('expression-container');
-    const lines = document.querySelectorAll('.expression-line');
-    const currentIndex = Array.from(lines).indexOf(currentLine);
-    
-    // 创建新行
-    const newLine = document.createElement('div');
-    newLine.className = 'expression-line';
-    newLine.innerHTML = `
-        ${Tag.createTagContainerHTML()}
-        <textarea class="input" 
-                  placeholder="输入表达式" 
-                  rows="1"
-                  oninput="handleInput(event); autoResize(this)"
-                  onkeydown="handleKeyDown(event, this)"
-                  onclick="removeCompletionHint(this)"></textarea>
-        <div class="result-container">
-            <div class="result">
-                <span class="result-value"></span>
-            </div>
-            <div class="message-icon" style="display: none;">
-                <div class="message-text"></div>
-            </div>
-        </div>
-    `;
-    
-    // 如果是最后一行，直接添加
-    if (currentIndex === lines.length - 1) {
-        container.appendChild(newLine);
-    } else {
-        // 否则，将当前行后面的所有行下移
-        const tempValues = [];
-        // 保存所有需要下移的行的内容
-        for (let i = currentIndex + 1; i < lines.length; i++) {
-            tempValues.push({
-                value: lines[i].querySelector('.input').value,
-                index: i
-            });
-        }
-        
-        // 插入新行
-        currentLine.insertAdjacentElement('afterend', newLine);
-        
-        // 恢复下移的行的内容并重新计算结果
-        const newLines = document.querySelectorAll('.expression-line');
-        tempValues.forEach((item) => {
-            const input = newLines[item.index + 1].querySelector('.input');
-            input.value = item.value;
-            calculateLine(input);
-        });
-    }
-    
-    // 为新行的结果添加点击处理
-    const result = newLine.querySelector('.result');
-    addResultClickHandler(result);
-    
-    // 聚焦到新行
-    const newInput = newLine.querySelector('.input');
-    newInput.focus();
-    
-    // 重新计算所有行的结果
-    const allLines = document.querySelectorAll('.expression-line');
-    allLines.forEach(line => {
-        const input = line.querySelector('.input');
-        if (input.value) {
-            calculateLine(input);
-        }
-    });
 }
 
 function recalculateAllLines() {
@@ -607,48 +632,13 @@ function handleContainerClick(event) {
     }
 }
 
-function autoResize(textarea) {
-    // 重置高度以获取正确的 scrollHeight
-    textarea.style.height = 'auto';
-    
-    // 获取文本内容的宽度
-    const textWidth = getTextWidth(textarea.value, getComputedStyle(textarea));
-    const containerWidth = textarea.clientWidth;
-    
-    // 检查是否需要换行
-    const needsNewline = textarea.scrollHeight > 24;
-    
-    // 检查是否需要缩小字体（仅在未换行时检查）
-    if (!needsNewline && !textarea.classList.contains('multiline')) {
-        const shouldShrink = textWidth > (containerWidth * 0.95);
-        if (shouldShrink) {
-            textarea.classList.add('multiline');
-        }
-    } else if (needsNewline) {
-        // 如果已经换行，保持字体缩小状态
-        textarea.classList.add('multiline');
-    }
-    
-    // 设置新的高度
-    textarea.style.height = textarea.scrollHeight + 'px';
-}
-
-// 辅助函数：计算文本宽度
-function getTextWidth(text, style) {
-    const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
-    const context = canvas.getContext("2d");
-    context.font = `${style.fontSize} ${style.fontFamily}`;
-    return context.measureText(text).width;
-}
-
-// 将函数添加到全局作用域
-window.autoResize = autoResize;
 
 // 将所有需要的函数添加到全局作用域
 Object.assign(window, {
     // UI 事件处理函数
     handleInput,
     handleKeyDown,
+    autoResize,
     handleContainerClick,
     removeCompletionHint,
     
