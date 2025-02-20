@@ -34,7 +34,18 @@ function addResultClickHandler(resultElement) {
             return;
         }
         
-        const resultValue = this.querySelector('.result-value').textContent;
+        let resultValue = this.querySelector('.result-value').textContent;
+        
+        // 获取整个计算表达式
+        const onlyCopyRsltToggle = document.getElementById('onlyCopyRsltToggle');
+        if (!onlyCopyRsltToggle.checked) {
+            // 获取输入表达式
+            const expressionText = this.closest('.expression-line').querySelector('textarea');
+            if (expressionText) {
+                resultValue = expressionText.value + ' = ' + resultValue;
+            }
+        }
+
         if (resultValue.trim()) {
             copyToClipboard(resultValue);
             
