@@ -16,6 +16,6 @@ export default {
       preferBuiltins: false
     }),
     commonjs(),
-    terser()
+    terser() // 压缩代码，生产环境使用
   ]
 }; 

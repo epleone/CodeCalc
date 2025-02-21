@@ -1,5 +1,6 @@
 // 工具类
 import Decimal from 'decimal.js';
+import { DecMatrix } from './matrix.js';
 
 Decimal.set({
     precision: 21,
@@ -451,6 +452,101 @@ const Utils = {
 
         return x.getYMString() + ts_str;
     },
+
+
+    // 矩阵和向量转换
+    str2vec(str) {
+        // 传入字符串 `[1, 2, 3]` 或者 `[1 2 3]`,将其转换成 columnVector 返回
+        str = str.trim();
+        if (str[0] !== '[' || str[str.length-1] !== ']') {
+            throw new Error('vector格式错误，请使用方括号[]');
+        }
+        
+        // 去掉首尾的 [ ]
+        str = str.substring(1, str.length-1);
+        // 将逗号前后的空格去掉
+        str = str.replace(/\s*,\s*/g, ',');
+
+        // 既有逗号分隔，又有空格分隔，抛出错误
+        if (str.includes(',') && str.includes(' ')) {
+            throw new Error('vector格式错误, 不要混用逗号和空格');
+        }
+
+        // 处理逗号分隔和空格分隔两种情况
+        let numbers;
+        if (str.includes(',')) {
+            numbers = str.split(',').map(s => Decimal(s.trim()));
+        } else {
+            numbers = str.split(/\s+/).map(s => Decimal(s.trim()));
+        }
+
+        if (numbers.length === 0) {
+            throw new Error('vector 长度为0');
+        }
+        
+        // 如果有非法数字，则抛出错误
+        for (let i = 0; i < numbers.length; i++) {
+            if (isNaN(numbers[i])) {
+                throw new Error(`vector${i+1}: ${numbers[i]} 不是数字`);
+            }
+        }  
+
+        // 返回一个列向量
+        return new DecMatrix(numbers, numbers.length, 1);
+    },
+
+
+    str2Matrix(str) {
+        //  传入字符串 `{1, 2, 3;4,5,6; 7, 8, 9}` 或者 `{1 2 3;4 5 6; 7 8 9}`,将其转换成Matrix返回
+        str = str.trim();
+        if (str[0] !== '{' || str[str.length-1] !== '}') {
+            throw new Error('matrix格式错误，请使用大括号{}');
+        }
+
+        // 去掉首尾的大括号
+        str = str.substring(1, str.length-1);
+        // 将逗号前后的空格去掉
+        str = str.replace(/\s*,\s*/g, ',');
+        // 将分号前后的空格去掉
+        str = str.replace(/\s*;\s*/g, ';');
+
+        // console.log(str);
+        // 既有逗号分隔，又有空格分隔，抛出错误
+        if (str.includes(',') && str.includes(' ')) {
+            throw new Error('matrix格式错误, 不要混用逗号和空格');
+        }
+
+        // 将逗号替换为空格
+        str = str.replace(/,/g, ' ');
+    
+        // 按分号分隔成行
+        let rows = str.split(';');
+        // 每行按空格分隔成数字数组
+        let numbers = rows.map(row => {
+            // 去掉首尾空格后按空格分隔，并转换为Decimal
+            return row.trim().split(/\s+/).map(Decimal);
+            // return row.trim().split(/\s+/).map(s => Decimal(s.trim()));
+        });
+
+        // 判断二维数组是否为空
+        if (numbers.length === 0) {
+            throw new Error('matrix 长度为0');
+        }
+
+        // 判断二维数组每行长度是否一致,并检查是否有非法数字
+        let rowLength = numbers[0].length;
+        for (let i = 0; i < numbers.length; i++) {
+            if (numbers[i].length !== rowLength) {
+                throw new Error('matrix 每行长度不一致');
+            }
+        }
+
+        let data = numbers.flat();
+        return new DecMatrix(data, numbers.length, rowLength);
+    },
+
+
+
 };
 
 

@@ -1,4 +1,4 @@
-import { Datestamp } from './utils.js';
+import { Utils, Datestamp } from './utils.js';
 
 // 添加cc临时变量字典
 const ccVariables = new Map();
@@ -613,7 +613,41 @@ function processTimestamp(expr) {
 }
 
 
+// 处理矩阵和向量
+function processMatrix(expr) {
 
+    let matrixConstantCounter = 0;
+
+    // 用正则表达式匹配向量 `[*]`
+    // 匹配向量格式 [1,2,3] 或 [1, 2, 3]
+    const vectorRegex = /\[([\d\s,]+)\]/g;
+    
+    // 将向量转换为 vector() 函数调用
+    expr = expr.replace(vectorRegex, (match, content) => {
+        const constName = `_cc_mat_i${matrixConstantCounter++}`;
+        const vec = Utils.str2vec(match);
+        ccVariables.set(constName, vec);
+        return constName;
+    });
+    
+
+    // TODO: 添加一种函数转化的方法, 将表达式转成函数
+    // expr2vec(...args)
+
+    // 用正则表达式匹配矩阵 `{*}`
+    // 匹配矩阵格式 {1,2,3;4,5,6;7,8,9} 或 {1 2 3;4 5 6;7 8 9}
+    const matrixRegex = /\{([^{}]+)\}/g;
+    
+    // 将矩阵转换为 matrix() 函数调用
+    expr = expr.replace(matrixRegex, (match, content) => {
+        const constName = `_cc_mat_i${matrixConstantCounter++}`;
+        const matrix = Utils.str2Matrix(match);
+        ccVariables.set(constName, matrix);
+        return constName;
+    });
+
+    return expr;
+}
 
 export {
     ccVariables,
@@ -622,5 +656,6 @@ export {
     checkVariableName,
     processStringLiterals,
     processDate,
-    processTimestamp
+    processTimestamp,
+    processMatrix
 }

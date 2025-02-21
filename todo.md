@@ -5,6 +5,8 @@ roundfix：四舍五入, 指定位数, 支持正数和负数
 进入读取设置状态。
 退出保存设置状态。
 
+GitHub action 测试
+
 ## RoadMap 
 
 ### V3.0

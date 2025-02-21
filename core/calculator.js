@@ -14,6 +14,7 @@ import {
     processStringLiterals,
     processDate,
     processTimestamp,
+    processMatrix
 } from './preprocessUtils.js';
 
 import { Utils } from './utils.js';
@@ -83,6 +84,9 @@ const Calculator = (function() {
 
         // 处理字符串字面量
         expr = processStringLiterals(expr);
+
+        // 处理矩阵
+        expr = processMatrix(expr);
         
         // 在空格不影响语义之后，清除空格
         expr = expr.replace(/\s/g, '');
@@ -860,3 +864,10 @@ const Calculator = (function() {
 
 // 修改导出方式
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
+
+// 测试
+console.log(Calculator.calculate('[1, +2, 3]'));
+console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9}'));
+// console.log(Calculator.calculate('[1,2,3] + 699'));
+// console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9} + 699'));
+// console.log(Calculator.calculate('[1,2,3] + {1,2,3;4,5,6;7,8,9}'));
