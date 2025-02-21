@@ -397,12 +397,12 @@ export const FUNCTIONS = {
     // 数学函数
     'max': {
         func: (...args) => Decimal.max(...args),
-        args: -1,
+        args: -1,  // 支持1~N个参数  
         description: '求最大值'
     },
     'min': {
         func: (...args) => Decimal.min(...args),
-        args: -1,
+        args: -1,  // 支持1~N个参数  
         description: '求最小值'
     },
     'lg': {
@@ -469,10 +469,10 @@ export const FUNCTIONS = {
         description: '设置数值范围'
     },
 
-    // 随机数函数
+    // 随机数函数, 0:数字，1:向量，2:矩阵
     'random': {
-        func: () => Decimal.random(),
-        args: 0,
+        func: (...args) => Utils.random(...args),
+        args: -2, // 支持0~N个参数   
         description: '随机数生成0~1'
     },
 

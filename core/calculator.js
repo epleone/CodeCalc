@@ -697,11 +697,15 @@ const Calculator = (function() {
             // 检查参数数量
             if (func.args !== undefined) {
                 if (func.args === -1) {
-                    // 不限制参数数量的情况
+                    // 不限制参数数量, 至少1个参数
                     if (args.length === 0) {
                         throw new Error(`函数 "${node.value}" 至少需要1个参数`);
                     }
-                } else {
+                }
+                else if (func.args === -2) {
+                    // 不限制参数数量, 0个参数也可以
+                }
+                else{
                     // 处理固定参数数量
                     if (args.length !== func.args) {
                         throw new Error(`函数 "${node.value}" 需要 ${func.args} 个参数，但得到了 ${args.length} 个`);
@@ -866,8 +870,8 @@ const Calculator = (function() {
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 
 // 测试
-console.log(Calculator.calculate('[1, +2, 3]'));
-console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9}'));
+// console.log(Calculator.calculate('[1, 2, 3]'));
+// console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9}'));
 // console.log(Calculator.calculate('[1,2,3] + 699'));
 // console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9} + 699'));
 // console.log(Calculator.calculate('[1,2,3] + {1,2,3;4,5,6;7,8,9}'));

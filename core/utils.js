@@ -297,6 +297,31 @@ const Utils = {
         return decimal.toFixed(precision).replace(/\.?0+$/, '');
     },
 
+    // 随机数函数
+    random(...args) {
+        if(args.length === 0) {
+            return Decimal.random().toFixed(8);
+        }
+
+        if(args.length === 1) {
+            const num = args[0].toNumber();
+            // 随机生成num个数字
+            const vec = Array.from({length: num}, () => Decimal.random().toFixed(6));
+            return new DecMatrix(vec, num, 1);
+        }
+
+        if(args.length === 2) {
+            const rows = args[0].toNumber();
+            const cols = args[1].toNumber();
+            const vec = Array.from({length: rows * cols}, () => Decimal.random().toFixed(6));
+            return new DecMatrix(vec, rows, cols);
+        }
+
+        throw new Error('随机数函数参数数量错误');
+
+    },
+
+
     // 辅助函数：尝试弧度数字转换为 π 的倍数或分数形式
     radianToPi(value) {
         const ratio = isDecimal(value) ? value : new Decimal(value);
