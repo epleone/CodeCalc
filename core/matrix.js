@@ -1,4 +1,13 @@
+import Decimal from 'decimal.js';
 import { Matrix, determinant, inverse, solve, EigenvalueDecomposition } from 'ml-matrix';
+
+
+// 判断是否是标量
+function isScalar(value) {
+    return typeof value === 'number' || 
+           typeof value === 'bigint' || 
+           value instanceof Decimal;
+}
 
 // 定义一个类，存放Decimal数组
 export class DecMatrix {
@@ -13,23 +22,58 @@ export class DecMatrix {
         //     throw new Error('data 必须是Decimal数组');
         // }
 
-        // 打印data
-        console.log('data:', data);
-        // 打印rows
-        console.log('rows:', rows);
-        // 打印cols
-        console.log('cols:', cols);
+        // 打印
+        // console.log('data:', data);
+        // console.log(`rows:${rows} cols:${cols}`);
         
         this.data = data; // 数据数组，如何判断是Decimal数组
         this.rows = rows; // 行数
         this.cols = cols; // 列数
     }
 
+    apply(func, other) {
+        // 同为DecMatrix
+        if (other instanceof DecMatrix) {
+            // 判断行列是否相同
+            if (this.rows !== other.rows || this.cols !== other.cols) {
+                throw new Error('行列不匹配');
+            }
+
+            // 创建新的DecMatrix
+            let result = new DecMatrix(this.data.map((value, index) => func(value, other.data[index])), this.rows, this.cols);
+            return result;
+        }
+
+        // 标量
+        if (isScalar(other)) {
+            // 创建新的DecMatrix
+            let result = new DecMatrix(this.data.map(value => func(value, other)), this.rows, this.cols);
+            return result;
+        }
+
+        throw new Error('不支持的矩阵运算');
+    }
+
+    // 对矩阵中的每个元素应用一个函数, 返回新的矩阵
+    map(func){
+        return new DecMatrix(this.data.map(func), this.rows, this.cols);
+    }
+
+   
+    // 提供矩阵运算方法
+    matmul(other) {
+        return Matrix.mmul(this, other);
+    }
+
+
     // 显示字符串
     toString() {
+        //将数据转换为字符串，格式化成6位小数，去掉小数点后多余的0
+        let data = this.data.map(value => value.toFixed(6).replace(/\.?0+$/, ''));
+
         // 如果只有一列，则返回向量
         if (this.cols === 1) {
-            return `[${this.data.join(',')}]`;
+            return `[${data.join(',')}]`;
         }
 
         // 将一维数组转换为二维数组
@@ -37,7 +81,7 @@ export class DecMatrix {
         for(let i = 0; i < this.rows; i++) {
             let row = [];
             for(let j = 0; j < this.cols; j++) {
-                row.push(this.data[i * this.cols + j]);
+                row.push(data[i * this.cols + j]);
             }
             result.push(row.join(','));
         }
@@ -130,16 +174,7 @@ function mat2Array(mat) {
 
 
 // 矩阵加法
-function mat_add(args0, args1) {
-    checkArgs(args0, args1);
 
-    if (isMatrix(args0)){
-        return Matrix.add(args0, args1);
-    }
-    else{
-        return Matrix.add(args1, args0);
-    }
-}
 
 function mat_sub(args0, args1) {
     checkArgs(args0, args1);

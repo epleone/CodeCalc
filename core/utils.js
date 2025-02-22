@@ -63,7 +63,6 @@ function isDecimal(value) {
     return value instanceof Decimal;
 }
 
-
 // 判断是否是数字类型，可以相互转换
 function isDigital(value) {
     return isNumber(value) || isBigInt(value) || isDecimal(value);
@@ -82,6 +81,31 @@ function isDatestamp(value) {
     return value instanceof Datestamp;
 }
 
+// 判断是否是Matrix
+function isMatrix(value) {
+    return value instanceof DecMatrix;
+}
+
+
+// 检查参数是否满足矩阵运算
+function checkMatrixArgs(args0, args1) {
+    // 如果是两个矩阵，则返回true
+    if (isMatrix(args0) && isMatrix(args1)) {
+        return true;
+    }
+
+    //  如果一个是矩阵，一个是数字，则返回true
+    if (isMatrix(args0) && isDigital(args1)) {
+        return true;
+    }
+
+    if (isDigital(args0) && isMatrix(args1)) {
+        return true;
+    }
+
+    return false;
+}
+
 
 // 类型转换工具
 const Utils = {
@@ -92,6 +116,10 @@ const Utils = {
         // console.log("convertTypes: ", value.toString(), type);
 
         if(type === 'decimal') {
+            // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
+            if(isMatrix(value)) {
+                return value;
+            }
             return new Decimal(value.toString());
         }  
         if(type === 'number') {
@@ -189,6 +217,16 @@ const Utils = {
             return Decimal(x.toString()).plus(Decimal(y.toString()));
         }
 
+        if(checkMatrixArgs(x, y)) {
+
+            let addOP = (x, y) => Decimal(x).plus(Decimal(y));
+            if(isMatrix(x)) {
+                return x.apply(addOP, y);
+            }else{
+                return y.apply(addOP, x);
+            }
+        }
+
 
         if (typeof x !== typeof y) {
             throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
@@ -236,6 +274,15 @@ const Utils = {
             return Decimal(x.toString()).minus(Decimal(y.toString()));
         }
 
+        if(checkMatrixArgs(x, y)) {
+            let subOP = (x, y) => Decimal(x).minus(Decimal(y));
+            if(isMatrix(x)) {
+                return x.apply(subOP, y);
+            }else{
+                return y.apply(subOP, x);
+            }
+        }
+
         if (typeof x !== typeof y) {
             throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
         }
@@ -248,12 +295,47 @@ const Utils = {
             return x.times(y);
         }
 
+        if(checkMatrixArgs(x, y)) {
+            let mulOP = (x, y) => Decimal(x).times(Decimal(y));
+
+            if(isMatrix(x)) {
+                return x.apply(mulOP, y);
+            }else{
+                return y.apply(mulOP, x);
+            }
+        }
+
+        if(isDigital(x) && isDigital(y)) {
+            return Decimal(x.toString()).times(Decimal(y.toString()));
+        }
+
+        if (typeof x !== typeof y) {
+            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
+        }
+
         throw new Error('不支持的乘法');
     },
 
     divide(x, y) {
         if(isDecimal(x) && isDecimal(y)) {
             return x.div(y);
+        }
+
+        if(checkMatrixArgs(x, y)) { 
+            let divOP = (x, y) => Decimal(x).div(Decimal(y));
+            if(isMatrix(x)) {
+                return x.apply(divOP, y);
+            }else{
+                return y.apply(divOP, x);
+            }   
+        }
+
+        if(isDigital(x) && isDigital(y)) {
+            return Decimal(x.toString()).div(Decimal(y.toString()));
+        }
+
+        if (typeof x !== typeof y) {
+            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
         }
 
         throw new Error('不支持的除法');
@@ -264,8 +346,23 @@ const Utils = {
         if(isDecimal(x) && isDecimal(y)) {
             return x.div(y).floor();
         }
+        
+        if(checkMatrixArgs(x, y)) {
+            let floorDivOP = (x, y) => Decimal(x).div(Decimal(y)).floor();
+            if(isMatrix(x)) {
+                return x.apply(floorDivOP, y);
+            }else{
+                return y.apply(floorDivOP, x);
+            }
+        }
 
-        throw new Error('不支持的整除');
+        if(isDigital(x) && isDigital(y)) {
+            return Decimal(x.toString()).div(Decimal(y.toString())).floor();
+        }
+
+        if (typeof x !== typeof y) {
+            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
+        }
     },
 
     // 取模
@@ -274,7 +371,24 @@ const Utils = {
             return x.mod(y);
         }
 
-        throw new Error('不支持的模运算');
+        if(checkMatrixArgs(x, y)) {
+            let modOP = (x, y) => Decimal(x).mod(Decimal(y));
+            if(isMatrix(x)) {
+                return x.apply(modOP, y);
+            }else{
+                return y.apply(modOP, x);
+            }
+        }
+
+        if(isDigital(x) && isDigital(y)) {
+            return Decimal(x.toString()).mod(Decimal(y.toString()));
+        }   
+
+        if (typeof x !== typeof y) {
+            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
+        }
+
+        throw new Error('不支持的取模运算');
     },
 
     // 幂运算
@@ -282,6 +396,24 @@ const Utils = {
         if(isDecimal(x) && isDecimal(y)) {
             return x.pow(y);
         }
+
+        if(checkMatrixArgs(x, y)) {
+            let powOP = (x, y) => Decimal(x).pow(Decimal(y));
+            if(isMatrix(x)) {
+                return x.apply(powOP, y);
+            }else{
+                return y.apply(powOP, x);
+            }
+        }
+
+        if(isDigital(x) && isDigital(y)) {
+            return Decimal(x.toString()).pow(Decimal(y.toString()));
+        }
+
+        if (typeof x !== typeof y) {
+            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
+        }
+
         throw new Error('不支持的幂运算');
     },
 
@@ -317,7 +449,7 @@ const Utils = {
             return new DecMatrix(vec, rows, cols);
         }
 
-        throw new Error('随机数函数参数数量错误');
+        throw new Error(`random函数参数数量(${args.length})错误，应为0, 1, 2`);
 
     },
 

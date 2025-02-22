@@ -870,7 +870,10 @@ const Calculator = (function() {
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 
 // 测试
-// console.log(Calculator.calculate('[1, 2, 3]'));
+console.log(Calculator.calculate('[1, 2, 3] + 1'));
+console.log(Calculator.calculate('[1, 2, 3] - 1'));
+console.log(Calculator.calculate('[1, 2, 3] * 3'));
+console.log(Calculator.calculate('[1, 2, 3] / 5'));
 // console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9}'));
 // console.log(Calculator.calculate('[1,2,3] + 699'));
 // console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9} + 699'));
