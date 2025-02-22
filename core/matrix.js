@@ -16,6 +16,10 @@ export class DecMatrix {
         if (!Array.isArray(data)) {
             throw new Error('DMatrix: data 必须是数组');
         }
+        
+        if (data.length !== rows * cols) {
+            throw new Error(`DMatrix: data 的长度 ${data.length} 不等于 rows * cols ${rows} * ${cols}`);
+        }
 
         // 判断data是否是Decimal数组
         // if (!data.every(item => item instanceof Decimal)) {
@@ -59,12 +63,35 @@ export class DecMatrix {
         return new DecMatrix(this.data.map(func), this.rows, this.cols);
     }
 
-   
+    //
     // 提供矩阵运算方法
     matmul(other) {
-        return Matrix.mmul(this, other);
+        const m1 = this.toMatrix();
+        const m2 = other.toMatrix();
+
+        if (m1.columns !== m2.rows) {
+            throw new Error('矩阵乘法：m1 的列数与 m2 的行数不匹配');
+        }
+    
+        const rslt = m1.mmul(m2);
+        return new DecMatrix(rslt.to1DArray().map(x => new Decimal(x)), rslt.rows, rslt.columns);
     }
 
+    // 转成Matrix类型
+    toMatrix() {
+        // 将data按照rows和cols转换为二维数组
+        let result = [];
+        for(let i = 0; i < this.rows; i++) {
+            let row = [];
+            for(let j = 0; j < this.cols; j++) {
+                // 获取一维数组中对应的元素
+                let value = Number(this.data[i * this.cols + j]);
+                row.push(value);
+            }
+            result.push(row);
+        }
+        return new Matrix(result);
+    }
 
     // 显示字符串
     toString() {
@@ -151,70 +178,10 @@ function mat2Array(mat) {
 
 
 
-// 矩阵乘法
-function mat_matmul(args0, args1) {
-    // 矩阵乘法, 必须都是 Matrix
-    if (!isMatrix(args0) || !isMatrix(args1)) {
-        throw new Error('args0, args1 必须都是 Matrix');
-    }
 
-    // 判断矩阵是否可以相乘
-    if (args0.columns !== args1.rows) {
-        throw new Error('args0 的列数与 args1 的行数不匹配');
-    }
+// const m = new DecMatrix([1, 2, 3, 4, 5, 6, 7, 8, 9], 3, 3);
 
-    return args0.mmul(args1);
-}
+// const m2 = new DecMatrix([1, 3, 3, 4, 1, 6, 7, 8, 9], 3, 3);
 
-
-
-// let vec1 = str2vec('[1, 2, 3]');
-// let vec2 = str2vec('[4, 5, 6, 7]');
-
-// console.log(vec1.to1DArray());
-
-// let vec2 = mat_add(vec1, 1);
-// console.log(vec2);
-
-// let vec3 = mat_add(1, vec1);
-// console.log(vec3);
-
-// let sv1 = mat_sub(vec1, 1);
-// console.log(sv1);
-
-// let sv2 = mat_sub(1, vec1);
-// console.log(sv2);
-
-// let sv3 = mat_div(1, vec1);
-// console.log(sv3);
-
-// let sv4 = mat_mul(vec1, vec1);
-// console.log(sv4);
-
-
-// let vec2 = str2vec('[1 2 3]');
-// console.log(vec2); 
-
-// let vec3 = str2vec('[1 2, 3]');
-// console.log(vec3); 
-
-// let mat1 = str2Matrix('{1, 2, 3;4, 5, 3; 9, 8, 9}');
-// let mat2 = str2Matrix('{1 1 ;1 1 ; 1 1 }');
-
-// let mat3 = str2Matrix('{1, 2, 3, 4, 5, 3, 9, 8, 9; 1, 1, 3,4, 5, 3, 9, 8, 9; 2, 2, 3,4, 5, 3, 9, 8, 9;1, 2, 3,4, 6, 3, 9, 8, 9; 1, 2, 3,4, 7, 3, 9, 8, 9; 1, 2, 3,9, 5, 3, 9, 8, 9;0, 2, 3,4, 5, 3, 9, 8, 9; 1, 2, 1,4, 5, 3, 9, 8, 9; 1, 2, 3,4, 5, 3, 3, 8, 9}');
-
-// const det = determinant(mat3);
-// console.log(det);
-
-// console.log(mat2Array(mat1));
-// console.log(mat2Array(mat2));
-
-// let rslt = mat_matmul(mat1, mat2);
+// const rslt = m.matmul(m2);
 // console.log(rslt);
-
-// rslt = mat_mul(mat1, mat2);
-// console.log(rslt);
-
-// console.log(mat2);
-
-// export { Utils, Datestamp, M_CONST };
