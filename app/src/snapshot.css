@@ -95,7 +95,7 @@
 .snapshot-group .snapshot-header {
     display: flex;
     align-items: center;
-    padding: 8px 10px;
+    padding: 8px 8px 8px 10px;
     cursor: pointer;
     user-select: none;
     background: var(--snapshot-item-bg);
@@ -114,7 +114,7 @@
 .toggle-icon {
     display: flex;
     align-items: center;
-    margin: 0 8px;
+    margin: 0 4px;
     transition: transform 250ms cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
@@ -170,13 +170,20 @@
     font-size: 13px;
     color: var(--snapshot-text);
     position: relative;
-    margin-right: auto;
+    margin-right: 8px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
 }
 
 .snapshot-title {
     cursor: text;
     padding: 2px 4px;
     border-radius: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
 }
 
 .snapshot-title:hover {
@@ -299,7 +306,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 4px;
+    padding: 3px;
     color: var(--snapshot-button-color);
     border-radius: 4px;
     display: inline-flex;
@@ -311,8 +318,9 @@
     width: 24px;
     height: 24px;
     min-width: 24px;
-    margin-right: 4px;
-    margin-left: 4px;
+    margin-right: 2px;
+    margin-left: 2px;
+    flex-shrink: 0;
 }
 
 .apply-snapshot-btn:hover {
@@ -433,7 +441,7 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 4px;
+    padding: 3px;
     color: #757575;
     border-radius: 4px;
     display: inline-flex;
@@ -445,7 +453,8 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     width: 24px;
     height: 24px;
     min-width: 24px;
-    margin-right: 0;
+    margin-right: 2px;
+    flex-shrink: 0;
 }
 
 .delete-snapshot-btn:hover {
@@ -469,7 +478,7 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
 .snapshot-type-icon {
     display: inline-flex;
     align-items: center;
-    margin-right: 6px;
+    margin-right: 4px;
     color: var(--snapshot-tab-line);
 }
 
