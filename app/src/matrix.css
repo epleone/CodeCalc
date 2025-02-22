@@ -1,3 +1,13 @@
+:root {
+    --matrix-color: #660985;
+    --matrix-background: rgba(238, 238, 238, 0.95);
+}
+
+:root[data-theme="dark"] {
+    --matrix-color: #999999;
+    --matrix-background: #2d2d2d;
+}
+
 /* LaTeX矩阵样式 */
 .latex-matrix {
     display: inline-block;
@@ -5,58 +15,61 @@
     font-family: "Times New Roman", serif;
     font-size: 1.2em;
     margin: 20px 0;
-    padding: 0 3px;  /* 减小左右padding */
+    padding: 0 2px;  /* 减小整体左右padding */
 }
 
-/* 使用伪元素添加方括号 */
+/* 使用伪元素添加圆括号 */
 .latex-matrix::before,
 .latex-matrix::after {
     content: '';
     position: absolute;
-    top: -2px;
-    bottom: -2px;
-    width: 6px;  /* 减小方括号的整体宽度 */
-    background:
-        linear-gradient(to right, black 100%, transparent 100%) top,
-        linear-gradient(to right, black 100%, transparent 100%) bottom,
-        linear-gradient(to bottom, black, black) left;
-    background-size: 
-        6px 2px,  /* 调整横线宽度 */
-        6px 2px,
-        2px 100%;
-    background-repeat: no-repeat;
+    top: 4px;     /* 进一步缩短上边距 */
+    bottom: 4px;  /* 进一步缩短下边距 */
+    width: 6px;
+    border-style: solid;
+    border-color: var(--matrix-color);
+    border-radius: 8px;
 }
 
 .latex-matrix::before {
     left: 0;
+    border-width: 1px 0 1px 1px;
+    border-radius: 8px 0 0 8px;
 }
 
 .latex-matrix::after {
     right: 0;
-    transform: scaleX(-1); /* 翻转右边的方括号 */
+    border-width: 1px 1px 1px 0;
+    border-radius: 0 8px 8px 0;
 }
 
+/* 调整内容区域的间距 */
 .latex-matrix .matrix-content {
-    padding: 0.2em 0.3em;  /* 减小内容区域的padding */
+    padding: 0.02em 0.3em;  /* 稍微减小上下padding */
 }
 
 .latex-matrix .matrix-row {
     display: flex;
-    justify-content: center;
-    margin: 2px 0;
-    line-height: 1.2;
+    justify-content: flex-end;
+    margin: 0;  /* 移除行间距 */
+    line-height: 1.1;  /* 进一步减小行高 */
 }
 
 .matrix-element-container {
-    padding: 3px 8px;
-    text-align: center;
+    padding: 2px;
+    text-align: right;
+    min-width: unset;
+    margin: 0 2px;  /* 减小元素之间的间距从4px到2px */
 }
 
 .matrix-element {
     display: inline-block;
-    min-width: 20px;
-    color: #660985;  /* 设置数字颜色为紫色 */
-    font-weight: 500;  /* 稍微加粗数字 */
+    padding: 0 2px;
+    min-width: 16px;
+    text-align: center;
+    color: var(--matrix-color);
+    font-weight: 500;
+    font-size: 1.2em;  /* 增加字体大小 */
 }
 
 /* 添加省略号样式 */
@@ -84,22 +97,38 @@
 }
 
 .message-icon .latex-matrix {
-    position: absolute;  /* 相对于图标定位 */
-    right: 100%;  /* 显示在图标的左侧 */
-    top: 0;  /* 与图标顶部对齐 */
-    margin: 0 8px;  /* 与图标保持水平距离 */
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0 -20px;
     font-size: 1em;
-    background: #eee8e8;  /* 改为白色背景 */
-    padding: 16px 24px;
+    background: var(--matrix-background);
+    padding: 12px 16px;
     border-radius: 4px;
-    z-index: 1000;  /* 确保显示在最上层 */
+    z-index: 9999;  /* 提高z-index值确保显示在最上层 */
 }
 
-/* 调整方括号位置 */
+/* 调整消息图标中的圆括号位置 */
 .message-icon .latex-matrix::before {
-    left: 24px;
+    left: 10px;  /* 稍微调整左括号位置 */
 }
 
 .message-icon .latex-matrix::after {
-    right: 24px;
+    right: 8px;  /* 相应调整右括号位置 */
+}
+
+/* 调整第一个和最后一个元素的边距 */
+.matrix-row > :first-child {
+    margin-left: 1px;  /* 减小左边距 */
+}
+
+.matrix-row > :last-child {
+    margin-right: 1px;  /* 减小右边距 */
+}
+
+/* 第一行的提示框样式 */
+.message-icon.first-row .latex-matrix {
+    top: -10px;  /* 将提示框移到图标下方 */
+    transform: none;  /* 移除垂直居中transform */
 }

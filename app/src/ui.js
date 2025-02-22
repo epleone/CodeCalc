@@ -514,6 +514,12 @@ function calculateLine(input) {
             messageIcon.className = 'message-icon matrix';
             messageIcon.style.display = 'inline';
             messageText.innerHTML = arrayToHtml(value);  // 这里使用value而不是messages
+
+            //判断是否在第一行，下移矩阵提示框
+            const expressionLine = messageIcon.closest('.expression-line');
+            if (expressionLine.previousElementSibling === null) {
+                messageIcon.classList.add('first-row');
+            }
             return;
         }
 
