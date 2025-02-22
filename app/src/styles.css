@@ -3,6 +3,8 @@
 @import 'tag.css';
 @import 'snapshot.css';
 @import 'settings.css';
+@import 'matrix.css';
+
 
 :root {
     --bg-primary: #f0f0f0;

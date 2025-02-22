@@ -440,6 +440,40 @@ function handleAsteriskInput(event, input) {
     }
 }
 
+function arrayToHtml(matString) {
+    // 向量
+    if (matString.startsWith('[') ) {
+        const array = JSON.parse(matString);
+        const rows = array.map(element => 
+            `<div class="matrix-row"><span class="matrix-element">${element}</span></div>`
+        );
+        return `<div class="latex-matrix">${rows.join('')}</div>`;
+    }
+   
+    // 矩阵
+    if (matString.startsWith('{')) {
+        // 将 {1,2,3; 4,5,6; 7,8,9} 转换为二维数组
+        const matrix = matString
+            .slice(1, -1)                    // 移除大括号
+            .split(';')                      // 分割行
+            .map(row => row.trim().split(',').map(Number)); // 处理每行数据
+
+        // 生成HTML - 使用嵌套结构表示二维矩阵
+        const rows = matrix.map(row => {
+            const elements = row.map(element =>
+                `<span class="matrix-element">${element}</span>`
+            );
+            return `<div class="matrix-row">${elements.join('')}</div>`;
+        });
+
+        return `<div class="latex-matrix">${rows.join('')}</div>`;
+    
+    }
+
+    // 错误格式 
+    return `<div class="latex-matrix"> Error </div>`;
+}
+
 function calculateLine(input) {
     const resultContainer = input.parentElement.querySelector('.result-container');
     const result = resultContainer.querySelector('.result');
@@ -476,8 +510,10 @@ function calculateLine(input) {
         // 检查是否为矩阵
         const isMatrix = messages.some(msg => msg.text === 'isMatrix');
         if (isMatrix) {
+            // 使用 arrayToHtml 函数将矩阵转换为可视化HTML
             messageIcon.className = 'message-icon matrix';
             messageIcon.style.display = 'inline';
+            messageText.innerHTML = arrayToHtml(value);  // 这里使用value而不是messages
             return;
         }
 
