@@ -494,16 +494,19 @@ const Calculator = (function() {
                         nextToken[0] === 'constant' || // 常量
                         nextToken[0] === 'function' || // 函数
                         (nextToken[0] === 'delimiter' && nextToken[1] === '(') // 左括号
-                        // 移除一元运算符的判断，让它走百分号的逻辑
                     );
 
-                    current++;
                     if (isModulo) {
                         // 作为取模运算符处理
+                        if (OPERATORS['%'].precedence < precedence) {
+                            break;
+                        }
+                        current++;
                         const right = parseExpression(OPERATORS['%'].precedence + 1);
                         left = createNode('%', [left, right], 'operator');
                     } else {
                         // 作为百分号处理
+                        current++;
                         left = createNode('unary%', [left], 'operator');
                     }
                     continue;
@@ -522,13 +525,17 @@ const Calculator = (function() {
                         (prevToken[0] === 'delimiter' && prevToken[1] === ')') // 右括号
                     );
 
-                    current++;
                     if (isMatmul) {
                         // 作为矩阵乘法运算符处理
+                        if (OPERATORS['matmul@'].precedence < precedence) {
+                            break;
+                        }
+                        current++;
                         const right = parseExpression(OPERATORS['matmul@'].precedence + 1);
                         left = createNode('matmul@', [left, right], 'operator');
                     } else {
                         // 作为日期符号处理
+                        current++;
                         const right = parseExpression(OPERATORS['@'].precedence + 1);
                         left = createNode('@', [right], 'operator');
                     }

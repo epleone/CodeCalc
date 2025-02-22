@@ -456,6 +456,18 @@
             { group: '取模运算', name: "复合运算1", input: "7 % 3 + 2", expected: "3" },
             { group: '取模运算', name: "复合运算2", input: "10 % (3 + 2)", expected: "0" },
 
+            // 添加连续取模测试用例
+            { group: '取模运算', name: "连续取模1", input: "100 % 30 % 7", expected: "3" },
+            { group: '取模运算', name: "连续取模2", input: "1000 % 100 % 30", expected: "0" },
+            { group: '取模运算', name: "连续取模3", input: "17 % 5 % 2", expected: "0" },
+            { group: '取模运算', name: "连续取模4", input: "-17 % 5 % 2", expected: "0" },
+            { group: '取模运算', name: "连续取模5", input: "100 % (30 % 7)", expected: "0" },
+            { group: '取模运算', name: "连续取模6", input: "(100 % 30) % 7", expected: "3" },
+            { group: '取模运算', name: "连续取模混合1", input: "100 % 30 + 7 % 3", expected: "11" },
+            { group: '取模运算', name: "连续取模混合2", input: "(100 % 30 + 7) % 3", expected: "2" },
+            { group: '取模运算', name: "连续取模混合3", input: "100 % (30 + 7 % 3)", expected: "7" },
+            { group: '取模运算', name: "连续取模混合4", input: "100 % 30 % 7 % 2", expected: "1" },
+
             // 错误情况测试
             { group: '百分号错误', name: "连续百分号", input: "50%%", expected: "error" },
             { group: '百分号错误', name: "孤立百分号", input: "%", expected: "error" },

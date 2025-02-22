@@ -106,6 +106,29 @@ function checkMatrixArgs(args0, args1) {
     return false;
 }
 
+// 添加标量和矩阵运算支持，注意是否满足交换律
+function addOpSupport(opName, x, y, op_xy, op_yx) {
+    // 使用这个函数时，x和y都强制转换为Decimal类型 或者是 DecMatrix类型
+    if(isDecimal(x) && isDecimal(y)) {
+        return op_xy(x, y);
+    }
+
+    if(checkMatrixArgs(x, y)) {
+        if(isMatrix(x)) {
+            return x.apply(op_xy, y);
+        }else{
+            // 不满足交换律时，op_yx也需要交换一次顺序
+            return y.apply(op_yx, x);
+        }
+    }
+
+    if (typeof x !== typeof y) {
+        throw new Error(`${opName} 参数类型不一致: ${typeof x} 和 ${typeof y}`);
+    }
+
+    throw new Error(`不支持的运算: ${opName}`);
+}
+
 
 // 类型转换工具
 const Utils = {
@@ -220,12 +243,10 @@ const Utils = {
         if(checkMatrixArgs(x, y)) {
 
             let addOP = (x, y) => Decimal(x).plus(Decimal(y));
-            if(isMatrix(x)) {
-                return x.apply(addOP, y);
-            }else{
-                return y.apply(addOP, x);
-            }
+            return addMatrixSupport(x, y, addOP, addOP);
         }
+
+        
 
 
         if (typeof x !== typeof y) {
@@ -276,13 +297,9 @@ const Utils = {
 
         if(checkMatrixArgs(x, y)) {
             // 不满足交换律
-            if(isMatrix(x)) {
-                let subOP = (x, y) => Decimal(x).minus(Decimal(y));
-                return x.apply(subOP, y);
-            }else{
-                let subOP = (x, y) => Decimal(y).minus(Decimal(x));
-                return y.apply(subOP, x);
-            }
+            let subOP1 = (x, y) => Decimal(x).minus(Decimal(y));
+            let subOP2 = (x, y) => Decimal(y).minus(Decimal(x));
+            return addMatrixSupport(x, y, subOP1, subOP2);
         }
 
         if (typeof x !== typeof y) {
@@ -293,138 +310,52 @@ const Utils = {
     },
 
     multiply(x, y) {
-        if(isDecimal(x) && isDecimal(y)) {
-            return x.times(y);
-        }
-
-        if(checkMatrixArgs(x, y)) {
-            let mulOP = (x, y) => Decimal(x).times(Decimal(y));
-
-            if(isMatrix(x)) {
-                return x.apply(mulOP, y);
-            }else{
-                return y.apply(mulOP, x);
-            }
-        }
-
-        if(isDigital(x) && isDigital(y)) {
-            return Decimal(x.toString()).times(Decimal(y.toString()));
-        }
-
-        if (typeof x !== typeof y) {
-            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-        }
-
-        throw new Error('不支持的乘法');
+        // 不可以定义 argTypes: 'any', 需要转换参数类型到Decimal
+        let mulOP = (x, y) => x.times(y);
+        return addOpSupport('乘法', x, y, mulOP, mulOP);
     },
 
     divide(x, y) {
-        if(isDecimal(x) && isDecimal(y)) {
-            return x.div(y);
-        }
+        // 不可以定义 argTypes: 'any', 需要转换参数类型
 
         // 不满足交换律
-        if(checkMatrixArgs(x, y)) { 
-            if(isMatrix(x)) {
-                let divOP = (x, y) => Decimal(x).div(Decimal(y));
-                return x.apply(divOP, y);
-            }else{
-                let divOP = (x, y) => Decimal(y).div(Decimal(x));
-                return y.apply(divOP, x);
-            }   
-        }
+        let divOP1 = (x, y) => x.div(y);
+        let divOP2 = (x, y) => y.div(x);
 
-        if(isDigital(x) && isDigital(y)) {
-            return Decimal(x.toString()).div(Decimal(y.toString()));
-        }
-
-        if (typeof x !== typeof y) {
-            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-        }
-
-        throw new Error('不支持的除法');
+        return addOpSupport('除法', x, y, divOP1, divOP2);
     },
 
     // 整除
     floorDivide(x, y) {
-        if(isDecimal(x) && isDecimal(y)) {
-            return x.div(y).floor();
-        }
-        
-        if(checkMatrixArgs(x, y)) {
-            // 不满足交换律
-            if(isMatrix(x)) {
-                let floorDivOP = (x, y) => Decimal(x).div(Decimal(y)).floor();
-                return x.apply(floorDivOP, y);
-            }else{
-                let floorDivOP = (x, y) => Decimal(y).div(Decimal(x)).floor();
-                return y.apply(floorDivOP, x);
-            }
-        }
+        // 不可以定义 argTypes: 'any', 需要转换参数类型
 
-        if(isDigital(x) && isDigital(y)) {
-            return Decimal(x.toString()).div(Decimal(y.toString())).floor();
-        }
+        // 不满足交换律
+        let floorDivOP1 = (x, y) => x.div(y).floor();
+        let floorDivOP2 = (x, y) => y.div(x).floor();
 
-        if (typeof x !== typeof y) {
-            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-        }
+        return addOpSupport('整除', x, y, floorDivOP1, floorDivOP2);
     },
 
     // 取模
     mod(x, y) {
-        if(isDecimal(x) && isDecimal(y)) {
-            return x.mod(y);
-        }
+        // 不可以定义 argTypes: 'any', 需要转换参数类型
 
-        if(checkMatrixArgs(x, y)) {
-            // 不满足交换律
-            if(isMatrix(x)) {
-                let modOP = (x, y) => Decimal(x).mod(Decimal(y));
-                return x.apply(modOP, y);
-            }else{
-                let modOP = (x, y) => Decimal(y).mod(Decimal(x));
-                return y.apply(modOP, x);
-            }
-        }
+        // 不满足交换律
+        let modOP1 = (x, y) => x.mod(y);
+        let modOP2 = (x, y) => y.mod(x);
 
-        if(isDigital(x) && isDigital(y)) {
-            return Decimal(x.toString()).mod(Decimal(y.toString()));
-        }   
-
-        if (typeof x !== typeof y) {
-            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-        }
-
-        throw new Error('不支持的取模运算');
+        return addOpSupport('取模', x, y, modOP1, modOP2);
     },
 
     // 幂运算
     pow(x, y) {
-        if(isDecimal(x) && isDecimal(y)) {
-            return x.pow(y);
-        }
+        // 不可以定义 argTypes: 'any', 需要转换参数类型
 
-        if(checkMatrixArgs(x, y)) {
-            // 不满足交换律
-            if(isMatrix(x)) {
-                let powOP = (x, y) => Decimal(x).pow(Decimal(y));
-                return x.apply(powOP, y);
-            }else{
-                let powOP = (x, y) => Decimal(y).pow(Decimal(x));
-                return y.apply(powOP, x);
-            }
-        }
+        // 不满足交换律
+        let powOP1 = (x, y) => x.pow(y);
+        let powOP2 = (x, y) => y.pow(x);
 
-        if(isDigital(x) && isDigital(y)) {
-            return Decimal(x.toString()).pow(Decimal(y.toString()));
-        }
-
-        if (typeof x !== typeof y) {
-            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-        }
-
-        throw new Error('不支持的幂运算');
+        return addOpSupport('幂运算', x, y, powOP1, powOP2);
     },
 
 
