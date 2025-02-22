@@ -15,6 +15,8 @@ function normalizeSymbols(expr) {
         '’': "'",
         '【': '[',
         '】': ']',
+        '「': '{',
+        '」': '}',
         '《': '<',
         '》': '>',
         '＋': '+',
@@ -619,8 +621,8 @@ function processMatrix(expr) {
     let matrixConstantCounter = 0;
 
     // 用正则表达式匹配向量 `[*]`
-    // 匹配向量格式 [1,2,3] 或 [1, 2, 3]
-    const vectorRegex = /\[([\d\s,]+)\]/g;
+    // 匹配向量格式 [1 2 3], 只处理空格的情况
+    const vectorRegex = /\[([\d\s]+)\]/g;
     
     // 将向量转换为 vector() 函数调用
     expr = expr.replace(vectorRegex, (match, content) => {

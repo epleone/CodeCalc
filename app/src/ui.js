@@ -473,6 +473,14 @@ function calculateLine(input) {
             return;
         }
 
+        // 检查是否为矩阵
+        const isMatrix = messages.some(msg => msg.text === 'isMatrix');
+        if (isMatrix) {
+            messageIcon.className = 'message-icon matrix';
+            messageIcon.style.display = 'inline';
+            return;
+        }
+
         // 处理警告和提示消息
         if (Array.isArray(messages) && messages.length > 0) {
             // 设置图标类型

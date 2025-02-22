@@ -192,7 +192,11 @@ const Utils = {
             // 显示16位有效数字，并去掉末尾的0
             return result.toFixed(16).replace(/\.?0+$/, '');
         }
-        
+
+        if(isMatrix(result)) {
+            return { value: result.toString(), info: "isMatrix" };
+        }
+
         return result.toString();
     },
 
@@ -554,29 +558,18 @@ const Utils = {
 
     // 矩阵和向量转换
     str2vec(str) {
-        // 传入字符串 `[1, 2, 3]` 或者 `[1 2 3]`,将其转换成 columnVector 返回
+        // 传入字符串 `[1 2 3]`, 只处理空格分割
         str = str.trim();
         if (str[0] !== '[' || str[str.length-1] !== ']') {
             throw new Error('vector格式错误，请使用方括号[]');
         }
         
-        // 去掉首尾的 [ ]
-        str = str.substring(1, str.length-1);
-        // 将逗号前后的空格去掉
-        str = str.replace(/\s*,\s*/g, ',');
+        // 去掉首尾的 [ ]以及周围的空格
+        str = str.replace(/\s*\[\s*/g, '');
+        str = str.replace(/\s*\]\s*/g, '');
 
-        // 既有逗号分隔，又有空格分隔，抛出错误
-        if (str.includes(',') && str.includes(' ')) {
-            throw new Error('vector格式错误, 不要混用逗号和空格');
-        }
-
-        // 处理逗号分隔和空格分隔两种情况
-        let numbers;
-        if (str.includes(',')) {
-            numbers = str.split(',').map(s => Decimal(s.trim()));
-        } else {
-            numbers = str.split(/\s+/).map(s => Decimal(s.trim()));
-        }
+        // 处理空格分隔的情况
+        let numbers = str.split(/\s+/).map(s => Decimal(s.trim()));
 
         if (numbers.length === 0) {
             throw new Error('vector 长度为0');
@@ -595,27 +588,18 @@ const Utils = {
 
 
     str2Matrix(str) {
-        //  传入字符串 `{1, 2, 3;4,5,6; 7, 8, 9}` 或者 `{1 2 3;4 5 6; 7 8 9}`,将其转换成Matrix返回
+        //  只处理 空格和分号分割的矩阵 `{1 2 3;4 5 6; 7 8 9}`
         str = str.trim();
         if (str[0] !== '{' || str[str.length-1] !== '}') {
             throw new Error('matrix格式错误，请使用大括号{}');
         }
 
-        // 去掉首尾的大括号
-        str = str.substring(1, str.length-1);
-        // 将逗号前后的空格去掉
-        str = str.replace(/\s*,\s*/g, ',');
+        // 去掉首尾的大括号以及周围的空格
+        str = str.replace(/\s*\{\s*/g, '');
+        str = str.replace(/\s*\}\s*/g, '');
+
         // 将分号前后的空格去掉
         str = str.replace(/\s*;\s*/g, ';');
-
-        // console.log(str);
-        // 既有逗号分隔，又有空格分隔，抛出错误
-        if (str.includes(',') && str.includes(' ')) {
-            throw new Error('matrix格式错误, 不要混用逗号和空格');
-        }
-
-        // 将逗号替换为空格
-        str = str.replace(/,/g, ' ');
     
         // 按分号分隔成行
         let rows = str.split(';');
@@ -623,7 +607,6 @@ const Utils = {
         let numbers = rows.map(row => {
             // 去掉首尾空格后按空格分隔，并转换为Decimal
             return row.trim().split(/\s+/).map(Decimal);
-            // return row.trim().split(/\s+/).map(s => Decimal(s.trim()));
         });
 
         // 判断二维数组是否为空
