@@ -137,29 +137,6 @@ function test() {
     console.log(m3);
 }
 
-// 判断是否是matrix
-function isMatrix(obj) {
-    return obj instanceof Matrix;
-}
-
-// 判断是否是数字
-function isNumber(obj) {
-    return typeof obj === 'number' || typeof obj === 'bigint';
-}
-
-// 检查参数数量和类型，保证至少有一个是 Matrix
-function checkArgs(args0, args1) {
-    // if (!isNumber(args0) || !isMatrix(args1)) {
-    //     throw new Error('参数类型错误');
-    // }
-
-    // 如果 都是数字，则返回错误
-    if (isNumber(args0) && isNumber(args1)) {
-        throw new Error('args0, args1都不是 Matrix');
-    }
-}
-
-
 
 function mat2Array(mat) {
     // 如果只有一列，则返回一维数组
@@ -172,22 +149,6 @@ function mat2Array(mat) {
     }
 }
 
-
-// 矩阵加法
-
-
-function mat_sub(args0, args1) {
-    checkArgs(args0, args1);
-
-    if (isMatrix(args0)){
-        return Matrix.subtract(args0, args0);
-    }
-    else{
-        // 如果 args1 是 Matrix，则 args0 是数字
-        let mat1 = Matrix.mul(Matrix.ones(args1.rows, args1.columns), args0);
-        return Matrix.subtract(mat1, args1);
-    }
-}
 
 
 // 矩阵乘法
@@ -205,41 +166,6 @@ function mat_matmul(args0, args1) {
     return args0.mmul(args1);
 }
 
-// 矩阵点乘和数乘
-function mat_mul(args0, args1) {
-    checkArgs(args0, args1);
-
-    // 如果都是 Matrix，则返回矩阵点乘
-    if (isMatrix(args0) && isMatrix(args1)){
-        // 判断矩阵是否可以点乘
-        if (args0.columns !== args1.columns || args0.rows !== args1.rows) {
-            throw new Error('args0 和 args1 的行数和列数不匹配');
-        }
-        return args0.mul(args1);
-    }
-    else if (isMatrix(args0)){
-        // 如果 args0 是 Matrix，则 args1 是数字
-        return Matrix.mul(args0, args1);
-    }
-    else{
-        // 如果 args1 是 Matrix，则 args0 是数字
-        return Matrix.mul(args1, args0);
-    }
-}
-
-
-function mat_div(args0, args1) {
-    checkArgs(args0, args1);
-
-    if (isMatrix(args0)){
-        return Matrix.div(args0, args1);
-    }
-    else{
-        // 如果 args1 是 Matrix，则 args0 是数字
-        let mat1 = Matrix.mul(Matrix.ones(args1.rows, args1.columns), args0);
-        return Matrix.div(mat1, args1);
-    }
-}
 
 
 // let vec1 = str2vec('[1, 2, 3]');

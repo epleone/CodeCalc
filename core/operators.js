@@ -290,6 +290,14 @@ export const OPERATORS = {
         isCompoundAssignment: true
     },
 
+    // 矩阵运算符
+    'matmul@': {
+        precedence: 4,
+        args: 2,
+        func: Utils.matmul,
+        position: 'infix',
+        description: '矩阵乘法'
+    },
     // 日期操作符, 返回日期对象的时间戳
     '@': {
         precedence: 1,

@@ -275,10 +275,12 @@ const Utils = {
         }
 
         if(checkMatrixArgs(x, y)) {
-            let subOP = (x, y) => Decimal(x).minus(Decimal(y));
+            // 不满足交换律
             if(isMatrix(x)) {
+                let subOP = (x, y) => Decimal(x).minus(Decimal(y));
                 return x.apply(subOP, y);
             }else{
+                let subOP = (x, y) => Decimal(y).minus(Decimal(x));
                 return y.apply(subOP, x);
             }
         }
@@ -321,11 +323,13 @@ const Utils = {
             return x.div(y);
         }
 
+        // 不满足交换律
         if(checkMatrixArgs(x, y)) { 
-            let divOP = (x, y) => Decimal(x).div(Decimal(y));
             if(isMatrix(x)) {
+                let divOP = (x, y) => Decimal(x).div(Decimal(y));
                 return x.apply(divOP, y);
             }else{
+                let divOP = (x, y) => Decimal(y).div(Decimal(x));
                 return y.apply(divOP, x);
             }   
         }
@@ -348,10 +352,12 @@ const Utils = {
         }
         
         if(checkMatrixArgs(x, y)) {
-            let floorDivOP = (x, y) => Decimal(x).div(Decimal(y)).floor();
+            // 不满足交换律
             if(isMatrix(x)) {
+                let floorDivOP = (x, y) => Decimal(x).div(Decimal(y)).floor();
                 return x.apply(floorDivOP, y);
             }else{
+                let floorDivOP = (x, y) => Decimal(y).div(Decimal(x)).floor();
                 return y.apply(floorDivOP, x);
             }
         }
@@ -372,10 +378,12 @@ const Utils = {
         }
 
         if(checkMatrixArgs(x, y)) {
-            let modOP = (x, y) => Decimal(x).mod(Decimal(y));
+            // 不满足交换律
             if(isMatrix(x)) {
+                let modOP = (x, y) => Decimal(x).mod(Decimal(y));
                 return x.apply(modOP, y);
             }else{
+                let modOP = (x, y) => Decimal(y).mod(Decimal(x));
                 return y.apply(modOP, x);
             }
         }
@@ -398,10 +406,12 @@ const Utils = {
         }
 
         if(checkMatrixArgs(x, y)) {
-            let powOP = (x, y) => Decimal(x).pow(Decimal(y));
+            // 不满足交换律
             if(isMatrix(x)) {
+                let powOP = (x, y) => Decimal(x).pow(Decimal(y));
                 return x.apply(powOP, y);
             }else{
+                let powOP = (x, y) => Decimal(y).pow(Decimal(x));
                 return y.apply(powOP, x);
             }
         }
@@ -700,6 +710,16 @@ const Utils = {
 
         let data = numbers.flat();
         return new DecMatrix(data, numbers.length, rowLength);
+    },
+
+    // 矩阵乘法
+    matmul(x, y) {
+        // 如果x是矩阵，y是矩阵，则返回矩阵
+        if(isMatrix(x) && isMatrix(y)) {
+            return x.matmul(y);
+        }
+
+        throw new Error('矩阵乘法参数错误');
     },
 
 

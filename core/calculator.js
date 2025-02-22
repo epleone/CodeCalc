@@ -292,9 +292,12 @@ const Calculator = (function() {
                         } else {
                             tokens.push(['operator', '-']);
                         }
-                    } else if (op === '%') {
-                        // 先统一标记为%，后面根据情况判断是百分号还是取模
-                        tokens.push(['operator', '%']);  
+                    // } else if (op === '@') {
+                    //     // 先统一标记为@，后面根据情况判断是日期符号还是矩阵乘法
+                    //     tokens.push(['operator', '@']);  
+                    // }else if (op === '%') {
+                    //     // 先统一标记为%，后面根据情况判断是百分号还是取模
+                    //     tokens.push(['operator', '%']);  
                     } else {
                         // 其他操作符的处理
                         if (separators.has(op)) {
@@ -480,6 +483,7 @@ const Calculator = (function() {
             while (current < tokens.length) {
                 const [type, value] = tokens[current];
                 
+                // 区分百分号运算符和取模运算符
                 if (type === 'operator' && value === '%') {
                     // 看下一个token来判断是百分号还是取模
                     const nextToken = tokens[current + 1];
@@ -501,6 +505,32 @@ const Calculator = (function() {
                     } else {
                         // 作为百分号处理
                         left = createNode('unary%', [left], 'operator');
+                    }
+                    continue;
+                }
+
+                // 区分日期符号和矩阵乘法
+                if (type === 'operator' && value === '@') {
+                    // 看前一个token来判断是日期符号还是矩阵乘法
+                    const prevToken = tokens[current - 1];
+                    
+                    // 判断是否是矩阵乘法运算符 - 前面必须是可以作为操作数的token
+                    const isMatmul = prevToken && (
+                        prevToken[0] === 'string' ||  // 数字或变量
+                        prevToken[0] === 'constant' || // 常量
+                        prevToken[0] === 'function' || // 函数
+                        (prevToken[0] === 'delimiter' && prevToken[1] === ')') // 右括号
+                    );
+
+                    current++;
+                    if (isMatmul) {
+                        // 作为矩阵乘法运算符处理
+                        const right = parseExpression(OPERATORS['matmul@'].precedence + 1);
+                        left = createNode('matmul@', [left, right], 'operator');
+                    } else {
+                        // 作为日期符号处理
+                        const right = parseExpression(OPERATORS['@'].precedence + 1);
+                        left = createNode('@', [right], 'operator');
                     }
                     continue;
                 }
@@ -870,10 +900,10 @@ const Calculator = (function() {
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 
 // 测试
-console.log(Calculator.calculate('[1, 2, 3] + 1'));
-console.log(Calculator.calculate('[1, 2, 3] - 1'));
-console.log(Calculator.calculate('[1, 2, 3] * 3'));
-console.log(Calculator.calculate('[1, 2, 3] / 5'));
+// console.log(Calculator.calculate('[1, 2, 3] + 1'));
+// console.log(Calculator.calculate('[1, 2, 3] - 1'));
+// console.log(Calculator.calculate('[1, 2, 3] * 3'));
+// console.log(Calculator.calculate('[1, 2, 3] / 5'));
 // console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9}'));
 // console.log(Calculator.calculate('[1,2,3] + 699'));
 // console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9} + 699'));
