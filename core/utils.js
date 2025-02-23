@@ -200,12 +200,7 @@ const Utils = {
         return result.toString();
     },
 
-    add(x, y) {
-
-        if(isDecimal(x) && isDecimal(y)) {
-            return x.plus(y);
-        }
-        
+    add(x, y) {        
         if (typeof x === 'string' || typeof y === 'string') {
             return x.toString() + y.toString();
         }
@@ -240,32 +235,14 @@ const Utils = {
             throw new Error('两个日期类型不能相加');
         }
 
-        if(isDigital(x) && isDigital(y)) {
-            return Decimal(x.toString()).plus(Decimal(y.toString()));
-        }
+        // 由于argTypes: 'any', 需要转成Decimal类型， 走通用逻辑
+        let addOP = (x, y) => Decimal(x).plus(Decimal(y));
 
-        if(checkMatrixArgs(x, y)) {
-
-            let addOP = (x, y) => Decimal(x).plus(Decimal(y));
-            return addMatrixSupport(x, y, addOP, addOP);
-        }
-
-        
-
-
-        if (typeof x !== typeof y) {
-            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-        }
-
-        throw new Error('不支持的加法');
+        return addOpSupport('加法', x, y, addOP, addOP);
 
     },
 
     subtract(x, y){
-        if(isDecimal(x) && isDecimal(y)) {
-            return x.minus(y);
-        }
-
         if(isDatestamp(x))
         {
             if(isDatestamp(y))
@@ -295,22 +272,10 @@ const Utils = {
             }
         }
 
-        if(isDigital(x) && isDigital(y)) {
-            return Decimal(x.toString()).minus(Decimal(y.toString()));
-        }
-
-        if(checkMatrixArgs(x, y)) {
-            // 不满足交换律
-            let subOP1 = (x, y) => Decimal(x).minus(Decimal(y));
-            let subOP2 = (x, y) => Decimal(y).minus(Decimal(x));
-            return addMatrixSupport(x, y, subOP1, subOP2);
-        }
-
-        if (typeof x !== typeof y) {
-            throw new Error(`参数类型不一致: ${typeof x} 和 ${typeof y}`);
-        }
-
-        throw new Error('不支持的减法');
+        // 由于argTypes: 'any', 需要转成Decimal类型， 走通用逻辑
+        let subOP1 = (x, y) => Decimal(x).minus(Decimal(y));
+        let subOP2 = (x, y) => Decimal(y).minus(Decimal(x));
+        return addOpSupport('减法', x, y, subOP1, subOP2);
     },
 
     multiply(x, y) {
@@ -383,14 +348,14 @@ const Utils = {
         if(args.length === 1) {
             const num = args[0].toNumber();
             // 随机生成num个数字
-            const vec = Array.from({length: num}, () => Decimal.random().toFixed(6));
+            const vec = Array.from({length: num}, () => Decimal.random());
             return new DecMatrix(vec, num, 1);
         }
 
         if(args.length === 2) {
             const rows = args[0].toNumber();
             const cols = args[1].toNumber();
-            const vec = Array.from({length: rows * cols}, () => Decimal.random().toFixed(6));
+            const vec = Array.from({length: rows * cols}, () => Decimal.random());
             return new DecMatrix(vec, rows, cols);
         }
 

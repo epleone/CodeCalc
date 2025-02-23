@@ -389,6 +389,7 @@ body {
     position: relative;
     padding-right: 1.5rem;
     box-sizing: border-box;
+    z-index: 2;
 }
 
 /* 消息图标基础样式 */

@@ -50,26 +50,28 @@
 
 .latex-matrix .matrix-row {
     display: flex;
-    justify-content: flex-end;
-    margin: 0;  /* 移除行间距 */
-    line-height: 1.1;  /* 进一步减小行高 */
+    justify-content: flex-start;  /* 改为flex-start使元素从左开始排列 */
+    margin: 0;
+    line-height: 1.1;
 }
 
 .matrix-element-container {
     padding: 2px;
-    text-align: right;
+    text-align: left;
     min-width: unset;
-    margin: 0 2px;  /* 减小元素之间的间距从4px到2px */
+    margin: 0 2px;
+    width: 24px;  /* 添加固定宽度确保列对齐 */
 }
 
 .matrix-element {
     display: inline-block;
     padding: 0 2px;
     min-width: 16px;
-    text-align: center;
+    text-align: left;
     color: var(--matrix-color);
     font-weight: 500;
-    font-size: 1.2em;  /* 增加字体大小 */
+    font-size: 1.2em;
+    width: 100%;  /* 让元素填充容器宽度 */
 }
 
 /* 添加省略号样式 */
@@ -106,7 +108,8 @@
     background: var(--matrix-background);
     padding: 12px 16px;
     border-radius: 4px;
-    z-index: 9999;  /* 提高z-index值确保显示在最上层 */
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* 调整消息图标中的圆括号位置 */
