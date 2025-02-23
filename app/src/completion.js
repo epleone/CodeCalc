@@ -9,11 +9,17 @@ function generateCompletions() {
         const func = FUNCTIONS[funcName];
         // 排除以数字开头的函数名（如 0b, 0o, 0x）
         if (!/^\d/.test(funcName)) {
+
             // 如果是属性函数，额外添加 .funcName 形式
             if (func.asProperty) {
-                completions.push(`${funcName}(`);
                 completions.push(`.${funcName}`);
-            } else {
+            } 
+            
+             // 如果不是隐藏函数，添加到补全列表
+            if (func.hidden) {
+                console.log(`隐藏函数: ${funcName}`);
+                continue;
+            }else{
                 completions.push(`${funcName}(`);
             }
         }
@@ -33,6 +39,9 @@ function generateCompletions() {
     // 添加进制前缀
     const prefixes = ['0b', '0o', '0x'];
     completions.push(...prefixes);
+
+    //打印补全列表
+    // console.log(completions);
     
     return completions;
 }
@@ -332,12 +341,12 @@ function checkCompletion(input) {
     const dotMatch = textBeforeCursor.match(/\.([a-zA-Z]*)$/);
     if (dotMatch) {
         // 只显示属性函数
-        const propertyMatches = Object.entries(FUNCTIONS)
-            .filter(([name, func]) => 
-                func.asProperty && 
-                (!dotMatch[1] || name.toLowerCase().startsWith(dotMatch[1].toLowerCase()))
+        const propertyMatches = completions
+            .filter(funcname => 
+                funcname.startsWith('.') && 
+                (!dotMatch[1] || funcname.substring(1).toLowerCase().startsWith(dotMatch[1].toLowerCase()))
             )
-            .map(([name]) => name);
+            .map(funcname => funcname.substring(1));
         
         if (propertyMatches.length > 0) {
             showCompletionHint(input, propertyMatches, true);
@@ -349,9 +358,8 @@ function checkCompletion(input) {
     const wordMatch = textBeforeCursor.match(/[a-zA-Z][a-zA-Z]*$/);
     if (wordMatch) {
         const word = wordMatch[0].toLowerCase();
-        const matches = Object.keys(FUNCTIONS)
-            .filter(name => name.toLowerCase().startsWith(word))
-            .map(name => name + '(');
+        const matches = completions
+            .filter(name => name.toLowerCase().startsWith(word));
         
         if (matches.length > 0) {
             showCompletionHint(input, matches, false);
