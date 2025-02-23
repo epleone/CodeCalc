@@ -57,17 +57,17 @@
 
 .matrix-element-container {
     padding: 2px;
-    text-align: left;
+    text-align: center;  /* 改为居中对齐 */
     min-width: unset;
     margin: 0 2px;
-    width: 24px;  /* 添加固定宽度确保列对齐 */
+    width: 24px;  /* 保持固定宽度确保列对齐 */
 }
 
 .matrix-element {
     display: inline-block;
     padding: 0 2px;
     min-width: 16px;
-    text-align: left;
+    text-align: center;  /* 改为居中对齐 */
     color: var(--matrix-color);
     font-weight: 500;
     font-size: 1.2em;
