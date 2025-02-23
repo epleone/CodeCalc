@@ -135,3 +135,15 @@
     top: -10px;  /* 将提示框移到图标下方 */
     transform: none;  /* 移除垂直居中transform */
 }
+
+.matrix-input {
+  /* 添加以下样式 */
+  white-space: pre-wrap;       /* 保留空格和换行 */
+  word-wrap: break-word;       /* 允许长单词换行 */
+  overflow-wrap: break-word;   /* 现代浏览器的单词换行属性 */
+  max-width: 100%;            /* 限制最大宽度 */
+  overflow-x: auto;           /* 添加水平滚动条 */
+  font-family: monospace;     /* 等宽字体，保持对齐 */
+  line-height: 1.5;          /* 适当的行高 */
+  padding: 8px;              /* 添加内边距 */
+}

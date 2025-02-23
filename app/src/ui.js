@@ -42,21 +42,47 @@ function handleResize(textarea) {
     // 重置高度以获取正确的 scrollHeight
     textarea.style.height = 'auto';
     
+    // 检查是否为当前激活的输入框
+    const isActive = document.activeElement === textarea;
+    
     // 文本长度阈值常量
     const TEXT_LENGTH_THRESHOLD = 25;
-
-    // 获取输入的字符数
-    const textLength = textarea.value.length;
     
-    // 根据字符数判断是否需要缩小字体
-    if (textLength > TEXT_LENGTH_THRESHOLD) {
-        textarea.classList.add('multiline');
+    if (isActive) {
+        // 获取输入的字符数
+        const textLength = textarea.value.length;
+        
+        // 激活状态：根据内容判断是否需要多行
+        if (textLength > TEXT_LENGTH_THRESHOLD) {
+            textarea.classList.add('multiline');
+        } else {
+            textarea.classList.remove('multiline');
+        }
+        // 设置实际高度
+        textarea.style.height = textarea.scrollHeight + 'px';
     } else {
+        // 非激活状态：强制单行显示
         textarea.classList.remove('multiline');
+        textarea.style.height = '';  // 移除手动设置的高度，使用 CSS 默认值
     }
+}
+
+// 添加焦点处理函数
+function handleFocus(event) {
+    const textarea = event.target;
+    if (!textarea.classList.contains('input')) return;
     
-    // 设置新的高度
-    textarea.style.height = textarea.scrollHeight + 'px';
+    // 重新计算当前获得焦点的输入框大小
+    handleResize(textarea);
+}
+
+function handleBlur(event) {
+    const textarea = event.target;
+    if (!textarea.classList.contains('input')) return;
+    
+    // 失去焦点时重置为单行
+    textarea.classList.remove('multiline');
+    textarea.style.height = '';  // 移除手动设置的高度，使用 CSS 默认值
 }
 
 // 使用防抖包装的 autoResize 函数
@@ -69,11 +95,13 @@ function CreateNewLine() {
     newLine.innerHTML = `
         ${Tag.createTagContainerHTML()}
         <textarea class="input" 
-                    placeholder="输入表达式" 
-                    rows="1"
-                    oninput="handleInput(event); autoResize(this)"
-                    onkeydown="handleKeyDown(event, this)"
-                    onclick="removeCompletionHint(this)"></textarea>
+                  placeholder="输入表达式" 
+                  rows="1"
+                  oninput="handleInput(event); autoResize(this)"
+                  onkeydown="handleKeyDown(event, this)"
+                  onfocus="handleFocus(event)"
+                  onblur="handleBlur(event)"
+                  onclick="removeCompletionHint(this)"></textarea>
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>
@@ -708,7 +736,9 @@ Object.assign(window, {
     
     // 实例
     settings,
-    snapshot
+    snapshot,
+    handleFocus,
+    handleBlur,
 });
 
 // 导出函数供模块使用
@@ -721,5 +751,7 @@ export {
     handleAsteriskInput,
     clearAll,
     handleContainerClick,
-    initializeUI
+    initializeUI,
+    handleFocus,
+    handleBlur,
 };

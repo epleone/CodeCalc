@@ -109,28 +109,32 @@ body {
     border: none;
     background: transparent;
     outline: none;
-    padding: 0.5rem 0 0.5rem 2rem;
+    padding: 0.5rem 8px 0.5rem 2rem;
     min-width: 0;
     color: var(--text-primary);
     position: relative;
     z-index: 1;
     box-sizing: border-box;
     resize: none;
+    white-space: nowrap;
     overflow: hidden;
-    min-height: 24px;
-    line-height: 24px;
-    padding: 0 8px;
-    transition: font-size 0.2s ease;
+    text-overflow: ellipsis;
+    min-height: 23px;
+    line-height: 23px;
     width: 100%;
-    word-break: break-all;
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
 }
 
 .input.multiline {
-    font-size: 1.2rem;  /* 多行时字体变小 */
-    line-height: 1.4;   /* 调整行间距 */
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    text-overflow: clip;
+    overflow: visible;
+    font-size: 1.2rem;
+    line-height: 1.4;
+    height: auto;
 }
+
 
 .result {
     font-size: 1.5rem;

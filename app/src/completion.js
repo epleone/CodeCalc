@@ -116,7 +116,7 @@ function positionCompletionHint(input, hint) {
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
     
-    // 获取输入框的位置信息
+    // 获取输入框的位置和样式信息
     const inputRect = input.getBoundingClientRect();
     const computedStyle = window.getComputedStyle(input);
     const paddingLeft = parseFloat(computedStyle.paddingLeft);
@@ -137,7 +137,8 @@ function positionCompletionHint(input, hint) {
     let remainingText = currentLine;
     let wrappedLines = 0;
     let finalLineWidth = 0;
-    const maxWidth = input.clientWidth - (paddingLeft * 2);
+    // 修改这里：考虑输入框的内部padding
+    const maxWidth = input.clientWidth - (parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight));
     
     while (remainingText.length > 0) {
         let testWidth = ctx.measureText(remainingText).width;
@@ -162,8 +163,9 @@ function positionCompletionHint(input, hint) {
     const totalLines = explicitLineBreaks + wrappedLines;
     const lineHeight = parseFloat(computedStyle.lineHeight);
     
+    // 修改这里：考虑输入框的左边距和padding
     const cursorX = inputRect.left + paddingLeft + finalLineWidth;
-    const cursorY = inputRect.top + (totalLines * lineHeight);
+    const cursorY = inputRect.top + (totalLines * lineHeight) + parseFloat(computedStyle.paddingTop);
     
     // 获取提示框尺寸
     const hintRect = hint.getBoundingClientRect();
