@@ -529,36 +529,6 @@ const Utils = {
 
 
     // 矩阵和向量转换
-    str2vec(str) {
-        // 传入字符串 `[1 2 3]`, 只处理空格分割
-        str = str.trim();
-        if (str[0] !== '[' || str[str.length-1] !== ']') {
-            throw new Error('vector格式错误，请使用方括号[]');
-        }
-        
-        // 去掉首尾的 [ ]以及周围的空格
-        str = str.replace(/\s*\[\s*/g, '');
-        str = str.replace(/\s*\]\s*/g, '');
-
-        // 处理空格分隔的情况
-        let numbers = str.split(/\s+/).map(s => Decimal(s.trim()));
-
-        if (numbers.length === 0) {
-            throw new Error('vector 长度为0');
-        }
-        
-        // 如果有非法数字，则抛出错误
-        for (let i = 0; i < numbers.length; i++) {
-            if (isNaN(numbers[i])) {
-                throw new Error(`vector${i+1}: ${numbers[i]} 不是数字`);
-            }
-        }  
-
-        // 返回一个列向量
-        return new DecMatrix(numbers, numbers.length, 1);
-    },
-
-
     str2Matrix(str) {
         //  只处理 空格和分号分割的矩阵 `{1 2 3;4 5 6; 7 8 9}`
         str = str.trim();
@@ -596,6 +566,36 @@ const Utils = {
 
         let data = numbers.flat();
         return new DecMatrix(data, numbers.length, rowLength);
+    },
+
+    expr2Vector(...args) {
+        // if(args.length === 1) {
+        //     // 判断是否是DecMatrix类型
+        //     if(isMatrix(args[0])) {
+        //         return args[0];
+        //     }
+        // }
+
+        // 将args转成数组
+        const vec = Array.from(args).map(x => Decimal(x));
+        return new DecMatrix(vec, vec.length, 1);
+    },
+
+    expr2Matrix(...args) {
+        // 循环每个args元素，检查他们的类型
+        for(let i = 0; i < args.length; i++) {
+            if(!isMatrix(args[i]) || args[i].cols !== 1) {
+                throw new Error('Matrix函数参数错误，应为列向量');
+            }
+
+            if(args[i].rows !== args[0].rows) {
+                throw new Error('Matrix函数参数错误，向量行数不相同');
+            }
+        }
+        
+        // 每个args元素都是DecMatrix类型, 拼接他们的data
+        const data = Array.from(args).flatMap(x => x.data);
+        return new DecMatrix(data, args.length, args[0].rows);
     },
 
     // 矩阵乘法

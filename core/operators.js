@@ -673,6 +673,18 @@ export const FUNCTIONS = {
         hidden: true   // 隐藏函数, 不显示在语法提示中
     },
 
+    // 矩阵转化函数
+    'matrix': {
+        func: (...args) => Utils.expr2Matrix(...args),
+        args: -1,
+        description: '转换为矩阵'
+    },
+    'vector': {
+        func: (...args) => Utils.expr2Vector(...args),
+        args: -1,
+        description: '转换为向量'
+    },
+    
     // 矩阵函数
     'eye': {
         func: Utils.eye,

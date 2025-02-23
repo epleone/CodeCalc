@@ -621,33 +621,68 @@ function processMatrix(expr) {
 
     let matrixConstantCounter = 0;
 
-    // 用正则表达式匹配向量 `[*]`
-    // 匹配向量格式 [1 2 3], 只处理空格的情况
-    const vectorRegex = /\[([\d\s]+)\]/g;
-    
-    // 将向量转换为 vector() 函数调用
-    expr = expr.replace(vectorRegex, (match, content) => {
-        const constName = `_cc_mat_i${matrixConstantCounter++}`;
-        const vec = Utils.str2vec(match);
-        ccVariables.set(constName, vec);
-        return constName;
-    });
-    
+    console.log('expr1:', expr);
 
-    // TODO: 添加一种函数转化的方法, 将表达式转成函数
-    // expr2vec(...args)
-
+    // 先处理矩阵，将矩阵参数转成向量
     // 用正则表达式匹配矩阵 `{*}`
-    // 匹配矩阵格式 {1,2,3;4,5,6;7,8,9} 或 {1 2 3;4 5 6;7 8 9}
+    //  {1,2,3;4,5,6;7,8,9} --> {[1,2,3];[4,5,6];[7,8,9]}  或 {1 2 3;4 5 6;7 8 9} --> {[1 2 3];[4 5 6];[7 8 9]}
     const matrixRegex = /\{([^{}]+)\}/g;
+
+    // TODO: 这里有问题。当表达式中没有[]包裹时正确，当有[]包裹时则会错误
+    // 按分号分隔处理即可
     
-    // 将矩阵转换为 matrix() 函数调用
     expr = expr.replace(matrixRegex, (match, content) => {
-        const constName = `_cc_mat_i${matrixConstantCounter++}`;
-        const matrix = Utils.str2Matrix(match);
-        ccVariables.set(constName, matrix);
-        return constName;
+        let matStr= match
+                    .replace(/\{/g, '\{\[')
+                    .replace(/\}/g, '\]\}')
+                    .replace(/;/g, '\];\[')
+        return matStr;
     });
+
+    console.log('expr2:', expr);
+
+    // 匹配向量格式 [1 2 3], 处理只有空格和负号的情况
+    const vectorRegex = /\[([\d\s-]+)\]/g;
+    
+    // 将空格转成逗号
+    expr = expr.replace(vectorRegex, (match, content) => {
+        // 如果负号前面没有空格，则报错
+        if(/[^\s]-\d/.test(content)) {
+            throw new Error('无法区分减号和负号，负号前必须有空格，减号使用逗号分隔向量元素');
+        }
+        // 去掉首尾的大括号以及周围的空格, 中间的空格并转成逗号
+        let vecStr= match
+                    .replace(/\[\s*/g, '')
+                    .replace(/\s*\]/g, '')
+                    .replace(/-\s*/g, '-') // 负号前面得有空格，否则会被当成减号? 目前是通过前面空格来控制负号还是减号
+                    .replace(/\s+/g, ',');
+        return 'vector(' + vecStr + ')';
+    });
+    
+    console.log('expr3:', expr);
+
+    // 继续匹配向量
+    const vectorRegex2 = /\[([^\]]+)\]/g;
+    expr = expr.replace(vectorRegex2, (match, content) => {
+        // 将开头的[和结尾的]去掉
+        return 'vector(' + match.slice(1, -1) + ')';
+    });
+
+    console.log('expr4:', expr);
+
+    // 再次处理矩阵
+
+    expr = expr.replace(matrixRegex, (match, content) => {
+
+        // 判断是否有;
+        if(match.includes(';')){
+            return 'matrix(' + match.slice(1, -1).replace(/;/g, ',')+ ')';    
+        }else{
+            return 'matrix(' + match.slice(1, -1) + ').T';
+        }
+    }); 
+
+    console.log('expr5:', expr);
 
     return expr;
 }
