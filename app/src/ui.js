@@ -471,10 +471,16 @@ function handleAsteriskInput(event, input) {
 function arrayToHtml(matString) {
     // 向量
     if (matString.startsWith('[') ) {
-        const array = JSON.parse(matString);
-        const rows = array.map(element => 
-            `<div class="matrix-row"><span class="matrix-element">${element}</span></div>`
-        );
+        const array = matString
+            .slice(1, -1)                    // 移除大括号
+            .split(',')                      // 分割行
+            .map(row => row.trim());         // 处理每个数据 
+
+        const rows = array.map(element => {
+            // 将复数中的 i 加粗和高亮
+            const highlightedElement = element.replace(/i/g, '<strong class="highlight-i">i</strong>');
+            return `<div class="matrix-row"><span class="matrix-element">${highlightedElement}</span></div>`;
+        });
         return `<div class="latex-matrix">${rows.join('')}</div>`;
     }
    

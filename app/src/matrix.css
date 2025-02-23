@@ -147,3 +147,11 @@
   line-height: 1.5;          /* 适当的行高 */
   padding: 8px;              /* 添加内边距 */
 }
+
+/* 高亮复数i */
+.highlight-i {
+    color: rgb(1, 88, 150);
+    font-weight: bold;
+    font-style: italic; /* 使用斜体 */
+    font-family: "Times New Roman", Times, serif; /* 使用数学字体 */
+}
