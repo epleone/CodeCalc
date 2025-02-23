@@ -670,4 +670,31 @@ export const FUNCTIONS = {
         argTypes: 'number',
         description: '时间间隔转换为时间戳'
     },
+
+    // 矩阵函数
+    'eye': {
+        func: Utils.eye,
+        args: 1,
+        description: '生成单位矩阵'
+    },
+    'diag': {
+        func: Utils.diag,
+        args: 1,
+        description: '生成对角矩阵'
+    },
+    'ones': {
+        func: (...args) => Utils.ones(...args),
+        args: -1, // 支持1~N个参数 
+        description: '生成全1矩阵'
+    },
+    'zeros': { 
+        func: (...args) => Utils.zeros(...args),
+        args: -1, // 支持1~N个参数 
+        description: '生成全0矩阵'
+    },
+    'range': {
+        func: (...args) => Utils.range(...args),
+        args: -1, // 支持1~N个参数 
+        description: '生成等差数列'
+    },
 }; 

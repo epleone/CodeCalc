@@ -17,18 +17,24 @@ export class DecMatrix {
             throw new Error('DMatrix: data 必须是数组');
         }
         
+        // 判断data是否是二维数组
+        if (Array.isArray(data[0])) {
+            // 将二维数组转换为一维数组
+            data = data.flat();
+        }
+
         if (data.length !== rows * cols) {
             throw new Error(`DMatrix: data 的长度 ${data.length} 不等于 rows * cols ${rows} * ${cols}`);
         }
 
         // 判断data是否是Decimal数组
-        // if (!data.every(item => item instanceof Decimal)) {
-        //     throw new Error('data 必须是Decimal数组');
-        // }
+        if (!data.every(item => item instanceof Decimal)) {
+            throw new Error('data 必须是Decimal数组');
+        }
 
         // 打印
-        // console.log('data:', data);
-        // console.log(`rows:${rows} cols:${cols}`);
+        //console.log('DecMatrix@data:', data);
+        //console.log(`DecMatrix@rows:${rows} cols:${cols}`);
         
         this.data = data; // 数据数组，如何判断是Decimal数组
         this.rows = rows; // 行数

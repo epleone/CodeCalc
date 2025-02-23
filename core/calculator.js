@@ -915,3 +915,9 @@ export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 // console.log(Calculator.calculate('[1,2,3] + 699'));
 // console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9} + 699'));
 // console.log(Calculator.calculate('[1,2,3] + {1,2,3;4,5,6;7,8,9}'));
+
+// console.log(Calculator.calculate('diag([1 2 3])'));
+// console.log(Calculator.calculate('eye(3)'));
+// console.log(Calculator.calculate('ones(3)'));
+// console.log(Calculator.calculate('zeros(3)'));
+// console.log(Calculator.calculate('range(1, 10, 2)'));

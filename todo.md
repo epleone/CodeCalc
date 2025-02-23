@@ -58,8 +58,8 @@ GitHub action 测试
 所有元素均为1的矩阵
 - 全0矩阵（All Zeros Matrix）：
 所有元素均为0的矩阵
-- 稀疏矩阵（Sparse Matrix）：
-大部分元素为0的矩阵
+- 等差数列：
+等差数列，range
 
 ### V3.2
 **自定义函数**

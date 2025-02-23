@@ -601,7 +601,111 @@ const Utils = {
         throw new Error('矩阵乘法参数错误');
     },
 
+    // 生成全1向量或者矩阵
+    ones(...args) {
+        if(args.length === 1) {
+            const num = args[0].toNumber();
+            // 随机生成num个数字
+            const vec = Array.from({length: num}, () => Decimal(1));
+            return new DecMatrix(vec, num, 1);
+        }
 
+        if(args.length === 2) {
+            const rows = args[0].toNumber();
+            const cols = args[1].toNumber();
+            const vec = Array.from({length: rows * cols}, () => Decimal(1));
+            return new DecMatrix(vec, rows, cols);
+        }
+
+        throw new Error(`ones函数参数数量(${args.length})错误，应为1, 2`);
+
+    },
+
+    // 生成全0向量或者矩阵
+    zeros(...args) {
+        if(args.length === 1) {
+            const num = args[0].toNumber();
+            const vec = Array.from({length: num}, () => Decimal(0)); 
+            return new DecMatrix(vec, num, 1);
+        }
+
+        if(args.length === 2) {
+            const rows = args[0].toNumber();
+            const cols = args[1].toNumber();
+            const vec = Array.from({length: rows * cols}, () => Decimal(0));
+            return new DecMatrix(vec, rows, cols);
+        }
+
+        throw new Error(`zeros函数参数数量(${args.length})错误，应为1, 2`);
+    }, 
+
+    // 生成单位矩阵
+    eye(n) {
+        n = n.toNumber();
+        if(n < 1) {
+            throw new Error('eye函数参数错误，应为正整数');
+        }
+        // 创建一个n的一维数组，每个元素为1
+        const data = Array.from({length: n}, () => Decimal(1));
+        const eyeVec =  new DecMatrix(data, n, 1);
+        return Utils.diag(eyeVec);
+    },
+
+    // 生成对角矩阵
+    diag(x) {
+        // x是矩阵
+        if(!isMatrix(x)) {
+            throw new Error('diag函数参数类型不是矩阵');
+        }
+
+        if(x.rows !== 1 && x.cols !== 1) {
+            throw new Error('diag函数参数类型不是行向量或者列向量');
+        }
+
+        const vec = x.data;
+
+        const n = Math.max(x.rows, x.cols);
+
+        // 创建二维数组，对角线为x.data，其他位置为0    
+        const data = Array.from({length: n}, (_, i) => 
+            Array.from({length: n}, (_, j) => i === j ? Decimal(vec[i]) : Decimal(0))
+        );
+
+        return new DecMatrix(data, n, n);
+    },
+    
+    // 生成等差数列向量
+    range(...args) {
+        let start, end, step;
+
+        if(args.length === 1) {
+            start = 0;
+            end = args[0].toNumber();
+            step = 1;
+        }
+        else if(args.length === 2) {
+            start = args[0].toNumber();
+            end = args[1].toNumber();
+            step = 1;
+        } else if(args.length === 3) {
+            start = args[0].toNumber();
+            end = args[1].toNumber();
+            step = args[2].toNumber();
+        } else {
+            throw new Error(`range函数参数数量(${args.length})错误，应为1, 2, 3`);
+        }
+
+        // 参数验证
+        if(step === 0) {
+            throw new Error('range函数的step参数不能为0');
+        }
+
+        // 计算数组长度
+        const n = Math.floor((end - start) / step);
+        // 生成等差数列数组
+        const data = Array.from({length: n}, (_, i) => Decimal(start + i * step));
+        return new DecMatrix(data, n, 1);
+    },
 
 };
 
