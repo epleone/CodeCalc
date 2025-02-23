@@ -31,7 +31,6 @@ GitHub action 测试
 - 行列式（Determinant）
 - 逆矩阵（Inverse Matrix）
 - 伪逆矩阵（Pseudoinverse Matrix）
-- 伴随矩阵（Adjoint Matrix）
 - 特征值和特征向量（Eigenvalues and Eigenvectors）
 - 迹（Trace）
 - 矩阵分解（Matrix Decomposition）

@@ -1,6 +1,6 @@
 // 工具类
 import Decimal from 'decimal.js';
-import { DecMatrix } from './matrix.js';
+import { DecMatrix, ComplexMatrix } from './matrix.js';
 
 Decimal.set({
     precision: 21,
@@ -86,6 +86,9 @@ function isMatrix(value) {
     return value instanceof DecMatrix;
 }
 
+function isComplexMatrix(value) {
+    return value instanceof ComplexMatrix;
+}
 
 // 检查参数是否满足矩阵运算
 function checkMatrixArgs(args0, args1) {
@@ -194,6 +197,10 @@ const Utils = {
         }
 
         if(isMatrix(result)) {
+            return { value: result.toString(), info: "isMatrix" };
+        }
+
+        if(isComplexMatrix(result)) {
             return { value: result.toString(), info: "isMatrix" };
         }
 
@@ -706,6 +713,60 @@ const Utils = {
         const data = Array.from({length: n}, (_, i) => Decimal(start + i * step));
         return new DecMatrix(data, n, 1);
     },
+
+    // 解方程
+    solve(a, b) {
+        if(isMatrix(a) && isMatrix(b)) {
+            // b 是列向量
+            if(b.cols !== 1) {
+                throw new Error('方程求解solve函数第二个参数应为列向量');
+            }
+
+            return a.solve(b);
+        }
+
+        throw new Error('方程求解solve函数参数应为矩阵，向量');
+    },
+
+    // 转置
+    transpose(a) {
+        if(isMatrix(a)) {
+            return a.transpose();
+        }
+
+        throw new Error('transpose函数参数应为矩阵');
+    },
+
+    // 求逆
+    inverse(a) {
+        if(isMatrix(a)) {
+            return a.inverse();
+        }
+
+        throw new Error('inverse函数参数应为矩阵');
+    },
+
+    // 特征值
+    eigenvalues(a) {
+        if(isMatrix(a)) {
+            const {eigs, vecs} = a.eigenvalues();
+
+            // todo
+            // return {eigs, vecs};
+            return eigs;
+        }
+
+        throw new Error('eigenvalues函数参数应为矩阵');
+    },
+    // 求行列式
+    determinant(a) {
+        if(isMatrix(a)) {       
+            return a.determinant();
+        }
+
+        throw new Error('determinant函数参数应为矩阵');
+    },
+
 
 };
 

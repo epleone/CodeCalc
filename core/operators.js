@@ -298,6 +298,7 @@ export const OPERATORS = {
         position: 'infix',
         description: '矩阵乘法'
     },
+
     // 日期操作符, 返回日期对象的时间戳
     '@': {
         precedence: 1,
@@ -668,7 +669,8 @@ export const FUNCTIONS = {
             return new Datestamp(years, months, totalMilliseconds);
         },
         argTypes: 'number',
-        description: '时间间隔转换为时间戳'
+        description: '时间间隔转换为时间戳',
+        hidden: true   // 隐藏函数, 不显示在语法提示中
     },
 
     // 矩阵函数
@@ -697,4 +699,40 @@ export const FUNCTIONS = {
         args: -1, // 支持1~N个参数 
         description: '生成等差数列'
     },
+
+    // 矩阵运算函数
+    'solve': {
+        func: Utils.solve,
+        args: 2,
+        description: '解方程'
+    },
+    'T': {
+        func: Utils.transpose,
+        args: 1,
+        description: '转置',
+        asProperty: true,
+        hidden: true
+    },
+    'transpose': {
+        alias: 'T',
+        description: '转置'
+    },
+    'inv': {
+        func: Utils.inverse,
+        args: 1,
+        description: '求逆',
+        asProperty: true
+    },
+    'det': {
+        func: Utils.determinant,
+        args: 1,
+        description: '行列式',
+        asProperty: true
+    },
+    'eigenvalues': {
+        func: Utils.eigenvalues,
+        args: 1,
+        description: '特征值'
+    },
+    
 }; 

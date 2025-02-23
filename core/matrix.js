@@ -2,12 +2,57 @@ import Decimal from 'decimal.js';
 import { Matrix, determinant, inverse, solve, EigenvalueDecomposition } from 'ml-matrix';
 
 
+// https://mikemcl.github.io/decimal.js
+// https://github.com/mljs/matrix
+
+
 // 判断是否是标量
 function isScalar(value) {
     return typeof value === 'number' || 
            typeof value === 'bigint' || 
            value instanceof Decimal;
 }
+
+// 定义一个复数矩阵，只用于显示
+export class ComplexMatrix {
+    constructor(data_r, data_i, rows, cols) {
+        this.data_r = data_r.map(x => new Decimal(x).toFixed(6).replace(/\.?0+$/, ''));
+        this.data_i = data_i.map(x => new Decimal(x).toFixed(6).replace(/\.?0+$/, ''));
+        this.rows = rows;
+        this.cols = cols;
+    }
+
+    toString() {
+        // 如果data_i为0，则只显示实部
+        let data = this.data_r.map((r, i) => {
+            if (this.data_i[i] === '0') {
+                return r;
+            }
+            let str = `${r} ${this.data_i[i] > 0 ? '+' : ''} ${this.data_i[i]}i`;
+            // 将负号转换为减号
+            return str.replace(/-/g, '− ');
+        });
+
+        // 如果只有一列，则返回向量
+        if (this.cols === 1) {
+            return `[${data.join(',')}]`;
+        }
+
+        // 将一维数组转换为二维数组
+        let result = [];
+        for(let i = 0; i < this.rows; i++) {
+            let row = [];
+            for(let j = 0; j < this.cols; j++) {
+                row.push(data[i * this.cols + j]);
+            }
+            result.push(row.join(','));
+        }
+
+        return `{${result.join(';')}}`;
+    }
+}
+
+
 
 // 定义一个类，存放Decimal数组
 export class DecMatrix {
@@ -69,35 +114,6 @@ export class DecMatrix {
         return new DecMatrix(this.data.map(func), this.rows, this.cols);
     }
 
-    //
-    // 提供矩阵运算方法
-    matmul(other) {
-        const m1 = this.toMatrix();
-        const m2 = other.toMatrix();
-
-        if (m1.columns !== m2.rows) {
-            throw new Error('矩阵乘法：m1 的列数与 m2 的行数不匹配');
-        }
-    
-        const rslt = m1.mmul(m2);
-        return new DecMatrix(rslt.to1DArray().map(x => new Decimal(x)), rslt.rows, rslt.columns);
-    }
-
-    // 转成Matrix类型
-    toMatrix() {
-        // 将data按照rows和cols转换为二维数组
-        let result = [];
-        for(let i = 0; i < this.rows; i++) {
-            let row = [];
-            for(let j = 0; j < this.cols; j++) {
-                // 获取一维数组中对应的元素
-                let value = Number(this.data[i * this.cols + j]);
-                row.push(value);
-            }
-            result.push(row);
-        }
-        return new Matrix(result);
-    }
 
     // 显示字符串
     toString() {
@@ -121,6 +137,134 @@ export class DecMatrix {
 
         return `{${result.join(';')}}`;
     }
+
+    // 转成Matrix类型
+    toMatrix() {
+        // 将data按照rows和cols转换为二维数组
+        let result = [];
+        for(let i = 0; i < this.rows; i++) {
+            let row = [];
+            for(let j = 0; j < this.cols; j++) {
+                // 获取一维数组中对应的元素
+                let value = Number(this.data[i * this.cols + j]);
+                row.push(value);
+            }
+            result.push(row);
+        }
+        return new Matrix(result);
+    }
+
+    // 定义全局静态方法, 从Matrix类型转换为DecMatrix类型
+    static fromMatrix(matrix) {
+        return new DecMatrix(matrix.to1DArray().map(x => new Decimal(x)), matrix.rows, matrix.columns);
+    }
+
+    // 提供矩阵运算方法
+    matmul(other) {
+        const m1 = this.toMatrix();
+        const m2 = other.toMatrix();
+
+        if (m1.columns !== m2.rows) {
+            throw new Error('矩阵乘法：m1 的列数与 m2 的行数不匹配');
+        }
+    
+        const rslt = m1.mmul(m2);
+        return DecMatrix.fromMatrix(rslt);
+    }
+
+    // 转置
+    transpose() {
+        // 创建新的数组存储转置后的数据
+        let transposed = new Array(this.data.length);
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                // 原矩阵 (i,j) 位置的元素在转置矩阵中的位置是 (j,i)
+                transposed[j * this.rows + i] = this.data[i * this.cols + j];
+            }
+        }
+        return new DecMatrix(transposed, this.cols, this.rows);
+    }
+
+    // 求行列式
+    determinant() {
+        const m = this.toMatrix();
+        return determinant(m);
+    }
+
+    // 求逆
+    inverse() {
+        const m = this.toMatrix();
+        let rslt;
+
+        if (m.rows !== m.columns) {
+            // 伪逆
+            console.log('矩阵不是方阵，使用伪逆');
+            rslt = m.pseudoInverse();
+        }
+        else {
+            // 行列式
+            let det = determinant(m);
+            if (Math.abs(det) < 1e-6) {
+                // 矩阵不可逆，使用SVD求逆
+                console.log('矩阵不可逆，使用SVD求逆');
+                rslt = inverse(m, true); 
+            }else{
+                rslt = inverse(m); 
+            }
+        }
+
+        return DecMatrix.fromMatrix(rslt);
+    }
+
+    // 特征值
+    eigenvalues() {
+        const m = this.toMatrix();
+        const e = new EigenvalueDecomposition(m);
+        const real = e.realEigenvalues;
+        const imaginary = e.imaginaryEigenvalues;
+        const vecs = DecMatrix.fromMatrix(e.eigenvectorMatrix);
+
+        // console.log('特征值 实部：', real);
+        // console.log('特征值 虚部：', imaginary);
+        // console.log('特征向量：', vecs);
+
+        // 将特征值和特征向量转换为复数矩阵
+        const eigs = new ComplexMatrix(real, imaginary, real.length, 1);
+        console.log('复数矩阵：', eigs.toString());
+
+        return {eigs, vecs};
+    }
+
+    // 解方程
+    solve(x){
+        if(x.cols != 1)
+        {
+            throw new Error("方程的右项需要是个向量");
+        }
+
+        if(this.rows != x.rows)
+        {
+            throw new Error("方程的左项和右项的行数不匹配");
+        }
+
+        const a = this.toMatrix();
+        const b = x.toMatrix();
+
+        let det = determinant(a);
+        let rslt;
+
+        // 奇异矩阵
+        if (Math.abs(det) < 1e-6) {
+            // 矩阵不可逆，使用SVD解方程
+            console.log('矩阵不可逆，使用SVD解方程');
+            rslt = solve(a, b, true); 
+        }else{
+            rslt = solve(a, b);
+        }
+
+        return DecMatrix.fromMatrix(rslt);
+    }
+    
 }
 
 function test() {
