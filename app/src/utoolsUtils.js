@@ -32,9 +32,13 @@ if (isUtoolsEnv) {
                 lastInput.value = payload || "";
                 lastInput.dispatchEvent(new Event('input'));
             }
+            console.log('set precision:', 100);
+            Calculator.setCfg('precision', 100);
         }else{
             // 将焦点聚焦到输入框
             lastInput.focus();
+            console.log('set precision:', -100);
+            Calculator.setCfg('precision', -100);
         }
     });
 

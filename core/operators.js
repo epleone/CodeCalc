@@ -677,11 +677,13 @@ export const FUNCTIONS = {
     'matrix': {
         func: (...args) => Utils.expr2Matrix(...args),
         args: -1,
+        argTypes: 'any',
         description: '转换为矩阵'
     },
     'vector': {
         func: (...args) => Utils.expr2Vector(...args),
         args: -1,
+        argTypes: 'any',
         description: '转换为向量'
     },
     

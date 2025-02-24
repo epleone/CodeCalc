@@ -18,7 +18,7 @@ import {
 } from './preprocessUtils.js';
 
 import { Utils } from './utils.js';
-
+import { config } from './cfg.js';
 /**
  * 代码标准：
  * 1. 所有配置都必须在配置文件中定义和读取，包括运算符、函数、常量、分隔符、定界符
@@ -881,6 +881,10 @@ const Calculator = (function() {
             };
         },
 
+        setCfg(key, value) {
+            config.set(key, value);
+        },
+
         tokenize(expr, operators, functions, constants) {
             return tokenize(expr, operators, functions, constants);
         },
@@ -929,4 +933,9 @@ export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 // console.log(Calculator.calculate('[ 1 ,2, 3 ]'));
 // console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9}'));
 
-console.log(Calculator.calculate('{[1 1 1], [2 2 2]}'));
+// console.log(Calculator.calculate('{[1 1 1], [2 2 2]}'));
+
+// console.log(Calculator.calculate('a = [1 1 1]'));
+// console.log(Calculator.calculate('b = [2 2 2]'));
+// console.log(Calculator.calculate('{a , b}'));
+// console.log(Calculator.calculate('{1 2 3}'));

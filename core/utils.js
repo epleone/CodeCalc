@@ -1,7 +1,7 @@
 // 工具类
 import Decimal from 'decimal.js';
 import { DecMatrix, ComplexMatrix } from './matrix.js';
-
+import { config } from './cfg.js';
 Decimal.set({
     precision: 21,
     // toExpNeg: -7,        // 小于 1e-7 时使用科学记数法，在函数formatToDisplayString中会被格式化覆盖
@@ -135,7 +135,6 @@ function addOpSupport(opName, x, y, op_xy, op_yx) {
 
 // 类型转换工具
 const Utils = {
-
     // 字符串转数字，用于输入时处理
     // type: 目标类型 {decimal, number, bigint, string, any}
     convertTypes(value, type='decimal') {
@@ -166,6 +165,8 @@ const Utils = {
 
     // 将不同的输出格式化成字符串
     formatToDisplayString(result) {
+        console.log('utils@cfg precision:', config.get('precision'));
+
         // 如果是Datestamp，则返回字符串
         if(isDatestamp(result)) {
             return {value: result.toString(), info: "时间间隔：" + Utils.formatDateStamp(result)};
@@ -569,12 +570,19 @@ const Utils = {
     },
 
     expr2Vector(...args) {
-        // if(args.length === 1) {
-        //     // 判断是否是DecMatrix类型
-        //     if(isMatrix(args[0])) {
-        //         return args[0];
-        //     }
-        // }
+        // 如果args只有一个元素，并且是DecMatrix类型，则返回该矩阵
+        if(args.length === 1) {
+            if(isMatrix(args[0]) && args[0].cols === 1) {
+                return args[0];
+            }
+
+            throw new Error('无法将矩阵转换成向量');
+        }
+
+        // 如果多个参数，并且第一个参数是DecMatrix类型，则交给expr2Matrix处理
+        if(isMatrix(args[0])){
+            return Utils.expr2Matrix(...args);
+        }
 
         // 将args转成数组
         const vec = Array.from(args).map(x => Decimal(x));
@@ -582,9 +590,17 @@ const Utils = {
     },
 
     expr2Matrix(...args) {
+        // 如果args只有一个元素，并且是DecMatrix类型，则返回该矩阵
+        if(args.length === 1) {
+            if(isMatrix(args[0])){
+                return args[0];
+            }
+        }
+
         // 循环每个args元素，检查他们的类型
         for(let i = 0; i < args.length; i++) {
             if(!isMatrix(args[i]) || args[i].cols !== 1) {
+                console.log("args[", i, "]", args[i], typeof args[i]);
                 throw new Error('Matrix函数参数错误，应为列向量');
             }
 
