@@ -86,7 +86,7 @@ export const OPERATORS = {
     'unary-': {
         precedence: 5,
         args: 1,
-        func: x => x.neg(),
+        func: x => Utils.mapFuncArgs1('负号', x, x => x.neg()),
         position: 'prefix',
         description: '负号'
     },
@@ -101,6 +101,7 @@ export const OPERATORS = {
         precedence: 5,
         args: 1,
         func: x => x.times(0.01),
+        argTypes: 'decimal',
         position: 'postfix',
         preventSelfReference: true,
         description: '百分号'
@@ -109,6 +110,7 @@ export const OPERATORS = {
         precedence: 5,
         args: 1,
         func: x => x.times(0.001),
+        argTypes: 'decimal',
         position: 'postfix',
         preventSelfReference: true,
         description: '千分号'
@@ -201,7 +203,7 @@ export const OPERATORS = {
     '+=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => oldValue.add(rightValue),
+        func: (x, y) => Utils.mapFuncArgs2('加法赋值', x, y, (x, y) => x.add(y), (x, y) => y.add(x)),
         position: 'infix',
         description: '加法赋值',
         isCompoundAssignment: true
@@ -209,7 +211,7 @@ export const OPERATORS = {
     '-=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => oldValue.sub(rightValue),
+        func: (x, y) => Utils.mapFuncArgs2('减法赋值', x, y, (x, y) => x.sub(y), (x, y) => y.sub(x)),
         position: 'infix',
         description: '减法赋值',
         isCompoundAssignment: true
@@ -217,7 +219,7 @@ export const OPERATORS = {
     '*=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => oldValue.mul(rightValue),
+        func: (x, y) => Utils.mapFuncArgs2('乘法赋值', x, y, (x, y) => x.mul(y), (x, y) => y.mul(x)),
         position: 'infix',
         description: '乘法赋值',
         isCompoundAssignment: true
@@ -225,7 +227,7 @@ export const OPERATORS = {
     '/=': {
         precedence: 0,
         args: 2,
-        func: (oldValue, rightValue) => oldValue.div(rightValue),
+        func: (x, y) => Utils.mapFuncArgs2('除法赋值', x, y, (x, y) => x.div(y), (x, y) => y.div(x)),
         position: 'infix',
         description: '除法赋值',
         isCompoundAssignment: true
@@ -415,65 +417,69 @@ export const FUNCTIONS = {
         description: '求最小值'
     },
     'lg': {
-        func: x => Decimal.log10(x),
+        func: x => Utils.mapFuncArgs1('lg', x, x => Decimal.log10(x)),
         args: 1,
         description: '以10为底的对数'
     },
     'lb': {
-        func: x => Decimal.log2(x),
+        func: x => Utils.mapFuncArgs1('lb', x, x => Decimal.log2(x)),
         args: 1,
         description: '以2为底的对数'
     },
     'log': {
-        func: (x, y) => Decimal.log(y, x),
+        func: (x, y) => Utils.mapOpArgs2('log', x, y, (x, y) => Decimal.log(y, x), (x, y) => Decimal.log(x, y)),
         args: 2,
         description: '以x为底的y对数'
     },
     'ln': {
-        func: x => Decimal.ln(x),
+        func: x => Utils.mapFuncArgs1('ln', x, x => Decimal.ln(x)),
         args: 1,
         description: '自然对数'
     },
     'exp': {
-        func: x => Decimal.exp(x),
+        func: x => Utils.mapFuncArgs1('exp', x, x => Decimal.exp(x)),
         args: 1,
         description: 'e的指数'
     },
 
     // 取整函数
     'round': {
-        func: x => Decimal.round(x),
+        func: x => Utils.mapFuncArgs1('round', x, x => Decimal.round(x)),
         args: 1,
         description: '四舍五入取整'
     },
     'roundfix': {
-        func: (x, n) => {
-            n = n.toNumber();
-            // 如果n为负数，-1表示最后一位，-2表示倒数第二位，以此类推
-            if(n < 0) {
-                n = x.decimalPlaces() + n;
+        func: (x, n) => Utils.mapFuncArgs2('roundfix', x, n, 
+            (x, n) => {
+                n = n.toNumber();
+                // 如果n为负数，-1表示最后一位，-2表示倒数第二位，以此类推
+                if(n < 0) {
+                    n = x.decimalPlaces() + n;
+                }
+                // 小于0，则为0
+                n = Math.max(0, n);
+                return x.toDecimalPlaces(n);
             }
-            // 小于0，则为0
-            n = Math.max(0, n);
-            return x.toDecimalPlaces(n);
-        },
+        ),
         args: 2,
         description: '指定小数位数, 四舍五入取整'
     },
     'floor': {
-        func: x => Decimal.floor(x),
+        func: x => Utils.mapFuncArgs1('floor', x, x => Decimal.floor(x)),
         args: 1,
         description: '向下取整'
     },
     'ceil': {
-        func: x => Decimal.ceil(x),
+        func: x => Utils.mapFuncArgs1('ceil', x, x => Decimal.ceil(x)),
         args: 1,
         description: '向上取整'
     },
 
-    // 取值范围函数
     'clamp': {
-        func: (x, y, z) => Decimal.clamp(x, y, z),
+        func: (x, y, z) => {
+            const op = (t) => Decimal.clamp(t, y, z);
+            return Utils.mapFuncArgs1('clamp', x, op);
+        },
         args: 3,
         description: '设置数值范围'
     },
@@ -487,57 +493,57 @@ export const FUNCTIONS = {
 
     // 三角函数
     'sin': {
-        func: x => Decimal.sin(x),
+        func: x => Utils.mapFuncArgs1('sin', x, x => Decimal.sin(x)),
         args: 1,
         description: '正弦函数'
     },
     'cos': {
-        func: x => Decimal.cos(x),
+        func: x => Utils.mapFuncArgs1('cos', x, x => Decimal.cos(x)),
         args: 1,
         description: '余弦函数'
     },
     'tan': {
-        func: x => Decimal.tan(x),
+        func: x => Utils.mapFuncArgs1('tan', x, x => Decimal.tan(x)),
         args: 1,
         description: '正切函数'
     },
     'asin': {
-        func: x => Decimal.asin(x),
+        func: x => Utils.mapFuncArgs1('asin', x, x => Decimal.asin(x)),
         args: 1,
-        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°', // 格式化输出函数
+        repr: x => Utils.formatRad(x), // 格式化输出函数
         description: '反正弦函数'
     },
     'acos': {
-        func: x => Decimal.acos(x),
+        func: x => Utils.mapFuncArgs1('acos', x, x => Decimal.acos(x)),
         args: 1,
-        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°', // 格式化输出函数
+        repr: x => Utils.formatRad(x), // 格式化输出函数
         description: '反余弦函数'
     },
     'atan': {
-        func: x => Decimal.atan(x),
+        func: x => Utils.mapFuncArgs1('atan', x, x => Decimal.atan(x)),
         args: 1,
-        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°', // 格式化输出函数
+        repr: x => Utils.formatRad(x), // 格式化输出函数
         description: '反正切函数'
     },
 
     // 双曲函数
     'sinh': {
-        func: x => Decimal.sinh(x),
+        func: x => Utils.mapFuncArgs1('sinh', x, x => Decimal.sinh(x)),
         args: 1,
         description: '双曲正弦'
     },
     'cosh': {
-        func: x => Decimal.cosh(x),
+        func: x => Utils.mapFuncArgs1('cosh', x, x => Decimal.cosh(x)),
         args: 1,
         description: '双曲余弦'
     },
     'tanh': {
-        func: x => Decimal.tanh(x),
+        func: x => Utils.mapFuncArgs1('tanh', x, x => Decimal.tanh(x)),
         args: 1,
         description: '双曲正切'
     },
     'sqrt': {
-        func: x => x.sqrt(),
+        func: x => Utils.mapFuncArgs1('sqrt', x, x => x.sqrt()),
         args: 1,
         description: '平方根'
     },
@@ -548,7 +554,7 @@ export const FUNCTIONS = {
     },
     'abs': {
         args: 1,
-        func: x => x.abs(),
+        func: x => Utils.mapFuncArgs1('abs', x, x => x.abs()),
         asProperty: true,
         description: '绝对值'
     },
@@ -557,7 +563,7 @@ export const FUNCTIONS = {
         func: x => x.times(M_CONST.pi).div(180),
         asProperty: true,
         preventSelfReference: true,       // 禁止自引用
-        repr: x => '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°', // 格式化输出函数
+        repr: x => Utils.formatRad(x),    // 格式化输出函数
         description: '度数转换为弧度'
     },
     'deg': {

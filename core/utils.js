@@ -137,14 +137,17 @@ function addOpSupport(opName, x, y, op_xy, op_yx) {
 const Utils = {
     // 字符串转数字，用于输入时处理
     // type: 目标类型 {decimal, number, bigint, string, any}
-    convertTypes(value, type='decimal') {
+    convertTypes(value, type='default') {
         // console.log("convertTypes: ", value.toString(), type);
-
-        if(type === 'decimal') {
+        if(type === 'default') {
             // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
             if(isMatrix(value)) {
                 return value;
             }
+            return new Decimal(value.toString());
+        }
+        if(type === 'decimal') {
+            // 不支持矩阵
             return new Decimal(value.toString());
         }  
         if(type === 'number') {
@@ -335,6 +338,32 @@ const Utils = {
         return addOpSupport('幂运算', x, y, powOP1, powOP2);
     },
 
+    // 单参函数的映射，只支持数字或者矩阵运算
+    mapFuncArgs1(opName, x, op) {
+        // 使用这个函数时，x和y都强制转换为Decimal类型 或者是 DecMatrix类型
+        if(isDecimal(x)) {
+            return op(x);
+        }
+    
+        if(isMatrix(x)) {
+            return x.map(op);
+        }
+
+        throw new Error(`不支持的运算: ${opName}`);
+    },
+
+    // 双参Op的映射，只支持数字或者矩阵运算
+    // 不支持交换律，需要支持(matrix,number) 或者 (number,matrix)
+    mapOpArgs2(opName, x, y, op_xy, op_yx) {
+        return addOpSupport(opName, x, y, op_xy, op_yx);
+    },
+
+    // 双参函数的映射，只支持数字或者矩阵运算
+    // 满足交换律的运算，或者固定第一个参数支持矩阵 (matrix, number)
+    // 参数matrix的位置固定时，这个可以转换到mapFuncArgs1中，将number固定到op中即可
+    mapFuncArgs2(opName, x, y, op) {
+        return addOpSupport(opName, x, y, op, op);
+    },
 
     toFixed(value, precision) {
         const decimal = isDecimal(value) ? value : new Decimal(value);
@@ -416,6 +445,20 @@ const Utils = {
         }
 
         return degrees;
+    },
+
+    // 格式化弧度
+    formatRad(x) {
+        // 尝试转换为数字,如果失败返回null
+        try {
+            const num = new Decimal(x);
+            if(num.isNaN()) return null;
+        } catch(e) {
+            return null;
+        }
+
+        const rslt = '弧度: ' + Utils.radianToPi(x) + " | 角度: " + Utils.toFixed(Utils.radianToDeg(x), 3) + '°';
+        return rslt;
     },
 
     // 时间和日期计算依旧使用默认的Math库

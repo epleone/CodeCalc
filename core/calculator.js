@@ -815,7 +815,7 @@ const Calculator = (function() {
                     const formattedResult = repr(result);
                     // console.log('formattedResult: ', formattedResult);
                     // 确保 repr 返回了有效值, 并添加到INFO中
-                    if (formattedResult !== undefined) {
+                    if (formattedResult !== undefined && formattedResult !== null) {
                         // result = formattedResult;
                         addInfo(formattedResult);
                     }
