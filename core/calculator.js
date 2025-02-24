@@ -939,3 +939,5 @@ export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 // console.log(Calculator.calculate('b = [2 2 2]'));
 // console.log(Calculator.calculate('{a , b}'));
 // console.log(Calculator.calculate('{1 2 3}'));
+
+// console.log(Calculator.calculate('{[1 3 5], [2 4 6]}.inv'));

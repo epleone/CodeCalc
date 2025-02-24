@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import { Matrix, determinant, inverse, solve, EigenvalueDecomposition } from 'ml-matrix';
+import { Matrix, determinant, inverse, pseudoInverse, solve, EigenvalueDecomposition } from 'ml-matrix';
 
 
 // https://mikemcl.github.io/decimal.js
@@ -199,7 +199,7 @@ export class DecMatrix {
         if (m.rows !== m.columns) {
             // 伪逆
             console.log('矩阵不是方阵，使用伪逆');
-            rslt = m.pseudoInverse();
+            rslt = pseudoInverse(m);
         }
         else {
             // 行列式
