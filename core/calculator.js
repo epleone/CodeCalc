@@ -911,33 +911,13 @@ const Calculator = (function() {
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 
 // 测试
-// console.log(Calculator.calculate('[1, 2, 3] + 1'));
-// console.log(Calculator.calculate('[1, 2, 3] - 1'));
-// console.log(Calculator.calculate('[1, 2, 3] * 3'));
-// console.log(Calculator.calculate('[1, 2, 3] / 5'));
-// console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9}'));
-// console.log(Calculator.calculate('[1,2,3] + 699'));
-// console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9} + 699'));
-// console.log(Calculator.calculate('[1,2,3] + {1,2,3;4,5,6;7,8,9}'));
-
-// console.log(Calculator.calculate('[1 2 3] @ {1 2 3}'));
-
 //console.log(Calculator.calculate('eigenvalues({1 2 3; 4 5 6; 7 8 9})'));
 
-// console.log(Calculator.calculate('diag([1 2 3])'));
-// console.log(Calculator.calculate('eye(3)'));
-// console.log(Calculator.calculate('ones(3)'));
-// console.log(Calculator.calculate('zeros(3)'));
-// console.log(Calculator.calculate('range(1, 10, 2)'));
-
-// console.log(Calculator.calculate('[ 1 ,2, 3 ]'));
-// console.log(Calculator.calculate('{1,2,3;4,5,6;7,8,9}'));
-
-// console.log(Calculator.calculate('{[1 1 1], [2 2 2]}'));
-
-// console.log(Calculator.calculate('a = [1 1 1]'));
-// console.log(Calculator.calculate('b = [2 2 2]'));
-// console.log(Calculator.calculate('{a , b}'));
-// console.log(Calculator.calculate('{1 2 3}'));
-
 // console.log(Calculator.calculate('{[1 3 5], [2 4 6]}.inv'));
+
+// console.log(Calculator.calculate('a = [1 2 3]'));
+// console.log(Calculator.calculate('{[a,a,a]}'));
+
+console.log(Calculator.calculate('{{1,2,3}, {4,5,6}, {7,8,9}}'));
+console.log(Calculator.calculate('{{1,2,3}; {4,5,6}; {7,8,9}}'));
+// console.log(Calculator.calculate('{[1,2,3], [4,5,6], [7,8,9]}'));
