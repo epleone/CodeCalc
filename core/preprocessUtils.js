@@ -681,7 +681,7 @@ function processMatrix(expr) {
     const matrixRegex1 = /\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
     expr = expr.replace(matrixRegex1, (match, content) => {
         // 将内部的行向量{ * }转成向列量 [ * ].T
-        const ctt = match.slice(1, -1).replace(/\{/g, '\[').replace(/\}/g, '\].T');
+        const ctt = match.slice(1, -1).replace(/\s*\{/g, '\[').replace(/\}\s*/g, '\].T');
         return "{" + ctt + "}";
     });
 
@@ -728,13 +728,21 @@ function processMatrix(expr) {
 
     console.log('matrix expr5:', expr);
 
-    // 第五步, 验证矩阵格式
-    // 由于目前matrix其实只能处理列向量, 所以需要将内部元素由行向量转成列向量
-    // matrix(vector(...).T, vector(...).T, vector(...).T).T --> matrix(vector(...), vector(...), vector(...))
-    // matrix(vector(...), vector(...), vector(...)) --> matrix(vector(...), vector(...), vector(...)).T
-
+    // 第五步, 验证矩阵格式并处理转置
+    // 处理两种情况:
+    // 1. matrix(vector(...).T, vector(...).T, vector(...).T).T -> matrix(vector(...), vector(...), vector(...))
+    // 2. matrix(vector(...).T, vector(...).T, vector(...).T) -> matrix(vector(...), vector(...), vector(...)).T
     
+    // 匹配包含.T的向量参数的矩阵表达式
+    const matrixTransposePattern = /matrix\(((?:vector\([^)]+\)\.T(?:,\s*)?)+)\)(\.T)?/g;
+    expr = expr.replace(matrixTransposePattern, (match, content, matrixT) => {
+        // 移除所有向量的.T
+        const cleanContent = content.replace(/\.T/g, '');
+        // 如果原矩阵没有.T，则添加.T；如果有.T，则不添加
+        return `matrix(${cleanContent})${matrixT ? '' : '.T'}`;
+    });
 
+    console.log('matrix expr6:', expr);
     return expr;
 }
 

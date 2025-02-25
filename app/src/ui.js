@@ -376,7 +376,7 @@ function recalculateAllLines() {
     lines.forEach(line => {
         const input = line.querySelector('.input');
         if (input.value.trim()) {  // 只计算有输入内容的行
-            calculateLine(input);
+            calculateLine(input, true);
         }
     });
 }
@@ -508,13 +508,24 @@ function arrayToHtml(matString) {
     return `<div class="latex-matrix"> Error </div>`;
 }
 
-function calculateLine(input) {
+// 计算当前行
+function calculateLine(input, ignoreAssignment=false) {
     const resultContainer = input.parentElement.querySelector('.result-container');
     const result = resultContainer.querySelector('.result');
     const messageIcon = resultContainer.querySelector('.message-icon');
     const messageText = messageIcon.querySelector('.message-text');
     const expression = input.value.trim();
-    
+
+    // 是否忽略赋值表达式的副作用
+    if(!ignoreAssignment) {
+        // 检查是否为赋值表达式
+        const isAssignment = /=/.test(expression);
+        if (isAssignment) {
+            recalculateAllLines();
+            return;
+        }
+    }
+
     // 清除所有状态
     function clearState() {
         result.innerHTML = '<span class="result-value"></span>';
