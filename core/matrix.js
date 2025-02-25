@@ -86,6 +86,53 @@ export class DecMatrix {
         this.cols = cols; // 列数
     }
 
+    reshape(rows, cols) {
+        // 判断行列是否相同
+        if (this.rows * this.cols !== rows * cols) {
+            throw new Error('reshape 数据长度不匹配');
+        }
+
+        //如果都相等，则直接返回
+        if (this.rows === rows && this.cols === cols) {
+            return this;
+        }
+
+        // 创建新的DecMatrix
+        let result = new DecMatrix(this.data, rows, cols);
+        return result;
+    }
+
+    // 重复向量
+    repeat(n) {
+        n = Number(n);
+        // 判断n是否是整数
+        if (!Number.isInteger(n)) {
+            throw new Error('repeat的次数必须是整数');
+        }
+
+        // 判断矩阵是否是行向量或列向量
+        if (this.cols !== 1 && this.rows !== 1) {
+            throw new Error('repeat的矩阵必须是行向量或列向量');
+        }
+
+        // 将数据重复n次
+        let result = [];
+        for (let i = 0; i < n; i++) {
+            result.push(...this.data);
+        }
+
+        // 列向量
+        if (this.cols == 1) {
+            return new DecMatrix(result, this.rows, n).transpose();
+        }
+
+        // 行向量
+        if (this.rows == 1) {
+            return new DecMatrix(result, n, this.cols);
+        }
+        
+    }
+
     apply(func, other) {
         // 同为DecMatrix
         if (other instanceof DecMatrix) {

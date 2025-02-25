@@ -720,6 +720,22 @@ export const FUNCTIONS = {
         description: '生成等差数列'
     },
 
+    //矩阵操作
+    'reshape': {
+        func: Utils.reshape,
+        args: 3, // 支持1~N个参数 
+        description: '调节矩阵形状'
+    },
+    'resize': {
+        alias: 'reshape',
+        description: '调整矩阵形状'
+    },
+    'repeat': {
+        func: Utils.repeat,
+        args: 2, 
+        description: '重复向量'
+    },
+
     // 矩阵运算函数
     'solve': {
         func: Utils.solve,

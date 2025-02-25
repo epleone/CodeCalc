@@ -819,7 +819,23 @@ const Utils = {
         throw new Error('determinant函数参数应为矩阵');
     },
 
+    // 调节矩阵形状
+    reshape(a, rows, cols) {
+        if(isMatrix(a)) {
+            return a.reshape(rows, cols);
+        }
 
+        throw new Error('reshape函数参数应为矩阵');
+    },
+
+    // 重复向量
+    repeat(a, n) {
+        if(isVector(a)) {
+            return a.repeat(n);
+        }
+
+        throw new Error('repeat函数参数应为行向量或列向量');
+    },
 };
 
 
