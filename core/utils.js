@@ -613,13 +613,19 @@ const Utils = {
     },
 
     expr2Vector(...args) {
-        // 如果args只有一个元素，并且是DecMatrix类型，则返回该矩阵
+        // 如果args只有一个元素
         if(args.length === 1) {
+            // 参数是DecMatrix，则返回该矩阵
             if(isMatrix(args[0]) && args[0].cols === 1) {
                 return args[0];
             }
 
-            throw new Error('无法将矩阵转换成向量');
+            // 参数是数字，则返回一个1行1列的矩阵
+            if(isDecimal(args[0])) {
+                return new DecMatrix([args[0]], 1, 1);
+            }
+
+            throw new Error('Vector参数错误: 无法转换成向量');
         }
 
         // 如果多个参数，并且第一个参数是DecMatrix类型，则交给expr2Matrix处理
@@ -638,17 +644,24 @@ const Utils = {
             if(isMatrix(args[0])){
                 return args[0];
             }
+
+            // 参数是数字，则返回一个1行1列的矩阵
+            if(isDecimal(args[0])) {
+                return new DecMatrix([args[0]], 1, 1);
+            }
+
+            throw new Error('Matrix参数错误: 无法转换成矩阵');
         }
 
         // 循环每个args元素，检查他们的类型
         for(let i = 0; i < args.length; i++) {
             if(!isMatrix(args[i]) || args[i].cols !== 1) {
                 console.log("args[", i, "]", args[i], typeof args[i]);
-                throw new Error('Matrix函数参数错误，应为列向量');
+                throw new Error('Matrix参数错误: 应为列向量');
             }
 
             if(args[i].rows !== args[0].rows) {
-                throw new Error('Matrix函数参数错误，向量行数不相同');
+                throw new Error('Matrix参数错误: 向量行数不相同');
             }
         }
         

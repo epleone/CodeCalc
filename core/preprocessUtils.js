@@ -621,7 +621,7 @@ function processMatrix(expr) {
 
     let matrixConstantCounter = 0;
 
-    // console.log('expr1:', expr);
+    console.log('expr1:', expr);
 
     // 先处理矩阵，将矩阵参数转成向量
     // 用正则表达式匹配矩阵 `{*}`
@@ -632,14 +632,18 @@ function processMatrix(expr) {
     // 按分号分隔处理即可
     
     expr = expr.replace(matrixRegex, (match, content) => {
-        let matStr= match
-                    .replace(/\{/g, '\{\[')
-                    .replace(/\}/g, '\]\}')
-                    .replace(/;/g, '\];\[')
+        // 如果不存在 `{\s*[`, 就添加`[` 和 `]`
+        if(!match.match(/\{\s*\[/)) {
+            match = match.replace(/\{/g, '\{\[')
+                         .replace(/\}/g, '\]\}')
+        }
+
+        // 处理分号
+        let matStr= match.replace(/;/g, '\];\[')
         return matStr;
     });
 
-    // console.log('expr2:', expr);
+    console.log('expr2:', expr);
 
     // 匹配向量格式 [1 2 3], 处理只有空格和负号的情况
     const vectorRegex = /\[([\d\s-]+)\]/g;
@@ -659,7 +663,12 @@ function processMatrix(expr) {
         return 'vector(' + vecStr + ')';
     });
     
-    // console.log('expr3:', expr);
+    console.log('expr3:', expr);
+
+    // 检查是否出现连续 `[[` 或 `]]` 的情况
+    if(/\[\s*\[/.test(expr) || /\]\s*\]/.test(expr)) {
+        throw new Error('非法矩阵输入, 出现连续的`[[`或`]]`');
+    }
 
     // 继续匹配向量
     const vectorRegex2 = /\[([^\]]+)\]/g;
@@ -668,7 +677,7 @@ function processMatrix(expr) {
         return 'vector(' + match.slice(1, -1) + ')';
     });
 
-    // console.log('expr4:', expr);
+    console.log('expr4:', expr);
 
     // 再次处理矩阵
 
@@ -682,7 +691,7 @@ function processMatrix(expr) {
         }
     }); 
 
-    // console.log('expr5:', expr);
+    console.log('expr5:', expr);
 
     return expr;
 }
