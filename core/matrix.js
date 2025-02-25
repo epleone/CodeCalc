@@ -82,8 +82,14 @@ export class DecMatrix {
         //console.log(`DecMatrix@rows:${rows} cols:${cols}`);
         
         this.data = data; // 数据数组，如何判断是Decimal数组
-        this.rows = rows; // 行数
-        this.cols = cols; // 列数
+
+        // 使用 !== 比较两个 Decimal 对象时，它比较的是对象引用而不是数值
+        this.rows = Number(rows); // 行数
+        this.cols = Number(cols); // 列数
+    }
+
+    clone() {
+        return new DecMatrix([...this.data], this.rows, this.cols);
     }
 
     reshape(rows, cols) {
@@ -97,8 +103,12 @@ export class DecMatrix {
             return this;
         }
 
-        // 创建新的DecMatrix
-        let result = new DecMatrix(this.data, rows, cols);
+        // 创建新的DecMatrix，注意这里是共用data
+        // let result = new DecMatrix(this.data, rows, cols);
+
+        // 不共享数据
+        let result = new DecMatrix([...this.data], rows, cols);
+
         return result;
     }
 
@@ -131,6 +141,21 @@ export class DecMatrix {
             return new DecMatrix(result, n, this.cols);
         }
         
+    }
+
+    // 排序,
+    // order: 0:升序, 1:降序
+    // axis: 0:行, 1:列
+    // 默认按行升序排序
+    sort(order=0, axis=0) {
+        if(order == 0) {
+            // 升序
+            return new DecMatrix(this.data.sort((a, b) => a.minus(b)), this.rows, this.cols);
+        }
+        else {
+            // 降序
+            return new DecMatrix(this.data.sort((a, b) => b.minus(a)), this.rows, this.cols);
+        }
     }
 
     apply(func, other) {

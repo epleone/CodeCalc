@@ -836,6 +836,143 @@ const Utils = {
 
         throw new Error('repeat函数参数应为行向量或列向量');
     },
+
+    max(...args) {
+        // 如果参数是多个Decimal类型
+        if (args.every(arg => isDecimal(arg))) {
+            return Decimal.max(...args);
+        }
+
+        // 如果参数是单个矩阵
+        if (args.length === 1 && isMatrix(args[0])) {
+            return Decimal.max(...args[0].data);
+        }
+
+        // 如果参数都是矩阵, 返回对应位置的最大值
+        if (args.every(arg => isMatrix(arg))) {
+            // 创建结果矩阵
+            const result = args[0].clone();
+
+            console.log('result type:', typeof result.rows);
+            console.log('arg[0] type:', typeof args[0].rows);
+            
+            // 遍历其余矩阵，更新最大值
+            for (let j = 1; j < args.length; j++) {
+                // 检查维度
+                if (args[j].rows !== result.rows || args[j].cols !== result.cols) {
+                    throw new Error(`所有矩阵的维度必须相同 ${args[j].rows}x${args[j].cols} != ${result.rows}x${result.cols}`);
+                }
+                
+                // 更新每个位置的最大值
+                for (let idx = 0; idx < result.data.length; idx++) {
+                    result.data[idx] = Decimal.max(result.data[idx], args[j].data[idx]);
+                }
+            }
+            
+            return result;
+        }
+        
+        throw new Error('max函数参数类型错误，应全为数字或矩阵');
+    },
+
+    min(...args) {
+        // 如果参数是多个Decimal类型
+        if (args.every(arg => isDecimal(arg))) {
+            return Decimal.min(...args);
+        }
+
+        // 如果参数是单个矩阵
+        if (args.length === 1 && isMatrix(args[0])) {
+            return Decimal.min(...args[0].data);
+        }
+
+        // 如果参数都是矩阵, 返回对应位置的最大值
+        if (args.every(arg => isMatrix(arg))) {
+            // 创建结果矩阵
+            const result = args[0].clone();
+            
+            // 遍历其余矩阵，更新最小值
+            for (let j = 1; j < args.length; j++) {
+                // 检查维度
+                if (args[j].rows !== result.rows || args[j].cols !== result.cols) {
+                    throw new Error('所有矩阵的维度必须相同');
+                }
+                
+                // 更新每个位置的最小值
+                for (let idx = 0; idx < result.data.length; idx++) {
+                    result.data[idx] = Decimal.min(result.data[idx], args[j].data[idx]);
+                }
+            }
+            
+            return result;
+        }
+        
+        throw new Error('min函数参数类型错误，应全为数字或矩阵');
+    },
+    
+    sum(a) {
+        if(isMatrix(a)) {
+            return a.data.reduce((a, b) => a.plus(b), Decimal(0));
+        }
+
+        throw new Error('sum函数参数应为向量或矩阵');
+    },
+
+    mean(a) {
+        if(isMatrix(a)) {
+            return a.data.reduce((a, b) => a.plus(b), Decimal(0)).div(a.rows * a.cols);
+        }
+
+        throw new Error('mean函数参数应为向量或矩阵');
+    },
+
+    sort(a) {
+        if(isMatrix(a)) {
+            return a.sort();
+        }
+
+        throw new Error('sort函数参数应为向量或矩阵');
+    },
+
+    median(a) {
+        if(isMatrix(a)) {
+            // 获取数据并排序
+            const sortedData = a.sort().data;
+            const len = sortedData.length;
+            
+            // 计算中位数
+            if (len % 2 === 0) {
+                // 偶数个元素，取中间两个的平均值
+                return sortedData[len/2 - 1].plus(sortedData[len/2]).div(2);
+            } else {
+                // 奇数个元素，取中间值
+                return sortedData[Math.floor(len/2)];
+            }
+        }
+
+        throw new Error('median函数参数应为向量或矩阵');
+    },
+
+    var(a) {
+        if(isMatrix(a)) {
+            const mean = Utils.mean(a);
+            const data = a.data;
+            const n = data.length;
+            const sum = data.reduce((acc, val) => acc.plus(val.minus(mean).pow(2)), Decimal(0));
+            return sum.div(n);
+        }
+
+        throw new Error('var函数参数应为向量或矩阵');
+    },
+
+    std(a) {
+        if(isMatrix(a)) {
+            return Utils.var(a).sqrt();
+        }
+
+        throw new Error('std函数参数应为向量或矩阵');
+    },
+    
 };
 
 

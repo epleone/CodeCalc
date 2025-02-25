@@ -407,14 +407,48 @@ export const FUNCTIONS = {
 
     // 数学函数
     'max': {
-        func: (...args) => Decimal.max(...args),
+        func: (...args) => Utils.max(...args),
         args: -1,  // 支持1~N个参数  
         description: '求最大值'
     },
     'min': {
-        func: (...args) => Decimal.min(...args),
+        func: (...args) => Utils.min(...args),
         args: -1,  // 支持1~N个参数  
         description: '求最小值'
+    },
+    'sum': {
+        func: Utils.sum,
+        args: 1,  
+        description: '求和'
+    },
+    'mean': {
+        func: Utils.mean,
+        args: 1,   
+        description: '求平均值'
+    },
+    'avg': { 
+        alias: 'mean',
+        description: '求平均值'
+    },
+    'median': {
+        func: Utils.median,
+        args: 1,
+        description: '求中位数'
+    },
+    'var': {
+        func: Utils.var,
+        args: 1,
+        description: '求方差'
+    },
+    'std': {
+        func: Utils.std,
+        args: 1,
+        description: '求标准差'
+    },
+    'sort': {
+        func:  Utils.sort,
+        args: 1,  // 支持数组和矩阵
+        description: '排序'
     },
     'lg': {
         func: x => Utils.mapFuncArgs1('lg', x, x => Decimal.log10(x)),
@@ -770,5 +804,18 @@ export const FUNCTIONS = {
         args: 1,
         description: '特征值'
     },
+
+    // 矩阵测试函数
+    'set0': {
+        func: (x) => {
+            for (let i = 0; i < x.data.length; i++) {
+                x.data[i] = 0;
+            }
+            return x;
+        },
+        args: 1,
+        hidden: true,
+        description: '【测试】设置为0'
+    }, 
     
 }; 
