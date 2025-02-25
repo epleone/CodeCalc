@@ -5,3 +5,4 @@ node_modules/
 math/
 package-lock.json
 .DS_Store
+app/src/calculator.min.js
