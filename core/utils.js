@@ -168,7 +168,7 @@ const Utils = {
 
     // 将不同的输出格式化成字符串
     formatToDisplayString(result) {
-        console.log('utils@cfg precision:', config.get('precision'));
+        // console.log('utils@cfg precision:', config.get('precision'));
 
         // 如果是Datestamp，则返回字符串
         if(isDatestamp(result)) {
@@ -572,46 +572,6 @@ const Utils = {
     },
 
 
-    // 矩阵和向量转换
-    str2Matrix(str) {
-        //  只处理 空格和分号分割的矩阵 `{1 2 3;4 5 6; 7 8 9}`
-        str = str.trim();
-        if (str[0] !== '{' || str[str.length-1] !== '}') {
-            throw new Error('matrix格式错误，请使用大括号{}');
-        }
-
-        // 去掉首尾的大括号以及周围的空格
-        str = str.replace(/\s*\{\s*/g, '');
-        str = str.replace(/\s*\}\s*/g, '');
-
-        // 将分号前后的空格去掉
-        str = str.replace(/\s*;\s*/g, ';');
-    
-        // 按分号分隔成行
-        let rows = str.split(';');
-        // 每行按空格分隔成数字数组
-        let numbers = rows.map(row => {
-            // 去掉首尾空格后按空格分隔，并转换为Decimal
-            return row.trim().split(/\s+/).map(Decimal);
-        });
-
-        // 判断二维数组是否为空
-        if (numbers.length === 0) {
-            throw new Error('matrix 长度为0');
-        }
-
-        // 判断二维数组每行长度是否一致,并检查是否有非法数字
-        let rowLength = numbers[0].length;
-        for (let i = 0; i < numbers.length; i++) {
-            if (numbers[i].length !== rowLength) {
-                throw new Error('matrix 每行长度不一致');
-            }
-        }
-
-        let data = numbers.flat();
-        return new DecMatrix(data, numbers.length, rowLength);
-    },
-
     expr2Vector(...args) {
         // 如果args只有一个元素
         if(args.length === 1) {
@@ -655,19 +615,20 @@ const Utils = {
 
         // 循环每个args元素，检查他们的类型
         for(let i = 0; i < args.length; i++) {
-            if(!isMatrix(args[i]) || args[i].cols !== 1) {
-                console.log("args[", i, "]", args[i], typeof args[i]);
-                throw new Error('Matrix参数错误: 应为列向量');
+            if(!isMatrix(args[i]) || (args[i].cols !== 1 && args[i].rows !== 1)) {
+                // console.log("args[", i, "]", args[i], typeof args[i]);
+                throw new Error(`Matrix参数${i}错误: 应为列向量或者行向量`);
             }
 
-            if(args[i].rows !== args[0].rows) {
-                throw new Error('Matrix参数错误: 向量行数不相同');
+            if(args[i].rows !== args[0].rows || args[i].cols !== args[0].cols) {
+                throw new Error(`Matrix参数${i}错误: 维度不相同`);
             }
         }
         
+        // TODO: 这个拼接只能处理列向量
         // 每个args元素都是DecMatrix类型, 拼接他们的data
         const data = Array.from(args).flatMap(x => x.data);
-        return new DecMatrix(data, args.length, args[0].rows);
+        return new DecMatrix(data, args.length, Math.max(args[0].rows, args[0].cols));
     },
 
     // 矩阵乘法
@@ -780,7 +741,7 @@ const Utils = {
         }
 
         // 计算数组长度
-        const n = Math.floor((end - start) / step);
+        const n = Math.ceil((end - start) / step);
         // 生成等差数列数组
         const data = Array.from({length: n}, (_, i) => Decimal(start + i * step));
         return new DecMatrix(data, n, 1);
