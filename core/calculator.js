@@ -918,6 +918,10 @@ export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 // console.log(Calculator.calculate('a = [1 2 3]'));
 // console.log(Calculator.calculate('{[a,a,a]}'));
 
-console.log(Calculator.calculate('{{1,2,3}, {4,5,6}, {7,8,9}}'));
-console.log(Calculator.calculate('{{1,2,3}; {4,5,6}; {7,8,9}}'));
+// console.log(Calculator.calculate('{{1,2,3}, {4,5,6}, {7,8,9}}'));
+// console.log(Calculator.calculate('{{1,2,3}; {4,5,6}; {7,8,9}}'));
 // console.log(Calculator.calculate('{[1,2,3], [4,5,6], [7,8,9]}'));
+
+// console.log(Calculator.calculate('{{1,2,3}; {4,5,6}}'));
+// console.log(Calculator.calculate('{[1,2,3], [4,5,6]}'));
+

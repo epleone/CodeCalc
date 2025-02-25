@@ -86,6 +86,11 @@ function isMatrix(value) {
     return value instanceof DecMatrix;
 }
 
+// 判断是否是向量
+function isVector(value) {
+    return value instanceof DecMatrix && (value.rows === 1 || value.cols === 1);
+}
+
 function isComplexMatrix(value) {
     return value instanceof ComplexMatrix;
 }
@@ -575,8 +580,8 @@ const Utils = {
     expr2Vector(...args) {
         // 如果args只有一个元素
         if(args.length === 1) {
-            // 参数是DecMatrix，则返回该矩阵
-            if(isMatrix(args[0]) && args[0].cols === 1) {
+            // 参数是向量，则返回该向量
+            if(isVector(args[0])) {
                 return args[0];
             }
 
@@ -615,8 +620,7 @@ const Utils = {
 
         // 循环每个args元素，检查他们的类型
         for(let i = 0; i < args.length; i++) {
-            if(!isMatrix(args[i]) || (args[i].cols !== 1 && args[i].rows !== 1)) {
-                // console.log("args[", i, "]", args[i], typeof args[i]);
+            if(!isVector(args[i])) {
                 throw new Error(`Matrix参数${i}错误: 应为列向量或者行向量`);
             }
 
@@ -624,11 +628,26 @@ const Utils = {
                 throw new Error(`Matrix参数${i}错误: 维度不相同`);
             }
         }
-        
-        // TODO: 这个拼接只能处理列向量
-        // 每个args元素都是DecMatrix类型, 拼接他们的data
-        const data = Array.from(args).flatMap(x => x.data);
-        return new DecMatrix(data, args.length, Math.max(args[0].rows, args[0].cols));
+
+        // 打印args
+        // console.log('args:', args);
+
+        if(args[0].rows === 1){
+            //  水平拼接行向量
+            const data = [];
+            for (let i = 0; i < args[0].cols; i++) {
+                for (let j = 0; j < args.length; j++) {
+                    data.push(args[j].data[i]);
+                }
+            }
+            return new DecMatrix(data, args[0].cols, args.length);
+        }
+        else{
+            //  垂直拼接列向量
+            const data = Array.from(args).flatMap(x => x.data);
+            return new DecMatrix(data, args.length, args[0].rows);
+        }
+    
     },
 
     // 矩阵乘法

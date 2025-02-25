@@ -618,7 +618,7 @@ function processTimestamp(expr) {
 
 // 处理向量, 将表达式中的`[1 2 3]` 转换成 `vector(1, 2, 3)`
 function processVector(expr) {
-    console.log('vector expr1:', expr);
+    // console.log('vector expr1:', expr);
 
     // 匹配向量格式 [1 2 3], 处理只有空格和负号的情况
     const vectorRegex = /\[([\d\s-]+)\]/g;
@@ -639,7 +639,7 @@ function processVector(expr) {
         return 'vector(' + vecStr + ')';
     });
     
-    console.log('vector expr2:', expr);
+    // console.log('vector expr2:', expr);
 
     // 检查是否出现连续 `[[` 或 `]]` 的情况
     if(/\[\s*\[/.test(expr) || /\]\s*\]/.test(expr)) {
@@ -662,14 +662,14 @@ function processVector(expr) {
         return 'vector(' + match.slice(1, -1) + ')';
     });
 
-    console.log('vector expr3:', expr);
+    // console.log('vector expr3:', expr);
 
     return expr;
 }
 
 
 function processMatrix(expr) {
-    console.log('matrix expr1:', expr);
+    // console.log('matrix expr1:', expr);
 
     // TODO: 格式验证, 无法处理三维矩阵
     // 如果出现 三个连续的{，中间没有} 就报错
@@ -685,7 +685,7 @@ function processMatrix(expr) {
         return "{" + ctt + "}";
     });
 
-    console.log('matrix expr2:', expr);
+    // console.log('matrix expr2:', expr);
 
     // 第二步, 将内部不正式的元素转成向量 {...;1 2 3; ...}  --> {...;[1 2 3]; ...}
     const matrixRegex = /\{([^{}]+)\}/g;
@@ -709,12 +709,12 @@ function processMatrix(expr) {
         return match;
     });
 
-    console.log('matrix expr3:', expr);
+    // console.log('matrix expr3:', expr);
 
     // 第三步, 处理向量
     expr = processVector(expr);
 
-    console.log('matrix expr4:', expr);
+    // console.log('matrix expr4:', expr);
 
     // 第四步, 再次匹配矩阵并处理, 此时矩阵内部元素都是向量
     expr = expr.replace(matrixRegex, (match, content) => {
@@ -726,23 +726,8 @@ function processMatrix(expr) {
         }
     }); 
 
-    console.log('matrix expr5:', expr);
-
-    // 第五步, 验证矩阵格式并处理转置
-    // 处理两种情况:
-    // 1. matrix(vector(...).T, vector(...).T, vector(...).T).T -> matrix(vector(...), vector(...), vector(...))
-    // 2. matrix(vector(...).T, vector(...).T, vector(...).T) -> matrix(vector(...), vector(...), vector(...)).T
-    
-    // 匹配包含.T的向量参数的矩阵表达式
-    const matrixTransposePattern = /matrix\(((?:vector\([^)]+\)\.T(?:,\s*)?)+)\)(\.T)?/g;
-    expr = expr.replace(matrixTransposePattern, (match, content, matrixT) => {
-        // 移除所有向量的.T
-        const cleanContent = content.replace(/\.T/g, '');
-        // 如果原矩阵没有.T，则添加.T；如果有.T，则不添加
-        return `matrix(${cleanContent})${matrixT ? '' : '.T'}`;
-    });
-
-    console.log('matrix expr6:', expr);
+    // console.log('matrix expr5:', expr);
+    // 第五步, 返回结果
     return expr;
 }
 
