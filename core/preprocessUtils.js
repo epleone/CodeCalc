@@ -674,7 +674,8 @@ function processMatrix(expr) {
     // TODO: 格式验证, 无法处理三维矩阵
     // 如果出现 三个连续的{，中间没有} 就报错
     // 或者出现连续三个的}，中间没有{ 就报错
- 
+    
+    // TODO:列向量用 [] , 行向量(内部概念)用 < >
 
     // 第一步, {..., { * }, ..., { * }, ...}  --> {..., [ * ].T, ..., [ * ].T, ...}
     // 匹配两层大括号包裹的模式
@@ -685,10 +686,18 @@ function processMatrix(expr) {
         return "{" + ctt + "}";
     });
 
-    // console.log('matrix expr2:', expr);
-
-    // 第二步, 将内部不正式的元素转成向量 {...;1 2 3; ...}  --> {...;[1 2 3]; ...}
+    // 第二步，判断是否是行向量。是的话，转成 --> [ * ].T
     const matrixRegex = /\{([^{}]+)\}/g;
+    //如果内部没有[ ], 没有; 就转成行向量
+    expr = expr.replace(matrixRegex, (match, content) => {
+        if(!content.match(/[\[\];]/)) {
+            return '[' + content + '].T';
+        }
+        return match;
+    });
+
+
+    // 第三步, 将内部不正式的元素转成向量 {...;1 2 3; ...}  --> {...;[1 2 3]; ...}
     expr = expr.replace(matrixRegex, (match, content) => {
         // 如果不存在 `{[`, 就添加`[`
         if(!match.match(/\{\s*\[/)) {
@@ -709,14 +718,15 @@ function processMatrix(expr) {
         return match;
     });
 
-    // console.log('matrix expr3:', expr);
+    console.log('matrix expr3:', expr);
+    // process.exit(0);
 
-    // 第三步, 处理向量
+    // 第四步, 处理向量
     expr = processVector(expr);
 
     // console.log('matrix expr4:', expr);
 
-    // 第四步, 再次匹配矩阵并处理, 此时矩阵内部元素都是向量
+    // 第五步, 再次匹配矩阵并处理, 此时矩阵内部元素都是向量
     expr = expr.replace(matrixRegex, (match, content) => {
         // 判断是否有;
         if(match.includes(';')){
@@ -727,7 +737,7 @@ function processMatrix(expr) {
     }); 
 
     // console.log('matrix expr5:', expr);
-    // 第五步, 返回结果
+    // 第六步, 返回结果
     return expr;
 }
 
