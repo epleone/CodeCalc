@@ -616,8 +616,9 @@ function processTimestamp(expr) {
 }
 
 
-// 处理向量, 将表达式中的`[1 2 3]` 转换成 `vector(1, 2, 3)`
-function processVector(expr) {
+// 处理列向量
+// 将表达式中的`[1 2 3]` 转换成 `ColVector(1, 2, 3)`
+function processColVector(expr) {
     // console.log('vector expr1:', expr);
 
     // 匹配向量格式 [1 2 3], 处理只有空格和负号的情况
@@ -636,7 +637,7 @@ function processVector(expr) {
                     .replace(/\s*\]/g, '')
                     .replace(/-\s*/g, '-') // 负号前面得有空格，否则会被当成减号? 目前是通过前面空格来控制负号还是减号
                     .replace(/\s+/g, ',');
-        return 'vector(' + vecStr + ')';
+        return 'ColVector(' + vecStr + ')';
     });
     
     // console.log('vector expr2:', expr);
@@ -654,12 +655,65 @@ function processVector(expr) {
             throw new Error('向量不可用分号分割符，使用逗号或者空格分割');
         }
         
-        if(/\d\s+\d/.test(expr)) {
+        if(/\d\s+\d/.test(content)) {
             throw new Error('非纯数字情况下, 向量只能使用逗号分割符');
         }
 
         // 将开头的[和结尾的]去掉
-        return 'vector(' + match.slice(1, -1) + ')';
+        return 'ColVector(' + match.slice(1, -1) + ')';
+    });
+
+    // console.log('vector expr3:', expr);
+
+    return expr;
+}
+
+
+// 处理行向量
+// 将表达式中的`<1 2 3>` 转换成 `RowVector(1, 2, 3)`
+function processRowVector(expr) {
+    // console.log('vector expr1:', expr);
+
+    // 匹配向量格式 <1 2 3>, 处理只有空格和负号的情况
+    const vectorRegex = /\<([\d\s-]+)\>/g;
+    
+    // 将空格转成逗号
+    expr = expr.replace(vectorRegex, (match, content) => {
+        // 如果负号前面没有空格，则报错
+        if(/\d-+\d/.test(match)) {
+            throw new Error('无法区分符号-，负号前需加空格，减号用逗号分隔向量');
+        }
+
+        // 去掉首尾的尖括号以及周围的空格, 中间的空格并转成逗号
+        let vecStr= match
+                    .replace(/\<\s*/g, '')
+                    .replace(/\s*\>/g, '')
+                    .replace(/-\s*/g, '-') // 负号前面得有空格，否则会被当成减号? 目前是通过前面空格来控制负号还是减号
+                    .replace(/\s+/g, ',');
+        return 'RowVector(' + vecStr + ')';
+    });
+    
+    // console.log('vector expr2:', expr);
+
+    // 检查是否出现连续 `<<` 或 `>>` 的情况
+    if(/\<\s*\</.test(expr) || /\>\s*\>/.test(expr)) {
+        throw new Error('非法矩阵输入, 出现连续的`<<`或`>>`');
+    }
+
+    // 继续匹配向量
+    const vectorRegex2 = /\<([^\>]+)\>/g;
+    expr = expr.replace(vectorRegex2, (match, content) => {
+        // 不可以有分号;
+        if(/;/.test(match)) {
+            throw new Error('向量不可用分号分割符，使用逗号或者空格分割');
+        }
+        
+        if(/\d\s+\d/.test(content)) {
+            throw new Error('非纯数字情况下, 向量只能使用逗号分割符');
+        }
+
+        // 将开头的<和结尾的>去掉
+        return 'RowVector(' + match.slice(1, -1) + ')';
     });
 
     // console.log('vector expr3:', expr);
@@ -669,75 +723,100 @@ function processVector(expr) {
 
 
 function processMatrix(expr) {
-    // console.log('matrix expr1:', expr);
+    console.log('matrix expr1:', expr);
 
     // TODO: 格式验证, 无法处理三维矩阵
     // 如果出现 三个连续的{，中间没有} 就报错
-    // 或者出现连续三个的}，中间没有{ 就报错
     
     // TODO:列向量用 [] , 行向量(内部概念)用 < >
 
-    // 第一步, {..., { * }, ..., { * }, ...}  --> {..., [ * ].T, ..., [ * ].T, ...}
+    // 第一步, {..., { * }, ..., { * }, ...}  --> {..., < * >, ..., < * >, ...}
     // 匹配两层大括号包裹的模式
-    const matrixRegex1 = /\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
-    expr = expr.replace(matrixRegex1, (match, content) => {
-        // 将内部的行向量{ * }转成向列量 [ * ].T
-        const ctt = match.slice(1, -1).replace(/\s*\{/g, '\[').replace(/\}\s*/g, '\].T');
+    const matrixRegex_2brackets = /\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
+    expr = expr.replace(matrixRegex_2brackets, (match, content) => {
+        // 将内部的{ * }转成向行列量 < * >
+        const ctt = match.slice(1, -1).replace(/\s*\{/g, '\<').replace(/\}\s*/g, '\>');
         return "{" + ctt + "}";
     });
 
-    // 第二步，判断是否是行向量。是的话，转成 --> [ * ].T
+    console.log('matrix expr2:', expr);
+    
+
+    // 第二步，判断是否是行向量。是的话，转成 --> < * >
     const matrixRegex = /\{([^{}]+)\}/g;
-    //如果内部没有[ ], 没有; 就转成行向量
+    //如果内部没有[ ], 没有 <> 没有; 就转成行向量
     expr = expr.replace(matrixRegex, (match, content) => {
-        if(!content.match(/[\[\];]/)) {
-            return '[' + content + '].T';
+        if(!content.match(/[\[\];\<\>]/)) {
+            return '{<' + content + '>}';
         }
-        return match;
-    });
-
-
-    // 第三步, 将内部不正式的元素转成向量 {...;1 2 3; ...}  --> {...;[1 2 3]; ...}
-    expr = expr.replace(matrixRegex, (match, content) => {
-        // 如果不存在 `{[`, 就添加`[`
-        if(!match.match(/\{\s*\[/)) {
-            match = match.replace(/\{/g, '\{\[')
-        }
-
-        // 如果不存在 `]}` 或者 `].T}`, 就添加`]`
-        if(!match.match(/\]\s*\}/) && !match.match(/\]\.T\}/)) {
-            match = match.replace(/\}/g, '\]\}')
-        }
-
-        // 处理分号;
-        // 如果不存在 `];`或者`].T;`, 就添加`]`
-        // 如果不存在 `;[`, 就添加`[`
-        match = match.replace(/(?<!](?:\.T)?)\s*;/g, '];')
-                    .replace(/;\s*([^\[])/g, ';[$1');
-
         return match;
     });
 
     console.log('matrix expr3:', expr);
-    // process.exit(0);
 
-    // 第四步, 处理向量
-    expr = processVector(expr);
-
-    // console.log('matrix expr4:', expr);
-
-    // 第五步, 再次匹配矩阵并处理, 此时矩阵内部元素都是向量
+    // TODO： 分号处理需要考虑到变量，变量的话就是转置。 单元素矩阵转置？ 数字返回就好了？
+    // 第三步, 如果存在分号，将内部不正式的元素转成向量 {...;1 2 3; ...}  --> {...;<1 2 3>; ...}
     expr = expr.replace(matrixRegex, (match, content) => {
-        // 判断是否有;
+
+        // 如果存在分号，将内部不正式的元素转成向量
         if(match.includes(';')){
-            return 'matrix(' + match.slice(1, -1).replace(/;/g, ',')+ ')';
-        }else{
-            return 'matrix(' + match.slice(1, -1) + ').T';
+            const ctt = match.slice(1, -1);
+            // 将ctt安装分号分割成数组
+            const arr1 = ctt.split(';').map(item => '<' + item.trim() + '>');
+
+            // 需要处理分号`;`导致的行列向量转换
+
+            // TODO: 变量情况
+
+            // 数字情况
+            // {{1,2,3}; {4,5,6}}  --> { <<1,2,3>>, <<4,5,6>> }
+            // 遍历arr1, 如果外部有两层 << ... >> ，则将其转成列向量 [ ... ]
+            const arr2 = arr1.map(item => {
+                if(item.match(/^<<.*>>$/)){
+                    return '[' + item.slice(2, -2) + ']';
+                }
+                return item;
+            });
+
+
+            // {[1,2,3]; [4,5,6]}  --> {<[1,2,3]>,<[4,5,6]>}
+            // 遍历arr2, 如果外部有 <[ ... ]> ，则将其转成列向量 < ... >
+            
+            const arr3 = arr2.map(item => {
+                if(item.match(/^<\[.*\]>$/)){
+                    return '<' + item.slice(2, -2) + '>';
+                }
+                return item;
+            });
+
+            // 将数组转成矩阵
+            return '{' + arr3.join(',') + '}';
         }
+
+        // 不包含分号，则直接返回
+        return match;
+    });
+
+    console.log('matrix expr4:', expr);
+
+    // 第四步, 处理列向量
+    expr = processColVector(expr);
+    console.log('matrix expr5:', expr);
+
+    // 第五步, 处理行向量
+    expr = processRowVector(expr);
+    console.log('matrix expr6:', expr);
+
+    // 第六步, 处理矩阵
+    expr = expr.replace(matrixRegex, (match, content) => {
+        return 'matrix(' + match.slice(1, -1) + ')';
     }); 
 
-    // console.log('matrix expr5:', expr);
-    // 第六步, 返回结果
+    console.log('matrix expr7:', expr);
+
+    console.log('---------------------------------------------------');
+    // throw new Error('test');
+
     return expr;
 }
 

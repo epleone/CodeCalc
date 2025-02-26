@@ -718,15 +718,23 @@ export const FUNCTIONS = {
         func: (...args) => Utils.expr2Matrix(...args),
         args: -1,
         argTypes: 'any',
+        hidden: true,
         description: '转换为矩阵'
     },
-    'vector': {
-        func: (...args) => Utils.expr2Vector(...args),
+    'ColVector': {
+        func: (...args) => Utils.expr2ColVector(...args),
         args: -1,
         argTypes: 'any',
-        description: '转换为向量'
+        hidden: true,
+        description: '转换为列向量'
     },
-    
+    'RowVector': {
+        func: (...args) => Utils.expr2RowVector(...args),
+        args: -1,
+        argTypes: 'any',
+        hidden: true,
+        description: '转换为行向量'
+    },
     // 矩阵函数
     'eye': {
         func: Utils.eye,

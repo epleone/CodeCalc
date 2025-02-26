@@ -911,28 +911,46 @@ const Calculator = (function() {
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
 
 // 测试
+
+function TEST(expr){
+    try{
+        console.log('expr: ', expr);
+        console.log(Calculator.calculate(expr));
+    }
+    catch(e){
+        console.log('error: ', e.message);
+    }
+    console.log('---------------------------------------------------');
+}
+
 // console.log(Calculator.calculate('eigenvalues({1 2 3; 4 5 6; 7 8 9})'));
 
 // console.log(Calculator.calculate('{[1 3 5], [2 4 6]}.inv'));
-
-// console.log(Calculator.calculate('a = [1 2 3]'));
-// console.log(Calculator.calculate('{[a,a,a]}'));
 
 
 // console.log(Calculator.calculate('{{1,2,3}, {4,5,6}, {7,8,9}}'));
 // console.log(Calculator.calculate('{{1,2,3}; {4,5,6}; {7,8,9}}'));
 // console.log(Calculator.calculate('{[1,2,3], [4,5,6], [7,8,9]}'));
 
-// console.log(Calculator.calculate('{1 2 3; 4 5 6; 7 8 9}'));
-// console.log(Calculator.calculate('{1 2 3}'));  // TODO: 需要处理, 单层{}, 且内部没有; 转成 行向量
-// console.log(Calculator.calculate('[1 2 3]'));
-// console.log(Calculator.calculate('{[1 2 3]}'));
-// console.log(Calculator.calculate('{{3 2 1}}'));
 
-// console.log(Calculator.calculate('{{1,2,3}; {4,5,6}}'));
-// console.log(Calculator.calculate('{[1,2,3], [4,5,6]}'));
+// TEST('{ }'); 
+// TEST('{1}'); 
+// TEST('{1 2 3; 4 5 6; 7 8 9}');
+// TEST('{1 2 3}'); 
+// TEST('{[1 2 3]}'); 
+// TEST('{{3 2 1}}');
+// TEST('{1,2,3; 4,5,6; 7,8,9}');
+// TEST('{1,2,3}'); 
+// TEST('{[1,2,3]}'); 
+// TEST('{{3,2,1}}');
+// TEST('{{1,2,3}, {4,5,6}}');
+// TEST('{{1,2,3}; {4,5,6}}');
+// TEST('{[1,2,3], [4,5,6]}');
+// TEST('{[1,2,3]; [4,5,6]}');
 
-console.log(Calculator.calculate('a= {1 2 3}'));
+
+console.log(Calculator.calculate('a = [1 2 3]'));
 console.log(Calculator.calculate('{a}'));
-// console.log(Calculator.calculate('b= [1 2 3]'));
-// console.log(Calculator.calculate('{b}'));
+
+// console.log(Calculator.calculate('{ a; a }'));
+// console.log(Calculator.calculate('{ a, a }'));

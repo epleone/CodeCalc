@@ -577,25 +577,16 @@ const Utils = {
     },
 
 
-    expr2Vector(...args) {
-        // 如果args只有一个元素
-        if(args.length === 1) {
-            // 参数是向量，则返回该向量
-            if(isVector(args[0])) {
-                return args[0];
-            }
-
-            // 参数是数字，则返回一个1行1列的矩阵
-            if(isDecimal(args[0])) {
-                return new DecMatrix([args[0]], 1, 1);
-            }
-
-            throw new Error('Vector参数错误: 无法转换成向量');
+    // 只支持数字传入
+    expr2ColVector(...args) {
+        // 如果args中存在非数字类型，则报错
+        if (!args.every(arg => isDecimal(arg))) {
+            throw new Error('ColVector参数错误: 应为数字');
         }
 
-        // 如果多个参数，并且第一个参数是DecMatrix类型，则交给expr2Matrix处理
-        if(isMatrix(args[0])){
-            return Utils.expr2Matrix(...args);
+        // 如果args只有一个元素
+        if(args.length === 1) {
+            return new DecMatrix([args[0]], 1, 1);
         }
 
         // 将args转成数组
@@ -603,22 +594,51 @@ const Utils = {
         return new DecMatrix(vec, vec.length, 1);
     },
 
-    expr2Matrix(...args) {
-        // 如果args只有一个元素，并且是DecMatrix类型，则返回该矩阵
-        if(args.length === 1) {
-            if(isMatrix(args[0])){
-                return args[0];
-            }
+    // 支持数字或者向量传入
+    expr2RowVector(...args) {
 
-            // 参数是数字，则返回一个1行1列的矩阵
-            if(isDecimal(args[0])) {
+        // 输入是向量
+        // {a} --> {<a>} --> matrix(a.t)   // 导致转置
+        //  { a; a } --> { < a >, < a > } --> matrix(a.t, a.t) // 遇到分号去做转置，传入参数
+        //  { a, a } --> { <a, a > } --> matrix(a, a)
+        if(args.every(arg => isVector(arg))) {
+            if(args.length === 1) {
+                return args[0];
+                // TODO：需要外部给定是否有分号， 或者和 expr2ColVector 分工
+                // return args[0].transpose();
+            }
+            else{
+                return Utils.expr2Matrix(...args);
+            }
+        }
+
+        // 都是数字
+        if (args.every(arg => isDecimal(arg))) {
+            // 如果args只有一个元素
+            if(args.length === 1) {
                 return new DecMatrix([args[0]], 1, 1);
             }
 
-            throw new Error('Matrix参数错误: 无法转换成矩阵');
+            // 将args转成数组
+            const vec = Array.from(args).map(x => Decimal(x));
+            return new DecMatrix(vec, 1, vec.length);
         }
 
-        // 循环每个args元素，检查他们的类型
+        // 其它情况，报错
+        throw new Error('RowVector参数错误: 应为数字或者向量');
+    },
+
+    expr2Matrix(...args) {
+        // 打印args
+        console.log('args:', args);
+
+        // 如果args只有一个元素，并且是DecMatrix类型，则返回该矩阵
+        // a = [...]; { a, a } --> {<a, a>} --> {RowVector( a, a )} --> matrix(RowVector( a, a )) --> matrix(matrix( a, a ))
+        if(args.length === 1 && isMatrix(args[0])) {
+            return args[0];
+        }
+
+        // 检查参数
         for(let i = 0; i < args.length; i++) {
             if(!isVector(args[i])) {
                 throw new Error(`Matrix参数${i}错误: 应为列向量或者行向量`);
@@ -629,23 +649,21 @@ const Utils = {
             }
         }
 
-        // 打印args
-        // console.log('args:', args);
-
-        if(args[0].rows === 1){
-            //  水平拼接行向量
+        if(args[0].cols === 1){
+            //  垂直拼接列向量
             const data = [];
-            for (let i = 0; i < args[0].cols; i++) {
+            for (let i = 0; i < args[0].rows; i++) {
                 for (let j = 0; j < args.length; j++) {
                     data.push(args[j].data[i]);
                 }
             }
-            return new DecMatrix(data, args[0].cols, args.length);
+
+            return new DecMatrix(data, args[0].rows, args.length);
         }
         else{
-            //  垂直拼接列向量
+            //  水平拼接行向量
             const data = Array.from(args).flatMap(x => x.data);
-            return new DecMatrix(data, args.length, args[0].rows);
+            return new DecMatrix(data, args.length, args[0].cols);
         }
     
     },
