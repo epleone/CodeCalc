@@ -928,11 +928,6 @@ function TEST(expr){
 // console.log(Calculator.calculate('{[1 3 5], [2 4 6]}.inv'));
 
 
-// console.log(Calculator.calculate('{{1,2,3}, {4,5,6}, {7,8,9}}'));
-// console.log(Calculator.calculate('{{1,2,3}; {4,5,6}; {7,8,9}}'));
-// console.log(Calculator.calculate('{[1,2,3], [4,5,6], [7,8,9]}'));
-
-
 // TEST('{ }'); 
 // TEST('{1}'); 
 // TEST('{1 2 3; 4 5 6; 7 8 9}');
@@ -952,18 +947,8 @@ function TEST(expr){
 // TEST('{[1 2 3]}');
 // TEST('{1; 2; 3}');
 // TEST('a = [1 2 3]');
-// TEST('{a}');
+// // TEST('{a}');
 // TEST('{a;a}');
 // TEST('{a,a}');
 
 // TEST('{1 2 3;4 5 6}');
-
-
-// console.log(Calculator.calculate('a = [1 2 3]'));
-// console.log(Calculator.calculate('{a}'));
-
-// console.log(Calculator.calculate('{ a; a }'));
-// console.log(Calculator.calculate('{ a, a }'));
-
-// 是否需要这样支持？
-// {1;1} --> [1, 1]

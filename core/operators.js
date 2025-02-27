@@ -728,6 +728,13 @@ export const FUNCTIONS = {
         hidden: true,
         description: '转换为列向量'
     },
+    'ColVector2': {
+        func: (...args) => Utils.expr2ColVector2(...args),
+        args: -1,
+        argTypes: 'any',
+        hidden: true,
+        description: '转换为列向量'
+    },
     'RowVector': {
         func: (...args) => Utils.expr2RowVector(...args),
         args: -1,

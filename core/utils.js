@@ -594,6 +594,33 @@ const Utils = {
         return new DecMatrix(vec, vec.length, 1);
     },
 
+    // 支持数字和向量传入
+    expr2ColVector2(...args) {
+
+        // 输入是矩阵
+        if(args.every(arg => isMatrix(arg))) {
+            // 需要进行转置操作
+            return Utils.expr2Matrix(...args.map(arg => arg.transpose()));
+        }
+        
+        // 如果args中存在非数字类型，则报错
+        if (args.every(arg => isDigital(arg))) {
+
+            // 如果args只有一个元素
+            if(args.length === 1) {
+                return new DecMatrix([Decimal(args[0])], 1, 1);
+            }
+
+            // 将args转成数组
+            const vec = Array.from(args).map(x => Decimal(x));
+            return new DecMatrix(vec, vec.length, 1);
+        }
+
+
+        throw new Error('ColVector参数错误: 应为数字或矩阵');
+
+    },
+
     // 支持数字或者向量传入
     expr2RowVector(...args) {
         // 输入是矩阵

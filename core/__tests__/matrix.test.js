@@ -288,23 +288,40 @@ describe('Matrix Operations', () => {
       expect(() => Calculator.calculate('[b; b; b]')).toThrow();
     });
 
-    // test.skip 先跳过测试
-    test.skip('不定行为', () => {
-      expect(Calculator.calculate('{1; 1}').value).toBe('{1;1}');
+    test('矩阵元素转置', () => {
       expect(Calculator.calculate('{1; 1}').value).toBe('[1,1]');
 
 
       expect(Calculator.calculate('a = 1').value).toBe('1');
-      expect(Calculator.calculate('{a, a}').value).toBe('[1,1]');
-      expect(['[1,1]', '{1;1}'].includes(Calculator.calculate('{a; a}').value)).toBe(true);
+      expect(Calculator.calculate('{a, a}').value).toBe('{1,1}');
+      expect(Calculator.calculate('{a; a}').value).toBe('[1,1]');
 
       expect(Calculator.calculate('b = 2').value).toBe('2');
-      expect(Calculator.calculate('{a; b}').value).toBe('{1;2}').toBe('[1,2]');
+      expect(Calculator.calculate('{a; b}').value).toBe('[1,2]');
 
-      expect(Calculator.calculate('{a + 1; b - 1}').value).toBe('{2;1}');
-      expect(Calculator.calculate('{a * 2; b / 2}').value).toBe('{2;1}');
-      expect(Calculator.calculate('{a ^ 2; b ** 2}').value).toBe('{3;4}');
-      expect(Calculator.calculate('{max(a, 1); min(b, 1)}').value).toBe('{1,1}');
+      // expect(Calculator.calculate('{a+1; b-1}').value).toBe('[2,1]');
+      // expect(Calculator.calculate('{a*2; b/2}').value).toBe('[2,1]');
+      // expect(Calculator.calculate('{a^2; b**2}').value).toBe('[3,4]');
+      // expect(Calculator.calculate('{max(a, 1); min(b, 1)}').value).toBe('[1,1]');
+    });
+
+    // 矩阵拼接
+    // test.skip 先跳过测试
+    test.skip('矩阵拼接', () => {
+      expect(Calculator.calculate('{1; 1}').value).toBe('[1,1]');
+
+
+      expect(Calculator.calculate('a = 1').value).toBe('1');
+      expect(Calculator.calculate('{a, a}').value).toBe('{1,1}');
+      expect(Calculator.calculate('{a; a}').value).toBe('[1,1]');
+
+      expect(Calculator.calculate('b = 2').value).toBe('2');
+      expect(Calculator.calculate('{a; b}').value).toBe('[1,2]');
+
+      expect(Calculator.calculate('{a + 1; b - 1}').value).toBe('[2,1]');
+      expect(Calculator.calculate('{a * 2; b / 2}').value).toBe('[2,1]');
+      expect(Calculator.calculate('{a ^ 2; b ** 2}').value).toBe('[3,4]');
+      expect(Calculator.calculate('{max(a, 1); min(b, 1)}').value).toBe('[1,1]');
 
       // 矩阵拼接，应该是一个问题
       expect(Calculator.calculate('c = {1 2 3;4 5 6}').value).toBe('{1,2,3;4,5,6}');

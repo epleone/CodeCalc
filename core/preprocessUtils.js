@@ -812,6 +812,29 @@ function processMatrix(expr) {
 
     // console.log('matrix expr4:', expr);
 
+    // {1;1} --> {<1>.T,<1>.T} --> {[1, 1]}
+    // 如果表达中存在>.T, 则转成矩阵
+    expr = expr.replace(matrixRegex, (match, content) => {
+        if(content.match(/>.T/)) {
+            
+            const ctt = match.slice(1, -1);
+            // 将ctt安装分号分割成数组
+            const arr0 = ctt.split(',').map(item => {
+                // 去除开头的 < 和后面的 >.T
+                if (item.trim().startsWith('<') && item.trim().endsWith('>.T')) {
+                    return item.trim().slice(1, -3);
+                }
+                return item.trim();
+            });
+
+            return 'ColVector2(' + arr0.join(',') + ')';
+        }
+
+        return match;
+    });
+
+    // console.log('matrix expr5:', expr);
+
     // console.log('---------------------------------------------------');
     // throw new Error('test');
 
