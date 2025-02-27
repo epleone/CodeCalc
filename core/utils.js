@@ -580,13 +580,13 @@ const Utils = {
     // 只支持数字传入
     expr2ColVector(...args) {
         // 如果args中存在非数字类型，则报错
-        if (!args.every(arg => isDecimal(arg))) {
+        if (!args.every(arg => isDigital(arg))) {
             throw new Error('ColVector参数错误: 应为数字');
         }
 
         // 如果args只有一个元素
         if(args.length === 1) {
-            return new DecMatrix([args[0]], 1, 1);
+            return new DecMatrix([Decimal(args[0])], 1, 1);
         }
 
         // 将args转成数组
@@ -596,27 +596,16 @@ const Utils = {
 
     // 支持数字或者向量传入
     expr2RowVector(...args) {
-
-        // 输入是向量
-        // {a} --> {<a>} --> matrix(a.t)   // 导致转置
-        //  { a; a } --> { < a >, < a > } --> matrix(a.t, a.t) // 遇到分号去做转置，传入参数
-        //  { a, a } --> { <a, a > } --> matrix(a, a)
-        if(args.every(arg => isVector(arg))) {
-            if(args.length === 1) {
-                return args[0];
-                // TODO：需要外部给定是否有分号， 或者和 expr2ColVector 分工
-                // return args[0].transpose();
-            }
-            else{
-                return Utils.expr2Matrix(...args);
-            }
+        // 输入是矩阵
+        if(args.every(arg => isMatrix(arg))) {
+            return Utils.expr2Matrix(...args);
         }
 
         // 都是数字
-        if (args.every(arg => isDecimal(arg))) {
+        if (args.every(arg => isDigital(arg))) {
             // 如果args只有一个元素
             if(args.length === 1) {
-                return new DecMatrix([args[0]], 1, 1);
+                return new DecMatrix([Decimal(args[0])], 1, 1);
             }
 
             // 将args转成数组
@@ -630,7 +619,7 @@ const Utils = {
 
     expr2Matrix(...args) {
         // 打印args
-        console.log('args:', args);
+        // console.log('args:', args);
 
         // 如果args只有一个元素，并且是DecMatrix类型，则返回该矩阵
         // a = [...]; { a, a } --> {<a, a>} --> {RowVector( a, a )} --> matrix(RowVector( a, a )) --> matrix(matrix( a, a ))
@@ -650,22 +639,14 @@ const Utils = {
         }
 
         if(args[0].cols === 1){
-            //  垂直拼接列向量
-            const data = [];
-            for (let i = 0; i < args[0].rows; i++) {
-                for (let j = 0; j < args.length; j++) {
-                    data.push(args[j].data[i]);
-                }
-            }
-
-            return new DecMatrix(data, args[0].rows, args.length);
+            // 列向量拼接, 按列拼接
+            return DecMatrix.concatCols(...args);
         }
         else{
-            //  水平拼接行向量
-            const data = Array.from(args).flatMap(x => x.data);
-            return new DecMatrix(data, args.length, args[0].cols);
+            // 行向量拼接, 按行拼接
+            return DecMatrix.concatRows(...args);
         }
-    
+
     },
 
     // 矩阵乘法

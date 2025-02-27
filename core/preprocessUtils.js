@@ -621,21 +621,22 @@ function processTimestamp(expr) {
 function processColVector(expr) {
     // console.log('vector expr1:', expr);
 
-    // 匹配向量格式 [1 2 3], 处理只有空格和负号的情况
-    const vectorRegex = /\[([\d\s-]+)\]/g;
-    
+    // TODO: 支持变量[a -b 3] 这种情况
+    // 匹配向量格式 [1 2 3] 或 [a b c], 处理空格、负号和变量名
+    const vectorRegex = /\[([a-zA-Z_\d\s-]+)\]/g;
+
     // 将空格转成逗号
     expr = expr.replace(vectorRegex, (match, content) => {
-        // 如果负号前面没有空格，则报错
-        if(/\d-+\d/.test(match)) {
+        // 检查负号后面是否存在空格，除非是第一个元素，否则报错
+        if(/-\s+/.test(match) && !/\[\s*-/.test(match)) {
             throw new Error('无法区分符号-，负号前需加空格，减号用逗号分隔向量');
         }
-
+        
         // 去掉首尾的大括号以及周围的空格, 中间的空格并转成逗号
         let vecStr= match
                     .replace(/\[\s*/g, '')
                     .replace(/\s*\]/g, '')
-                    .replace(/-\s*/g, '-') // 负号前面得有空格，否则会被当成减号? 目前是通过前面空格来控制负号还是减号
+                    .replace(/-\s*/g, '-') // 前面已经检查过了
                     .replace(/\s+/g, ',');
         return 'ColVector(' + vecStr + ')';
     });
@@ -675,12 +676,12 @@ function processRowVector(expr) {
     // console.log('vector expr1:', expr);
 
     // 匹配向量格式 <1 2 3>, 处理只有空格和负号的情况
-    const vectorRegex = /\<([\d\s-]+)\>/g;
+    const vectorRegex = /\<([a-zA-Z_\d\s-]+)\>/g;
     
     // 将空格转成逗号
     expr = expr.replace(vectorRegex, (match, content) => {
-        // 如果负号前面没有空格，则报错
-        if(/\d-+\d/.test(match)) {
+        // 检查负号后面是否存在空格，如果存在则报错
+        if(/-\s+/.test(match) && !/\<\s*-/.test(match)) {
             throw new Error('无法区分符号-，负号前需加空格，减号用逗号分隔向量');
         }
 
@@ -697,6 +698,7 @@ function processRowVector(expr) {
 
     // 检查是否出现连续 `<<` 或 `>>` 的情况
     if(/\<\s*\</.test(expr) || /\>\s*\>/.test(expr)) {
+        // TODO: 可能会和{ 1<<2 , 1 >>2 } 这种情况冲突， 无法处理位运算了
         throw new Error('非法矩阵输入, 出现连续的`<<`或`>>`');
     }
 
@@ -723,10 +725,13 @@ function processRowVector(expr) {
 
 
 function processMatrix(expr) {
-    console.log('matrix expr1:', expr);
+    // console.log('matrix expr1:', expr);
 
-    // TODO: 格式验证, 无法处理三维矩阵
-    // 如果出现 三个连续的{，中间没有} 就报错
+    // 格式验证, 无法处理三维矩阵
+    // 检查是否存在嵌套超过2层的大括号
+    if(/\{[^{}]*\{[^{}]*\{/.test(expr)) {
+        throw new Error('不支持嵌套超过2层的矩阵');
+    }
     
     // TODO:列向量用 [] , 行向量(内部概念)用 < >
 
@@ -739,7 +744,7 @@ function processMatrix(expr) {
         return "{" + ctt + "}";
     });
 
-    console.log('matrix expr2:', expr);
+    // console.log('matrix expr2:', expr);
     
 
     // 第二步，判断是否是行向量。是的话，转成 --> < * >
@@ -752,7 +757,7 @@ function processMatrix(expr) {
         return match;
     });
 
-    console.log('matrix expr3:', expr);
+    // console.log('matrix expr3:', expr);
 
     // TODO： 分号处理需要考虑到变量，变量的话就是转置。 单元素矩阵转置？ 数字返回就好了？
     // 第三步, 如果存在分号，将内部不正式的元素转成向量 {...;1 2 3; ...}  --> {...;<1 2 3>; ...}
@@ -762,11 +767,19 @@ function processMatrix(expr) {
         if(match.includes(';')){
             const ctt = match.slice(1, -1);
             // 将ctt安装分号分割成数组
-            const arr1 = ctt.split(';').map(item => '<' + item.trim() + '>');
+            const arr0 = ctt.split(';').map(item => '<' + item.trim() + '>');
 
-            // 需要处理分号`;`导致的行列向量转换
+            // 分号`;`本质上是转置的语法糖
 
-            // TODO: 变量情况
+            //  对于只分割了一个元素, {1;2;3}, {a;a;a}   --> {<a>.T,<a>.T,<a>.T}
+            // 只有一层< ... >, 且只有一个元素， 为了适配变量 {a;a;a}，需要调用转置
+            const arr1 = arr0.map(item => {
+                if(item.match(/^<.*>$/) && !item.match(/[,\s]/) ){
+                    return item + '.T';
+                }
+                return item;
+            });
+
 
             // 数字情况
             // {{1,2,3}; {4,5,6}}  --> { <<1,2,3>>, <<4,5,6>> }
@@ -797,24 +810,27 @@ function processMatrix(expr) {
         return match;
     });
 
-    console.log('matrix expr4:', expr);
+    // console.log('matrix expr4:', expr);
+
+    // console.log('---------------------------------------------------');
+    // throw new Error('test');
 
     // 第四步, 处理列向量
     expr = processColVector(expr);
-    console.log('matrix expr5:', expr);
+    // console.log('matrix expr5:', expr);
 
     // 第五步, 处理行向量
     expr = processRowVector(expr);
-    console.log('matrix expr6:', expr);
+    // console.log('matrix expr6:', expr);
 
     // 第六步, 处理矩阵
     expr = expr.replace(matrixRegex, (match, content) => {
         return 'matrix(' + match.slice(1, -1) + ')';
     }); 
 
-    console.log('matrix expr7:', expr);
+    // console.log('matrix expr7:', expr);
 
-    console.log('---------------------------------------------------');
+    // console.log('---------------------------------------------------');
     // throw new Error('test');
 
     return expr;

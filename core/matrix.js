@@ -112,6 +112,60 @@ export class DecMatrix {
         return result;
     }
 
+    // 按行拼接矩阵，行数相加，列数相同, 矩阵向下拼接
+    static concatRows(...args) {
+        // 判断参数是否是DecMatrix类型
+        if (!args.every(arg => arg instanceof DecMatrix)) {
+            throw new Error('concatRows的参数必须是DecMatrix类型');
+        }
+
+        // 判断列数是否相同
+        for(let i = 0; i < args.length; i++) {
+            if (args[i].cols !== args[0].cols) {
+                throw new Error('concatRows的列数不匹配');
+            }
+        }
+
+        // 拼接行
+        let result = [];
+        for(let i = 0; i < args.length; i++) {
+            result.push(...args[i].data);
+        }
+
+        // 计算所有矩阵的行数总和
+        const totalRows = args.reduce((sum, matrix) => sum + matrix.rows, 0);
+        return new DecMatrix(result, totalRows, args[0].cols);
+    }
+
+    // 按列拼接矩阵，行数相同，列数相加, 矩阵向右拼接
+    static concatCols(...args) {
+        // 判断参数是否是DecMatrix类型
+        if (!args.every(arg => arg instanceof DecMatrix)) {
+            throw new Error('concatCols的参数必须是DecMatrix类型');
+        }
+
+        // 判断行数是否相同
+        for(let i = 0; i < args.length; i++) {
+            if (args[i].rows !== args[0].rows) {
+                throw new Error('concatCols的行数不匹配');
+            }
+        }
+
+        // 拼接列
+        let result = [];
+        for(let i = 0; i < args[0].rows; i++) {
+            for(let j = 0; j < args.length; j++) {
+                for(let k = 0; k < args[j].cols; k++) {
+                    result.push(args[j].data[i * args[j].cols + k]);
+                }
+            }
+        }
+        
+        // 计算所有矩阵的列数总和
+        const totalCols = args.reduce((sum, matrix) => sum + matrix.cols, 0);
+        return new DecMatrix(result, args[0].rows, totalCols);
+    }
+
     // 重复向量
     repeat(n) {
         n = Number(n);

@@ -948,9 +948,22 @@ function TEST(expr){
 // TEST('{[1,2,3], [4,5,6]}');
 // TEST('{[1,2,3]; [4,5,6]}');
 
+// TEST('{1 2 3}');
+// TEST('{[1 2 3]}');
+// TEST('{1; 2; 3}');
+// TEST('a = [1 2 3]');
+// TEST('{a}');
+// TEST('{a;a}');
+// TEST('{a,a}');
 
-console.log(Calculator.calculate('a = [1 2 3]'));
-console.log(Calculator.calculate('{a}'));
+// TEST('{1 2 3;4 5 6}');
+
+
+// console.log(Calculator.calculate('a = [1 2 3]'));
+// console.log(Calculator.calculate('{a}'));
 
 // console.log(Calculator.calculate('{ a; a }'));
 // console.log(Calculator.calculate('{ a, a }'));
+
+// 是否需要这样支持？
+// {1;1} --> [1, 1]
