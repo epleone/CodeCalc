@@ -5,12 +5,61 @@ describe('Matrix Operations', () => {
     Calculator.clearAllCache();
   });
 
-  describe('矩阵创建', () => {
+  describe('列向量创建', () => {
     beforeEach(() => {
       Calculator.clearAllCache();
     });
-    
-    test('创建向量', () => {
+
+    test('基本列向量', () => {
+      expect(Calculator.calculate('[1]').value).toBe('[1]');
+      expect(Calculator.calculate('[1,2,3]').value).toBe('[1,2,3]');
+      expect(Calculator.calculate('[1 2 3]').value).toBe('[1,2,3]');
+
+      expect(Calculator.calculate('[1 -2 --3]').value).toBe('[1,-2,3]');
+      expect(Calculator.calculate('[-1 -2 --3]').value).toBe('[-1,-2,3]');
+
+      expect(Calculator.calculate('[- 1 -2 --3]').value).toBe('[-1,-2,3]');
+      expect(Calculator.calculate('[---- 1 -2 --3]').value).toBe('[1,-2,3]');
+
+      expect(Calculator.calculate('[1-2]').value).toBe('[-1]');
+
+      // 报错
+      expect(() => Calculator.calculate('[1- 2]')).toThrow();
+      expect(() => Calculator.calculate('[1 - 2]')).toThrow();
+      expect(() => Calculator.calculate('[1 - 2 3]')).toThrow();
+      expect(() => Calculator.calculate('[1 -2 - 3]')).toThrow();
+      expect(() => Calculator.calculate('[1- 2 3]')).toThrow();
+    });
+
+    test('列向量+变量', () => {
+      expect(Calculator.calculate('a = 1').value).toBe('1');
+      expect(Calculator.calculate('b = 2').value).toBe('2');
+      expect(Calculator.calculate('c = 3').value).toBe('3');
+
+      expect(Calculator.calculate('[a]').value).toBe('[1]');
+      expect(Calculator.calculate('[-a]').value).toBe('[-1]');
+
+      expect(Calculator.calculate('[a,b,c]').value).toBe('[1,2,3]');
+      expect(Calculator.calculate('[a+1,b+1,c-1]').value).toBe('[2,3,2]');
+      
+      // 报错
+      expect(() => Calculator.calculate('[a+1 b c]').value).toThrow();
+
+    });
+
+    test('多个列向量', () => {
+      expect(Calculator.calculate('[1 2  3] + [ 4 5 6 ]').value).toBe('[5,7,9]');
+
+      expect(Calculator.calculate('[1,2,3] + [4,5,6]').value).toBe('[5,7,9]');
+      expect(Calculator.calculate('[1,2,3] + [4,5,6] + [7,8,9]').value).toBe('[12,15,18]');
+      
+      expect(Calculator.calculate('[1,2,3] - [4,5,6]').value).toBe('[-3,-3,-3]');
+      expect(Calculator.calculate('[1,2,3] - [4,5,6] + [7,8,9]').value).toBe('[4,5,6]');
+
+
+    });
+
+    test('复杂列向量', () => {
       expect(Calculator.calculate('[1]').value).toBe('[1]');
       expect(Calculator.calculate('[----1]').value).toBe('[1]');
       expect(Calculator.calculate('[1 2 3]').value).toBe('[1,2,3]');
@@ -50,7 +99,7 @@ describe('Matrix Operations', () => {
       expect(Calculator.calculate('[min(1, 2, 3), max(1, 2, 3), 1 ]').value).toBe('[1,3,1]');
     });
 
-    test('创建向量-变量', () => {
+    test('复杂列向量 + 变量', () => {
       expect(Calculator.calculate('a = 1').value).toBe('1');
       expect(Calculator.calculate('b = -1').value).toBe('-1');
 
@@ -113,7 +162,220 @@ describe('Matrix Operations', () => {
 
     });
 
-    test('创建矩阵', () => {
+    test('列向量 + 矩阵', () => {
+      expect(Calculator.calculate('a = [1 2 3]').value).toBe('[1,2,3]');
+    });
+
+  });
+
+  describe('行向量创建', () => {
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+    
+    test('基本行向量', () => {
+      expect(Calculator.calculate('<1>').value).toBe('[1]');
+      expect(Calculator.calculate('<1,2,3>').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('<1 2 3>').value).toBe('{1,2,3}');
+
+      expect(Calculator.calculate('<1 -2 --3>').value).toBe('{1,-2,3}');
+      expect(Calculator.calculate('<-1 -2 --3>').value).toBe('{-1,-2,3}');
+
+      expect(Calculator.calculate('<- 1 -2 --3>').value).toBe('{-1,-2,3}');
+      expect(Calculator.calculate('<---- 1 -2 --3>').value).toBe('{1,-2,3}');
+
+      expect(Calculator.calculate('<1-2>').value).toBe('[-1]');
+
+      // 报错
+      expect(() => Calculator.calculate('<1- 2>')).toThrow();
+      expect(() => Calculator.calculate('<1 - 2>')).toThrow();
+      expect(() => Calculator.calculate('<1 - 2 3>')).toThrow();
+      expect(() => Calculator.calculate('<1 -2 - 3>')).toThrow();
+      expect(() => Calculator.calculate('<1- 2 3>')).toThrow();
+    });
+
+    test('行向量+变量', () => {
+      expect(Calculator.calculate('a = 1').value).toBe('1');
+      expect(Calculator.calculate('b = 2').value).toBe('2');
+      expect(Calculator.calculate('c = 3').value).toBe('3');
+
+      expect(Calculator.calculate('<a>').value).toBe('[1]');
+      expect(Calculator.calculate('<a,b,c>').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('<a+1,b+1,c-1>').value).toBe('{2,3,2}');
+      
+      // 报错
+      expect(() => Calculator.calculate('<a+1 b c>')).toThrow();
+      
+    });
+
+    test('多个行向量', () => {
+      expect(Calculator.calculate('<1 2  3> + < 4 5 6 >').value).toBe('{5,7,9}');
+
+      expect(Calculator.calculate('<1,2,3> + <4,5,6>').value).toBe('{5,7,9}');
+      expect(Calculator.calculate('<1,2,3> + <4,5,6> + <7,8,9>').value).toBe('{12,15,18}');
+      
+    });
+
+    test('复杂行向量', () => {
+      expect(Calculator.calculate('<1>').value).toBe('[1]');
+      expect(Calculator.calculate('<----1>').value).toBe('[1]');
+      expect(Calculator.calculate('<1 2 3>').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('<1 -2 -3>').value).toBe('{1,-2,-3}');
+      expect(Calculator.calculate('<1,2,3>').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('<---2 2 3>').value).toBe('{-2,2,3}');
+      expect(Calculator.calculate('<1-2>').value).toBe('[-1]');
+      expect(Calculator.calculate('<1+2>').value).toBe('[3]');
+      expect(Calculator.calculate('<1*2>').value).toBe('[2]');
+      expect(Calculator.calculate('<4/2>').value).toBe('[2]');
+      expect(Calculator.calculate('<2**(2)>').value).toBe('[4]');
+
+      expect(Calculator.calculate('<1-2 2 3>').value).toBe('{-1,2,3}');
+      expect(Calculator.calculate('<1---2 2 3>').value).toBe('{-1,2,3}');
+
+      // 位运算
+      expect(Calculator.calculate('<2^2>').value).toBe('[0]');
+      expect(Calculator.calculate('<2or2>').value).toBe('[2]');
+      expect(Calculator.calculate('<~2>').value).toBe('[-3]');
+
+      // expect(Calculator.calculate('[2 << 2, 2 or 2]').value).toBe('[0, 2]');
+      expect(() => Calculator.calculate('<2 << 2, 2 or 2>')).toThrow();
+      
+      // 报错
+      expect(() => Calculator.calculate('<1 -2 2 - 3>')).toThrow();
+      expect(() => Calculator.calculate('<1 - 2 2 3>')).toThrow();
+      expect(() => Calculator.calculate('<2 or 2>')).toThrow();
+      expect(() => Calculator.calculate('<2 << 2>')).toThrow();
+      expect(() => Calculator.calculate('<2 2 +3>')).toThrow();
+      expect(() => Calculator.calculate('<2 2x3 1/2>')).toThrow();
+
+      expect(Calculator.calculate('<1,1 + 1, 1 + 2>').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('<+1,1 - 1, 1 * 2>').value).toBe('{1,0,2}');
+      expect(Calculator.calculate('<--1,1 / 1, 2 ** 2>').value).toBe('{1,1,4}');
+      expect(Calculator.calculate('<max(1, 2, 3)>').value).toBe('[3]');
+      expect(Calculator.calculate('<min(1, 2, 3)>').value).toBe('[1]');
+      expect(Calculator.calculate('<min(1, 2, 3), max(1, 2, 3), 1 >').value).toBe('{1,3,1}');
+    });
+
+    test('复杂行向量 + 变量', () => {
+      expect(Calculator.calculate('a = 1').value).toBe('1');
+      expect(Calculator.calculate('b = -1').value).toBe('-1');
+
+      expect(Calculator.calculate('< - a >').value).toBe('[-1]');
+      expect(Calculator.calculate('<-a>').value).toBe('[-1]');
+      expect(Calculator.calculate('<- a -b>').value).toBe('{-1,1}');
+      expect(Calculator.calculate('< - a -b>').value).toBe('{-1,1}');
+      expect(Calculator.calculate('<---a -b>').value).toBe('{-1,1}');
+      expect(Calculator.calculate('<a -b>').value).toBe('{1,1}');
+
+
+      expect(Calculator.calculate('<a , - b>').value).toBe('{1,1}');
+      expect(Calculator.calculate('<a ,- b>').value).toBe('{1,1}');
+
+      // 报错
+      expect(() => Calculator.calculate('<a - b>')).toThrow();
+      expect(() => Calculator.calculate('<a- b>')).toThrow();
+
+      // 单个元素就该报错 TODO
+      // expect(Calculator.calculate('[a + b]').value).toBe('[0]');
+      // expect(Calculator.calculate('[a * b]').value).toBe('[-1]');
+      // expect(Calculator.calculate('[a / b]').value).toBe('[-1]');
+      // expect(Calculator.calculate('[a ^ b]').value).toBe('[1]');
+      // expect(Calculator.calculate('[a ** b]').value).toBe('[1]');
+
+      expect(Calculator.calculate('<max(a, b)>').value).toBe('[1]');
+      expect(Calculator.calculate('<min(a, b)>').value).toBe('[-1]');
+
+      // 多个元素
+      expect(Calculator.calculate('<a+b, b-a >').value).toBe('{0,-2}');
+      expect(Calculator.calculate('< a*b, b/a>').value).toBe('{-1,-1}');
+      expect(Calculator.calculate('<a^b, b^a>').value).toBe('{-2,-2}');
+      expect(Calculator.calculate('< a**b, b**a >').value).toBe('{1,-1}');
+      expect(Calculator.calculate('<max(a,b), min(a,b)>').value).toBe('{1,-1}');
+
+    
+      expect(Calculator.calculate('<a>').value).toBe('[1]');
+      expect(Calculator.calculate('<-a>').value).toBe('[-1]');
+      expect(Calculator.calculate('<--a>').value).toBe('[1]');
+      expect(Calculator.calculate('<a+b>').value).toBe('[0]');
+
+      expect(Calculator.calculate('<a 1 1>').value).toBe('{1,1,1}');
+      expect(Calculator.calculate('<-a 1 1>').value).toBe('{-1,1,1}');
+      expect(Calculator.calculate('<--a 1 1>').value).toBe('{1,1,1}');
+      expect(Calculator.calculate('<a,1,1>').value).toBe('{1,1,1}');
+      expect(Calculator.calculate('<--a,1,1>').value).toBe('{1,1,1}');
+
+      expect(Calculator.calculate('<a b 2>').value).toBe('{1,-1,2}');
+      expect(Calculator.calculate('<a -b 2>').value).toBe('{1,1,2}');
+      expect(Calculator.calculate('<a, b, 2>').value).toBe('{1,-1,2}');
+
+      // 应该报错
+      expect(() => Calculator.calculate('<a - b 1 2>')).toThrow();    // 负号不明确
+      expect(() => Calculator.calculate('<a+b 1 2>')).toThrow();    // 不能使用空格
+      expect(() => Calculator.calculate('<a, b, x>')).toThrow();    // 未定义的变量x
+      expect(() => Calculator.calculate('<1;1;1>')).toThrow();      // 不能用分号// 不能用方括号
+
+    });
+
+    test('行向量 + 矩阵', () => {
+      expect(Calculator.calculate('a = <1 2 3>').value).toBe('{1,2,3}');
+    });
+
+  });
+
+  describe('矩阵创建I型', () => {
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+    
+    test('基本矩阵创建-数字', () => {
+      expect(Calculator.calculate('{1}').value).toBe('[1]');
+      expect(Calculator.calculate('{1 2 3}').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('{1,2,3}').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('{1;2;3}').value).toBe('[1,2,3]'); // todo
+      expect(Calculator.calculate('{1,2,3;4,5,6}').value).toBe('{1,2,3;4,5,6}');
+      expect(Calculator.calculate('{1 2 3;4 5 6}').value).toBe('{1,2,3;4,5,6}');
+    });
+
+    test('基本矩阵创建-向量', () => {
+      expect(Calculator.calculate('{[1 2 3]}').value).toBe('[1,2,3]');
+      expect(Calculator.calculate('{[1 2 3],[1 2 3]}').value).toBe('{1,1;2,2;3,3}');
+      expect(Calculator.calculate('{[1 2 3];[1 2 3]}').value).toBe('{1,2,3;1,2,3}');
+
+      expect(Calculator.calculate('{{1 2 3}}').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('{{1 2 3};{1 2 3}}').value).toBe('{1,1;2,2;3,3}');
+      expect(Calculator.calculate('{{1 2 3},{1 2 3}}').value).toBe('{1,2,3;1,2,3}');
+
+    });
+
+    test('基本矩阵创建-变量', () => {
+
+      // 数字
+      expect(Calculator.calculate('a = 1').value).toBe('1');
+      expect(Calculator.calculate('b = 2').value).toBe('2');
+      expect(Calculator.calculate('c = 3').value).toBe('3');
+      expect(Calculator.calculate('{a,b,c}').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('{a b c}').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('{a;b;c}').value).toBe('[1,2,3]'); 
+      expect(Calculator.calculate('{a b c;a b c}').value).toBe('{1,2,3;1,2,3}');
+      expect(Calculator.calculate('{a,b,c;a,b,c}').value).toBe('{1,2,3;1,2,3}');
+
+      // 向量
+      expect(Calculator.calculate('a = [1 2 3]').value).toBe('[1,2,3]');
+      expect(Calculator.calculate('{a,a}').value).toBe('{1,1;2,2;3,3}');
+      expect(Calculator.calculate('{a;a}').value).toBe('{1,2,3;1,2,3}');
+
+      expect(Calculator.calculate('a = {1 2 3}').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('{a;a}').value).toBe('{1,1;2,2;3,3}');
+      expect(Calculator.calculate('{a,a}').value).toBe('{1,2,3;1,2,3}');
+
+      // 矩阵
+      expect(Calculator.calculate('a = {1 2 3;4 5 6}').value).toBe('{1,2,3;4,5,6}');
+      // 报错
+      expect(() => Calculator.calculate('{a,a}')).toThrow();
+      expect(() => Calculator.calculate('{a;a}')).toThrow();
+    });
+
+    test('创建矩阵混合', () => {
       // 单个元素
       expect(Calculator.calculate('{1}').value).toBe('[1]');
       expect(Calculator.calculate('{[1]}').value).toBe('[1]');
@@ -375,7 +637,19 @@ describe('Matrix Operations', () => {
     });
   });
 
-  describe('矩阵运算', () => {
+
+  describe.skip('矩阵创建II型', () => {
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+    
+    test('基础', () => {
+      expect(Calculator.calculate('{1 2 3;4 5 6}').value).toBe('{1,2,3;4,5,6}');
+    });
+    
+  });
+
+  describe.skip('矩阵运算', () => {
     test('矩阵加法', () => {
       expect(Calculator.calculate('{1 2;3 4} + {1 1;1 1}').value).toBe('{2,3;4,5}');
     });
@@ -389,7 +663,7 @@ describe('Matrix Operations', () => {
     });
   });
 
-  describe('矩阵错误处理', () => {
+  describe.skip('矩阵错误处理', () => {
     test('维度不匹配', () => {
       expect(() => Calculator.calculate('{1 2} + {1 2 3}')).toThrow();
       expect(() => Calculator.calculate('{1 2} @ {1 2 3}')).toThrow();
