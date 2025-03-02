@@ -832,5 +832,21 @@ export const FUNCTIONS = {
         hidden: true,
         description: '【测试】设置为0'
     }, 
+
+    'MatrixI': {
+        func: (...args) => Utils.expr2MatrixI(...args),
+        args: -1,
+        argTypes: 'any',
+        hidden: true,
+        description: '[...]转换为矩阵'
+    },
+    'MatrixII': {
+        func: (...args) => Utils.expr2MatrixII(...args),
+        args: -1,
+        argTypes: 'any',
+        hidden: true,
+        description: '{...}转换为矩阵'
+    },
+    
     
 }; 

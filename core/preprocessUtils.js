@@ -628,7 +628,7 @@ function processColVector(expr) {
     // 将空格转成逗号
     expr = expr.replace(vectorRegex, (match, content) => {
         // 检查负号后面是否存在空格，除非是第一个元素，否则报错
-        if(/-\s+/.test(match) && !/\[\s*-/.test(match)) {
+        if(/[^\s]-\s+/.test(expr)) {
             throw new Error('无法区分符号-，负号前需加空格，减号用逗号分隔向量');
         }
         
@@ -724,7 +724,7 @@ function processRowVector(expr) {
 }
 
 
-function processMatrix(expr) {
+function processMatrix1(expr) {
     // console.log('matrix expr1:', expr);
 
     // 格式验证, 无法处理三维矩阵
@@ -858,6 +858,85 @@ function processMatrix(expr) {
 
     return expr;
 }
+
+// 将矩阵表达式中的参数加上逗号`<1 2 3>` --> `<1,2,3>`
+function processMatrixArgs(expr) {
+    console.log('processMatrixArgs expr0:', expr);
+
+    // 能够使用空格分割的情况，只有变量，数字和负号
+    if(/^[a-zA-Z_\d\s-]*$/.test(expr)) {
+        expr = expr.trim();
+
+        // 将开头的负号后面的空格去掉
+        expr = expr.replace(/^(-+)\s+/g, '$1');
+
+        // 检查负号后面是否存在空格，有就报错
+        if(/-\s+/.test(expr)) {
+            throw new Error('无法区分符号-，负号前需加空格，减号用逗号分隔向量');
+        }
+        
+        // 去掉首尾的空格, 中间的空格并转成逗号
+        expr = expr.replace(/\s+/g, ',');
+    }
+
+    console.log('processMatrixArgs expr1:', expr);
+
+    //如果有空格，没有逗号，则报错
+    if(/\s+/.test(expr) && !/,/.test(expr)) {
+        throw new Error('矩阵中的元素无法被空格分割，请使用逗号分割符');
+    }
+
+    // 不可以有分号;
+    if(/;/.test(expr)) {
+        throw new Error('非法的分号分割符，使用逗号或者空格分割');
+    }
+
+    // 检查是否存在被空格分隔的数字
+    if(/\d\s+\d/.test(expr)) {
+        throw new Error('矩阵中存在被空格分隔的数字，请使用逗号分割符');
+    }
+
+    return expr;
+}
+
+// 处理I型矩阵 [...; ...; ...]
+function processMatrix(expr) {
+
+    console.log('Matrix-1 expr0:', expr);
+
+    // 检查是否存在嵌套超过2层的中括号
+    // if(/\[[^]]*\[[^]]*\[/.test(expr)) {
+    //     throw new Error('不支持嵌套超过2层的中括号');
+    // }
+
+    // 检查中括号`[]`是否存在嵌套中括号 `[]`, 比如 `[..., [...], ...]`
+
+    if(/\[[^\[\]]*\[/.test(expr)) {
+        throw new Error('向量[..., ...]不支持向量作为参数');
+    }
+
+    if(/\[[^[\]]*;[^[\]]*\]/.test(expr)) {
+        throw new Error('向量[..., ...]中不能使用分号;作为分隔符');
+    }
+    
+    // 匹配 [1 2 3] 或 [a b c] 或 [[1 2 3] [4 5 6]] 或 [[a b c] [d e f]]
+    const matrixIRegex = /\[([^\]]+)\]/g;
+
+
+    // 匹配[...], 内部的表达式送给processMatrix1处理
+    expr = expr.replace(matrixIRegex, (match, content) => {
+        return 'MatrixI(' + processMatrixArgs(content) + ')';
+    });
+
+
+    console.log('Matrix-1 expr1:', expr);
+
+    // console.log('---------------------------------------------------');
+    // throw new Error('test');
+
+    return expr;
+}
+
 
 export {
     ccVariables,

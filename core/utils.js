@@ -86,10 +86,22 @@ function isMatrix(value) {
     return value instanceof DecMatrix;
 }
 
+// 判断是否是行向量
+function isRowVector(value) {
+    return value instanceof DecMatrix && value.rows === 1;
+}
+
+// 判断是否是列向量
+function isColVector(value) {
+    return value instanceof DecMatrix && value.cols === 1;
+}
+
 // 判断是否是向量
 function isVector(value) {
-    return value instanceof DecMatrix && (value.rows === 1 || value.cols === 1);
+    return isRowVector(value) || isColVector(value);
 }
+
+
 
 function isComplexMatrix(value) {
     return value instanceof ComplexMatrix;
@@ -674,6 +686,47 @@ const Utils = {
             return DecMatrix.concatRows(...args);
         }
 
+    },
+
+    // 处理[...; ...; ...]类型
+    expr2MatrixI(...args) {
+        // 打印args
+        // console.log('args:', args);
+    
+         // 只支持行向量
+        if(args.every(arg => isRowVector(arg))) {
+            // 如果只有一个元素
+            if(args.length === 1) {
+                return args[0];
+            }
+
+            // 行向量拼接, 按行拼接
+            return DecMatrix.concatRows(...args);
+            
+        }
+
+        // 都是数字
+        if (args.every(arg => isDigital(arg))) {
+            // 如果args只有一个元素
+            if(args.length === 1) {
+                // 就是单元素向量是否还是向量？ 
+                //  [1] --> 1, 还是 [1] --> [1]
+                // return args[0];  
+                return new DecMatrix([Decimal(args[0])], 1, 1);
+            }
+
+            // 将args转成数组
+            const vec = Array.from(args).map(x => Decimal(x));
+            return new DecMatrix(vec, vec.length, 1);
+        }
+
+        // 其它情况，报错
+        throw new Error('[...]参数错误: 应为数字或者行向量');
+    },
+
+    // 处理{...; ...; ...}类型
+    expr2MatrixII(...args) {
+        // TODO
     },
 
     // 矩阵乘法
