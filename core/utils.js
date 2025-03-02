@@ -606,90 +606,8 @@ const Utils = {
         return new DecMatrix(vec, vec.length, 1);
     },
 
-    // 支持数字和向量传入
-    expr2ColVector2(...args) {
-
-        // 输入是矩阵
-        if(args.every(arg => isMatrix(arg))) {
-            // 需要进行转置操作
-            return Utils.expr2Matrix(...args.map(arg => arg.transpose()));
-        }
-        
-        // 如果args中存在非数字类型，则报错
-        if (args.every(arg => isDigital(arg))) {
-
-            // 如果args只有一个元素
-            if(args.length === 1) {
-                return new DecMatrix([Decimal(args[0])], 1, 1);
-            }
-
-            // 将args转成数组
-            const vec = Array.from(args).map(x => Decimal(x));
-            return new DecMatrix(vec, vec.length, 1);
-        }
-
-
-        throw new Error('ColVector参数错误: 应为数字或矩阵');
-
-    },
-
-    // 支持数字或者向量传入
-    expr2RowVector(...args) {
-        // 输入是矩阵
-        if(args.every(arg => isMatrix(arg))) {
-            return Utils.expr2Matrix(...args);
-        }
-
-        // 都是数字
-        if (args.every(arg => isDigital(arg))) {
-            // 如果args只有一个元素
-            if(args.length === 1) {
-                return new DecMatrix([Decimal(args[0])], 1, 1);
-            }
-
-            // 将args转成数组
-            const vec = Array.from(args).map(x => Decimal(x));
-            return new DecMatrix(vec, 1, vec.length);
-        }
-
-        // 其它情况，报错
-        throw new Error('RowVector参数错误: 应为数字或者向量');
-    },
-
-    expr2Matrix(...args) {
-        // 打印args
-        // console.log('args:', args);
-
-        // 如果args只有一个元素，并且是DecMatrix类型，则返回该矩阵
-        // a = [...]; { a, a } --> {<a, a>} --> {RowVector( a, a )} --> matrix(RowVector( a, a )) --> matrix(matrix( a, a ))
-        if(args.length === 1 && isMatrix(args[0])) {
-            return args[0];
-        }
-
-        // 检查参数
-        for(let i = 0; i < args.length; i++) {
-            if(!isVector(args[i])) {
-                throw new Error(`Matrix参数${i}错误: 应为列向量或者行向量`);
-            }
-
-            if(args[i].rows !== args[0].rows || args[i].cols !== args[0].cols) {
-                throw new Error(`Matrix参数${i}错误: 维度不相同`);
-            }
-        }
-
-        if(args[0].cols === 1){
-            // 列向量拼接, 按列拼接
-            return DecMatrix.concatCols(...args);
-        }
-        else{
-            // 行向量拼接, 按行拼接
-            return DecMatrix.concatRows(...args);
-        }
-
-    },
-
     // 处理[...; ...; ...]类型
-    expr2MatrixI(...args) {
+    expr2Vector(...args) {
         // 打印args
         // console.log('args:', args);
     
@@ -725,8 +643,44 @@ const Utils = {
     },
 
     // 处理{...; ...; ...}类型
-    expr2MatrixII(...args) {
-        // TODO
+    expr2Matrix(mode, ...args) {
+        // console.log('mode:', mode);
+        // console.log('args:', args);
+        if(mode !== 'row' && mode !== 'col') {
+            throw new Error('Matrix参数错误: 需要指定为row或者col');
+        }
+
+        // 都是矩阵
+        if(args.every(arg => isMatrix(arg))) {
+            if(args.length === 1) {
+                return args[0];
+            }
+
+            if(mode === 'col'){
+                // 列向量拼接, 按列拼接, 向右拼接
+                return DecMatrix.concatCols(...args);
+            }
+            else{
+                // 行向量拼接, 按行拼接，向下拼接
+                return DecMatrix.concatRows(...args);
+            }
+        }
+
+        // 都是数字
+        if(args.every(arg => isDigital(arg))) {
+            // TODO: 检查下效果
+            if(mode === 'col'){
+                // 列向量拼接, 按列拼接
+                return new DecMatrix(args.map(x => Decimal(x)), 1, args.length);
+            }
+            else{
+                // 行向量拼接, 按行拼接 
+                return new DecMatrix(args.map(x => Decimal(x)), args.length, 1);
+            }
+        }
+
+        throw new Error('Matrix参数错误: 应为数字或者矩阵');
+
     },
 
     // 矩阵乘法
