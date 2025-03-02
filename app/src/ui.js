@@ -172,6 +172,9 @@ function insertNewLine(currentLine) {
         });
     }
     
+    // 初始化标签功能
+    Tag.initializeTagButton(newLine);
+    
     // 为新行的结果添加点击处理
     const result = newLine.querySelector('.result');
     addResultClickHandler(result);

@@ -129,7 +129,7 @@ function checkMatrixArgs(args0, args1) {
 // 添加标量和矩阵运算支持，注意是否满足交换律
 function addOpSupport(opName, x, y, op_xy, op_yx) {
     // 使用这个函数时，x和y都强制转换为Decimal类型 或者是 DecMatrix类型
-    if(isDecimal(x) && isDecimal(y)) {
+    if(isDigital(x) && isDigital(y)) {
         return op_xy(x, y);
     }
 
