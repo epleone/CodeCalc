@@ -607,6 +607,7 @@ const Utils = {
     },
 
     // 处理[...; ...; ...]类型
+    // TODO: 后面可以被expr2Matrix覆盖
     expr2Vector(...args) {
         // 打印args
         // console.log('args:', args);
@@ -794,6 +795,8 @@ const Utils = {
 
         // 计算数组长度
         const n = Math.ceil((end - start) / step);
+        if(n <= 0) throw new Error('range函数参数错误，数据长度小于等于0');
+
         // 生成等差数列数组
         const data = Array.from({length: n}, (_, i) => Decimal(start + i * step));
         return new DecMatrix(data, n, 1);

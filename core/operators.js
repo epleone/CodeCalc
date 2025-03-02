@@ -743,7 +743,7 @@ export const FUNCTIONS = {
     //矩阵操作
     'reshape': {
         func: Utils.reshape,
-        args: 3, // 支持1~N个参数 
+        args: 3,   
         description: '调节矩阵形状'
     },
     'resize': {
@@ -790,20 +790,6 @@ export const FUNCTIONS = {
         args: 1,
         description: '特征值'
     },
-
-    // 矩阵测试函数
-    'set0': {
-        func: (x) => {
-            for (let i = 0; i < x.data.length; i++) {
-                x.data[i] = 0;
-            }
-            return x;
-        },
-        args: 1,
-        hidden: true,
-        description: '【测试】设置为0'
-    }, 
-
      // 矩阵构造函数
     'Vector': {
         func: (...args) => Utils.expr2Vector(...args),

@@ -926,27 +926,9 @@ function TEST(expr){
 // console.log(Calculator.calculate('eigenvalues({1 2 3; 4 5 6; 7 8 9})'));
 
 // console.log(Calculator.calculate('{[1 3 5], [2 4 6]}.inv'));
-// TEST('[]');
-// TEST('[1]');
-
-// TEST('[1 2 3]');
-// TEST('[1,2,3]');
-// TEST('[1;2;3]');
-
-// TEST('[1,2,3;4,5,6;7,8,9]');
-
-// TEST('[1 2 3]');
-// TEST('[1 2 3;4 5 6]');
-// TEST('[1 2 3;4 5 6;7 8 9]');
-// TEST('[1 2 3, 4 5 6]');
-
-// TEST('[a b+1 c]');
-
-// TEST('[a -b b+1]');
 
 
 // TEST('{1 2 3}');
-// TEST('{[1 2 3]}');
 // TEST('{1; 2; 3}');
 // TEST('{[1 2 3], [4 5 6]}');
 // TEST('{[1 2 3]; [4 5 6]}');
@@ -956,9 +938,3 @@ function TEST(expr){
 // TEST('{{1; 2; 3}}');
 // TEST('{{1 2 3};{4 5 6};{7 8 9}}');
 
-// TEST('{{1; 2; 3;4;5;6}}');
-// TEST('{1; 2; 3}');
-// TEST('{{1; 2; 3}}');
-
-// TEST('{ 2 << 2}');
-// TEST('{ 2 or 2}');

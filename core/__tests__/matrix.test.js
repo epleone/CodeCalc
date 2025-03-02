@@ -721,9 +721,12 @@ describe('Matrix Operations', () => {
       expect(Calculator.calculate('ones(2)').value).toBe('[1,1]');
       expect(Calculator.calculate('diag([1,2,3])').value).toBe('{1,0,0;0,2,0;0,0,3}');
 
-      expect(Calculator.calculate('range(1,3)').value).toBe('[1,2]');
       expect(Calculator.calculate('range(3)').value).toBe('[0,1,2]');
+      expect(Calculator.calculate('range(1, 3)').value).toBe('[1,2]');
+      expect(Calculator.calculate('range(1, 3, 1)').value).toBe('[1,2]');
       expect(Calculator.calculate('range(1, 10, 2)').value).toBe('[1,3,5,7,9]');
+      expect(Calculator.calculate('range(10, 0, -1)').value).toBe('[10,9,8,7,6,5,4,3,2,1]');
+
 
       expect(Calculator.calculate('eye(3)').value).toBe('{1,0,0;0,1,0;0,0,1}');
       expect(Calculator.calculate('zeros(3, 3)').value).toBe('{0,0,0;0,0,0;0,0,0}');
@@ -753,8 +756,35 @@ describe('Matrix Operations', () => {
 
 
   describe('矩阵运算', () => {
+
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+
+
     test('矩阵加法', () => {
       expect(Calculator.calculate('{1 2;3 4} + {1 1;1 1}').value).toBe('{2,3;4,5}');
+      expect(Calculator.calculate('{1 2;3 4} + 1').value).toBe('{2,3;4,5}');
+      expect(Calculator.calculate('1 + {1 2;3 4} + 1').value).toBe('{3,4;5,6}');
+    });
+
+    test('矩阵减法', () => {
+      expect(Calculator.calculate('{1 2;3 4} - {1 1;1 1}').value).toBe('{0,1;2,3}');
+      expect(Calculator.calculate('{1 2;3 4} - 1').value).toBe('{0,1;2,3}');
+      expect(Calculator.calculate('1 - {1 2;3 4} + 1').value).toBe('{1,0;-1,-2}');
+    });
+
+    test('矩阵点乘', () => {
+      expect(Calculator.calculate('{1 2;3 4} * {2 1;2 1}').value).toBe('{2,2;6,4}');
+      expect(Calculator.calculate('{2 1;2 1} * {1 2;3 4}').value).toBe('{2,2;6,4}');
+      expect(Calculator.calculate('{1 2;3 4} * 1').value).toBe('{1,2;3,4}');
+      expect(Calculator.calculate('1 * {1 2;3 4} * 1').value).toBe('{1,2;3,4}');
+      expect(Calculator.calculate('-1 * {1 2;3 4} * 0.5').value).toBe('{-0.5,-1;-1.5,-2}');
+    });
+
+    test('矩阵除法', () => {
+      expect(Calculator.calculate('{1 2;3 4} / 1').value).toBe('{1,2;3,4}');
+      expect(Calculator.calculate('10 / {2 2;5 5} ').value).toBe('{5,5;2,2}');
     });
 
     test('矩阵乘法', () => {
@@ -763,7 +793,151 @@ describe('Matrix Operations', () => {
 
     test('矩阵转置', () => {
       expect(Calculator.calculate('{1 2;3 4}.T').value).toBe('{1,3;2,4}');
+      expect(Calculator.calculate('{1 2 3}.T').value).toBe('[1,2,3]');
+      expect(Calculator.calculate('[1 2 3].T').value).toBe('{1,2,3}');
     });
+
+    test('矩阵reshape', () => {
+      expect(Calculator.calculate('reshape([1 2 3], 1, 3)').value).toBe('{1,2,3}');
+      expect(Calculator.calculate('reshape({1 2 3}, 3, 1)').value).toBe('[1,2,3]');
+      expect(Calculator.calculate('reshape({1 2 3 4 5 6}, 3, 2)').value).toBe('{1,2;3,4;5,6}');
+      expect(Calculator.calculate('reshape({1 2 3 4 5 6}, 2, 3)').value).toBe('{1,2,3;4,5,6}');
+      expect(() => Calculator.calculate('reshape({1 2 3 4 5 6}, 3, 3)')).toThrow();
+
+      expect(Calculator.calculate('resize({1 2 3 4 5 6}, 2, 3)').value).toBe('{1,2,3;4,5,6}');
+      expect(() => Calculator.calculate('resize({1 2 3 4 5 6}, 3, 3)')).toThrow();
+    });
+
+    test('向量repeat', () => {
+      expect(Calculator.calculate('repeat([1 2 3], 3)').value).toBe('{1,1,1;2,2,2;3,3,3}');
+      expect(Calculator.calculate('repeat({1 2 3}, 3)').value).toBe('{1,2,3;1,2,3;1,2,3}');
+
+      expect(() => Calculator.calculate('repeat({1 2 3;1 2 3}, 3)')).toThrow();
+    });
+
+    test('矩阵求逆inv', () => {
+      expect(Calculator.calculate('inv({0,1;-1,0})').value).toBe('{0,-1;1,0}');
+      expect(Calculator.calculate('inv({1,0;0,1})').value).toBe('{1,0;0,1}');
+      expect(Calculator.calculate('inv({0,-1;1,0})').value).toBe('{0,1;-1,0}');
+    });
+
+    
+    test('矩阵行列式det', () => {
+      expect(Calculator.calculate('det({0,1;-1,0})').value).toBe('1');
+      expect(Calculator.calculate('det({0,-1;-1,0})').value).toBe('-1');
+      expect(Calculator.calculate('det({0,-1;1,0})').value).toBe('1');
+    });
+
+    
+    test('矩阵特征值eigenvalues', () => {
+      expect(Calculator.calculate('eigenvalues({0,1;-1,0})').value).toBe('[0 + 1i,0  − 1i]');
+      expect(Calculator.calculate('eigenvalues({1,0;0,1})').value).toBe('[1,1]');
+      expect(Calculator.calculate('eigenvalues({1,0;0,0})').value).toBe('[0,1]');
+    });
+
+    test('方程求解solve', () => {
+      // 简单的2x2方程组
+      expect(Calculator.calculate('solve({0,1;-1,0}, [0,1])').value).toBe('[-1,0]');
+      expect(Calculator.calculate('solve({1,1;1,-1}, [2,0])').value).toBe('[1,1]');
+      
+      // 单位矩阵方程组
+      expect(Calculator.calculate('solve({1,0;0,1}, [1,2])').value).toBe('[1,2]');
+      
+      // 3x3方程组
+      expect(Calculator.calculate('solve({1,1,1;0,1,1;0,0,1}, [5,2,1])').value).toBe('[3,1,1]');
+      
+      // 不可逆矩阵(使用SVD求解)
+      expect(Calculator.calculate('solve({1,1;1,1}, [2,2])').value).toBe('[1,1]');
+      
+      // 错误情况
+      expect(() => Calculator.calculate('solve({1,1}, [1,1])')).toThrow();
+      expect(() => Calculator.calculate('solve({1,1;1,1}, [1,1,1])')).toThrow();
+    });
+
+
+  });
+
+  describe('矩阵为参数的函数运算', () => {
+
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+
+
+    test('三角函数', () => {
+      expect(Calculator.calculate('a={pi/2, -pi/2; pi, -pi}').value).toBe('{1.570796,-1.570796;3.141593,-3.141593}');
+      
+      expect(Calculator.calculate('sin(a)').value).toBe('{1,-1;0,-0}');
+      expect(Calculator.calculate('cos(a)').value).toBe('{0,0;-1,-1}');
+      expect(Calculator.calculate('tan({pi/4, -pi/4, pi/6})').value).toBe('{1,-1,0.57735}');
+      
+    });
+
+    test('反三角函数', () => {
+
+      expect(Calculator.calculate('asin([0.5, -0.5])').value).toBe('[0.523599,-0.523599]');
+      expect(Calculator.calculate('acos([0.5, -0.5])').value).toBe('[1.047198,2.094395]');
+      expect(Calculator.calculate('atan([0.5, -0.5])').value).toBe('[0.463648,-0.463648]');
+      
+    });
+
+    test('双曲函数', () => {
+      expect(Calculator.calculate('a={1,2;3,4}').value).toBe('{1,2;3,4}');
+      
+      expect(Calculator.calculate('sinh(a)').value).toBe('{1.175201,3.62686;10.017875,27.289917}');
+      expect(Calculator.calculate('cosh(a)').value).toBe('{1.543081,3.762196;10.067662,27.308233}');
+      expect(Calculator.calculate('tanh(a)').value).toBe('{0.761594,0.964028;0.995055,0.999329}');
+      
+      // 特殊值
+      expect(Calculator.calculate('sinh([0,1,-1])').value).toBe('[0,1.175201,-1.175201]');
+      expect(Calculator.calculate('cosh([0,1,-1])').value).toBe('[1,1.543081,1.543081]');
+      expect(Calculator.calculate('tanh([0,1,-1])').value).toBe('[0,0.761594,-0.761594]');
+      
+    });
+
+    test('对数函数', () => {
+      expect(Calculator.calculate('a={1,2;e, 10}').value).toBe('{1,2;2.718282,10}');
+
+      expect(Calculator.calculate('ln(a)').value).toBe('{0,0.693147;1,2.302585}');
+      expect(Calculator.calculate('lg(a)').value).toBe('{0,0.30103;0.434294,1}');
+      expect(Calculator.calculate('lb(a)').value).toBe('{0,1;1.442695,3.321928}');
+
+      expect(Calculator.calculate('log(e, a)').value).toBe('{0,0.693147;1,2.302585}');
+      expect(Calculator.calculate('log(10, a)').value).toBe('{0,0.30103;0.434294,1}');
+      expect(Calculator.calculate('log(2, a)').value).toBe('{0,1;1.442695,3.321928}');
+      
+      
+      // 错误情况
+      expect(Calculator.calculate('ln([0,-1])').value).toBe('[-Infinity,NaN]');
+
+      expect( Calculator.calculate('log(10, [0,-2])').value).toBe('[-Infinity,NaN]');
+      
+    });
+
+    test('统计函数', () => {
+
+      // max min mean sum std
+      expect(Calculator.calculate('a={1,2,3;4,5,6}').value).toBe('{1,2,3;4,5,6}');
+      expect(Calculator.calculate('max(a)').value).toBe('6');
+      expect(Calculator.calculate('min(a)').value).toBe('1');
+      expect(Calculator.calculate('mean(a)').value).toBe('3.5');
+      expect(Calculator.calculate('sum(a)').value).toBe('21');
+      expect(Calculator.calculate('std(a)').value).toBe('1.7078251276599331');
+
+      // 向量
+      expect(Calculator.calculate('max([1,2,3])').value).toBe('3');
+      expect(Calculator.calculate('min([1,2,3])').value).toBe('1');
+      expect(Calculator.calculate('mean([1,2,3])').value).toBe('2');
+      expect(Calculator.calculate('sum([1,2,3])').value).toBe('6');
+      expect(Calculator.calculate('std([1,2,3])').value).toBe('0.816496580927726');
+
+      // 多矩阵
+      expect(Calculator.calculate('max({1,2;3,4}, {2,1;4,3})').value).toBe('{2,2;4,4}');
+      expect(Calculator.calculate('min({1,2;3,4}, {2,1;4,3})').value).toBe('{1,1;3,3}');
+
+      
+    });
+
   });
 
   describe('矩阵错误处理', () => {

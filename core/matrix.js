@@ -68,13 +68,17 @@ export class DecMatrix {
             data = data.flat();
         }
 
+        if(rows * cols <= 0){
+            throw new Error(`DMatrix: 维度错误@rows * cols ${rows} * ${cols}`);
+        }
+
         if (data.length !== rows * cols) {
             throw new Error(`DMatrix: data 的长度 ${data.length} 不等于 rows * cols ${rows} * ${cols}`);
         }
 
         // 判断data是否是Decimal数组
         if (!data.every(item => item instanceof Decimal)) {
-            throw new Error('data 必须是Decimal数组');
+            throw new Error('DMatrix: 数据类型必须是Decimal数组');
         }
 
         // 打印
@@ -356,7 +360,7 @@ export class DecMatrix {
 
         // 将特征值和特征向量转换为复数矩阵
         const eigs = new ComplexMatrix(real, imaginary, real.length, 1);
-        console.log('复数矩阵：', eigs.toString());
+        // console.log('复数矩阵：', eigs.toString());
 
         return {eigs, vecs};
     }
