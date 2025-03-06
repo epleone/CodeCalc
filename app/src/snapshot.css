@@ -16,8 +16,6 @@
     --snapshot-tab-line: rgba(0, 0, 0, 0.41);
     --snapshot-tag-text: rgb(231, 231, 231);
     --snapshot-tag-bg: rgb(146, 146, 222);
-    --snapshot-scrollbar: rgba(0, 0, 0, 0.1);
-    --snapshot-scrollbar-hover: rgba(0, 0, 0, 0.15);
 }
 
 :root[data-theme="dark"] {
@@ -37,8 +35,6 @@
     --snapshot-tab-line: rgba(255, 255, 255, 0.41);
     --snapshot-tag-text: rgb(200, 200, 200);
     --snapshot-tag-bg: rgb(125, 125, 207, 0.8);
-    --snapshot-scrollbar: rgba(255, 255, 255, 0.1);
-    --snapshot-scrollbar-hover: rgba(255, 255, 255, 0.15);
 }
 
 /* 蒙版样式 */
@@ -714,42 +710,10 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
         transform: scaleY(1) translateY(0);
         opacity: 1;
     }
-    30% {
-        opacity: 0;
-    }
     100% {
         transform: scaleY(0) translateY(-8px);
         opacity: 0;
     }
 }
 
-/* 滚动条样式 */
-.snapshot-panel::-webkit-scrollbar,
-.snapshot-list::-webkit-scrollbar,
-.snapshot-content::-webkit-scrollbar,
-.snapshot-content-container::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.snapshot-panel::-webkit-scrollbar-track,
-.snapshot-list::-webkit-scrollbar-track,
-.snapshot-content::-webkit-scrollbar-track,
-.snapshot-content-container::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.snapshot-panel::-webkit-scrollbar-thumb,
-.snapshot-list::-webkit-scrollbar-thumb,
-.snapshot-content::-webkit-scrollbar-thumb,
-.snapshot-content-container::-webkit-scrollbar-thumb {
-    background: var(--snapshot-scrollbar);
-    border-radius: 4px;
-}
-
-.snapshot-panel::-webkit-scrollbar-thumb:hover,
-.snapshot-list::-webkit-scrollbar-thumb:hover,
-.snapshot-content::-webkit-scrollbar-thumb:hover,
-.snapshot-content-container::-webkit-scrollbar-thumb:hover {
-    background: var(--snapshot-scrollbar-hover);
-}
+/* 移除特定滚动条样式，使用全局滚动条样式 */
