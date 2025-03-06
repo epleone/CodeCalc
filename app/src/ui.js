@@ -265,9 +265,12 @@ function handleKeyDown(event, input) {
             break;
 
         case 'Delete':
-            event.preventDefault();
-            handleLineDelete(input);
-            return;
+            if (event.shiftKey) {
+                event.preventDefault();
+                handleLineDelete(input);
+                return;
+            }
+            break;
 
         case 'ArrowUp':
         case 'ArrowDown':
