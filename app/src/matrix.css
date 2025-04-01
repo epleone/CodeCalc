@@ -15,7 +15,32 @@
     font-family: "Times New Roman", serif;
     font-size: 1.2em;
     margin: 20px 0;
-    padding: 0 2px;  /* 减小整体左右padding */
+    padding: 0 12px;  /* 增加左右内边距，为长数值提供更多空间 */
+    min-width: max-content;  /* 确保容器至少和内容一样宽 */
+    /* 添加表格样式 */
+    border-collapse: separate;
+    border-spacing: 8px 2px; /* 水平和垂直间距 */
+}
+
+/* 将矩阵改为表格布局 */
+.latex-matrix {
+    display: table;
+    table-layout: auto; /* 根据内容自动调整列宽 */
+}
+
+.matrix-row {
+    display: table-row;
+}
+
+.matrix-element {
+    display: table-cell;
+    padding: 0 4px;
+    text-align: center;
+    color: var(--matrix-color);
+    font-weight: 500;
+    font-size: 1.2em;
+    white-space: nowrap; /* 防止文本换行 */
+    vertical-align: middle;
 }
 
 /* 使用伪元素添加圆括号 */
@@ -48,30 +73,12 @@
     padding: 0.02em 0.3em;  /* 稍微减小上下padding */
 }
 
-.latex-matrix .matrix-row {
-    display: flex;
-    justify-content: flex-start;  /* 改为flex-start使元素从左开始排列 */
-    margin: 0;
-    line-height: 1.1;
-}
-
 .matrix-element-container {
     padding: 2px;
     text-align: center;  /* 改为居中对齐 */
     min-width: unset;
     margin: 0 2px;
     width: 24px;  /* 保持固定宽度确保列对齐 */
-}
-
-.matrix-element {
-    display: inline-block;
-    padding: 0 2px;
-    min-width: 16px;
-    text-align: center;  /* 改为居中对齐 */
-    color: var(--matrix-color);
-    font-weight: 500;
-    font-size: 1.2em;
-    width: 100%;  /* 让元素填充容器宽度 */
 }
 
 /* 添加省略号样式 */
@@ -154,4 +161,14 @@
     font-weight: bold;
     font-style: italic; /* 使用斜体 */
     font-family: "Times New Roman", Times, serif; /* 使用数学字体 */
+}
+
+/* 矩阵行布局优化 */
+.matrix-row {
+    display: flex;
+    justify-content: space-between;  /* 元素间均匀分布 */
+    margin: 0;
+    line-height: 1.1;
+    flex-wrap: nowrap;  /* 防止元素换行 */
+    gap: 8px;  /* 添加固定间距 */
 }
