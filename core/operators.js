@@ -814,4 +814,10 @@ export const FUNCTIONS = {
     },
     
     
+    // 版本号
+    'version': {
+        args: 0,
+        func: () => 'CodeCalcCore 3.1.0',
+        description: 'CodeCalcCore 版本号'
+    }
 }; 
