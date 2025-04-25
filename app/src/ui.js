@@ -144,6 +144,17 @@ function insertNewLine(currentLine) {
     const lines = document.querySelectorAll('.expression-line');
     const currentIndex = Array.from(lines).indexOf(currentLine);
     
+    // 检查下一行是否存在且为空， 直接聚焦到下一行
+    if (currentIndex < lines.length - 1) {
+        const nextLine = lines[currentIndex + 1];
+        const nextInput = nextLine.querySelector('.input');
+        if (nextInput.value.trim() === '') {
+            // 如果下一行为空，直接聚焦到下一行
+            nextInput.focus();
+            return;
+        }
+    }
+    
     const newLine = CreateNewLine();
     
     // 如果是最后一行，直接添加
@@ -318,15 +329,29 @@ function handleInput(event) {
     }
 }
 
+// 将当前行的值设为上一行的结果
+function copyPreviousResult(currentLine) {
+    const previousResult = currentLine.querySelector('.result-value').textContent;
+    const newInput = currentLine.nextElementSibling.querySelector('.input');
+    if (previousResult) {
+        newInput.value = previousResult;
+        newInput.dispatchEvent(new Event('input'));
+    }
+}
+
 function handleEnterKey(event, input) {
     const currentLine = input.closest('.expression-line');
     const lines = document.querySelectorAll('.expression-line');
     const currentIndex = Array.from(lines).indexOf(currentLine);
     const isLastLine = currentIndex === lines.length - 1;
-    const isSecondLastLine = currentIndex === lines.length - 2;
     
     // 处理 Shift + Enter
     if (event.shiftKey) {
+        // 如果当前行为空，则返回
+        if (input.value.trim() === '') {
+            return;
+        }
+
         // 当在最后一行时
         if (isLastLine) {
             const expression = input.value.trim();
@@ -337,23 +362,32 @@ function handleEnterKey(event, input) {
             return;
         }
         
-        // 当在倒数第二行时
-        if (isSecondLastLine) {
-            const nextLine = currentLine.nextElementSibling;
-            const nextInput = nextLine.querySelector('.input');
-            
-            // 如果下一行不为空，插入新行
-            if (nextInput.value.trim() !== '') {
-                insertNewLine(currentLine);
-            } else {
-                // 下一行为空，光标跳到下一行
-                nextInput.focus();
+        // 不在最后一行时，在下方插入新行
+        insertNewLine(currentLine);
+        return;
+    }
+
+    // 处理 Ctrl/Command + Enter，会复制上一行的结果到下一行
+    if (event.ctrlKey || event.metaKey) {
+        // 如果当前行为空，则返回
+        if (input.value.trim() === '') {
+            return;
+        }
+
+        // 当在最后一行时
+        if (isLastLine) {
+            const expression = input.value.trim();
+            // 只有当本行不为空时才插入新行
+            if (expression !== '') {
+                addNewLine();
+                copyPreviousResult(currentLine);
             }
             return;
         }
-        
-        // 不在最后两行时，直接在下方插入新行
+
+        // 不在最后一行时，在下方插入新行
         insertNewLine(currentLine);
+        copyPreviousResult(currentLine);
         return;
     }
     
@@ -669,11 +703,11 @@ function clearAll() {
     newLine.innerHTML = `
         ${Tag.createTagContainerHTML()}
         <textarea class="input" 
-                  placeholder="输入表达式" 
+                  placeholder="输入表达式，例如: a = 1 + 2 * 3" 
                   rows="1"
                   oninput="handleInput(event); autoResize(this)"
-                  onkeydown="handleKeyDown(event, this)"
-                  onclick="removeCompletionHint(this)"></textarea>
+                  onfocus="handleFocus(event)" onblur="handleBlur(event)"
+                  onkeydown="handleKeyDown(event, this)"></textarea>
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>
