@@ -70,6 +70,10 @@ if (isUtoolsEnv) {
                 let title = expr;
                 
                 try {
+                    // 如果expr最后一位是=，则去掉=
+                    if(expr.endsWith('=')){
+                        expr = expr.substring(0, expr.length - 1);
+                    }
                     const rslt = Calculator.calculate(expr);
                     value = rslt.value;
                     // utools.showNotification(value);
