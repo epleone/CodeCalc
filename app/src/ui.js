@@ -3,6 +3,7 @@ import * as Copy from './copy.js';
 import * as Tag from './tag.js';
 import { Settings } from './settings.js';
 import { Snapshot } from './snapshot.js';
+import { shortcuts } from './shortcuts.js';
 import {
     completions,
     isCompletionEnabled,
@@ -22,6 +23,7 @@ export const snapshot = new Snapshot();
 // 导出面板切换函数
 export const toggleSnapshotPanel = () => snapshot.togglePanel();
 export const toggleSettingsPanel = () => settings.togglePanel();
+export const toggleShortcutsPanel = () => shortcuts.togglePanel();
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
@@ -790,6 +792,7 @@ Object.assign(window, {
     // 面板切换函数
     toggleSnapshotPanel,
     toggleSettingsPanel,
+    toggleShortcutsPanel,
     
     // 实例
     settings,
