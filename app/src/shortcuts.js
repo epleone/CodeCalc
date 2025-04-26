@@ -38,12 +38,10 @@ export class Shortcuts {
 
 // 添加快捷键支持，Ctrl + / 打开快捷键面板
 document.addEventListener('keydown', (e) => {
-    // 检查是否是 Ctrl + / 组合键
-    const isCtrlSlash = e.ctrlKey && e.code === 'Slash';
-    // 检查是否是 Command + / 组合键（MacOS）
-    const isCmdSlash = e.metaKey && e.code === 'Slash';
-    
-    if (isCtrlSlash || isCmdSlash) {
+    // 检查是否是 Ctrl/Command + /
+    const isCtrlSlash = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === '/';
+        
+    if (isCtrlSlash) {
         e.preventDefault();
         e.stopPropagation();
         shortcuts.togglePanel();

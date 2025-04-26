@@ -603,7 +603,8 @@ export class Snapshot {
 
 // 添加快捷键支持
 document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'h') {
+    const isCtrlH = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.code === 'KeyH';
+    if (isCtrlH) {
         e.preventDefault();
         snapshot.togglePanel();
     }

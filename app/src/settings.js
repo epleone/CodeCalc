@@ -52,10 +52,11 @@ export class Settings {
     }
 }
 
-// 添加快捷键支持，Ctrl + ` 打开设置页面
+// 添加快捷键支持，Ctrl + P 打开设置页面
 document.addEventListener('keydown', (e) => {
-    // 使用 Backquote 键代码来检测 ` 键（波浪号键）
-    if (e.ctrlKey && e.code === 'Backquote') {
+    const isCtrlP = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.code === 'KeyP';
+
+    if (isCtrlP) {
         e.preventDefault();
         settings.togglePanel();
     }

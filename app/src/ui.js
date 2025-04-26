@@ -370,7 +370,7 @@ function handleEnterKey(event, input) {
     }
 
     // 处理 Ctrl/Command + Enter，会复制上一行的结果到下一行
-    if (event.ctrlKey || event.metaKey) {
+    if (utools.isMacOS() ? event.metaKey : event.ctrlKey) {
         // 如果当前行为空，则返回
         if (input.value.trim() === '') {
             return;
@@ -476,11 +476,11 @@ function initializeUI() {
         handleLineDelete(input);
     });
 
-    
 
+    
     // 添加清空快捷键
     document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.code === 'KeyQ') {
+        if ((utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.code === 'KeyK') {
             e.preventDefault();
             clearAll();
         }
