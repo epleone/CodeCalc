@@ -447,6 +447,23 @@ function isLastExpression() {
     return true;
 }
 
+// 获取快捷键显示文本
+function getShortcutText(key) {
+    if (utools.isMacOS()) {
+        return key.replace('Ctrl', '⌘').replace('Shift', '⇧').replace('Alt', '⌥').replace('Enter', '↵').replace('Delete', '⌫');
+    }
+    return key;
+}
+
+// 更新快捷键显示
+function updateShortcutsDisplay() {
+    // 处理所有快捷键文本
+    const shortcutElements = document.querySelectorAll('.shortcut-key, .shortcut-text');
+    shortcutElements.forEach(element => {
+        element.textContent = getShortcutText(element.textContent);
+    });
+}
+
 function initializeUI() {
 
     // 将标签和快照相关函数添加到全局作用域
@@ -485,6 +502,9 @@ function initializeUI() {
             clearAll();
         }
     });
+
+    // 初始化快捷键显示
+    updateShortcutsDisplay();
 }
 
 function handleAsteriskInput(event, input) {
