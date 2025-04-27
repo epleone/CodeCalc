@@ -124,11 +124,6 @@ function addNewLine() {
     const lines = document.querySelectorAll('.expression-line');
     
     const newLine = CreateNewLine();
-
-    // 确保行之间有正确的间距
-    if (lines.length > 0) {
-        newLine.style.marginTop = '10px';
-    }
     
     container.appendChild(newLine);
     
