@@ -41,6 +41,10 @@ export class Settings {
             if (window.snapshot.isPanelVisible) {
                 window.snapshot.togglePanel();
             }
+            // 移除当前焦点
+            if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+            }
             this.panel.classList.add('show');
             this.overlay.classList.add('show');
             document.body.style.overflow = 'hidden';
@@ -48,6 +52,11 @@ export class Settings {
             this.panel.classList.remove('show');
             this.overlay.classList.remove('show');
             document.body.style.overflow = '';
+            // 退出面板，聚焦输入框
+            const inputs = document.querySelectorAll('.input');
+            if (inputs.length > 0) {
+                inputs[inputs.length - 1].focus();
+            }
         }
     }
 }

@@ -524,6 +524,10 @@ export class Snapshot {
             if (window.settings.isPanelVisible) {
                 window.settings.togglePanel();
             }
+            // 移除当前焦点
+            if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+            }
             this.panel.classList.add('show');
             this.overlay.classList.add('show');
             document.body.style.overflow = 'hidden';
@@ -531,6 +535,11 @@ export class Snapshot {
             this.panel.classList.remove('show');
             this.overlay.classList.remove('show');
             document.body.style.overflow = '';
+            // 退出后聚焦到最后一个输入框
+            const inputs = document.querySelectorAll('.input');
+            if (inputs.length > 0) {
+                inputs[inputs.length - 1].focus();
+            }
         }
         this.panel.style.right = this.isPanelVisible ? '0' : '-300px';
     }

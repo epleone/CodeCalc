@@ -60,6 +60,10 @@
 - 矩阵求逆
 - 矩阵特征值
 
+### 快捷键
+- `Ctrl + /` or `⌘ + /` 显示快捷键面板
+
+
 
 > [!TIP] 
 > 详细文档请参考 [CodeCalc 文档](https://epleone.github.io/codecalc-doc/)
