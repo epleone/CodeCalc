@@ -1,3 +1,5 @@
+import { notification } from './notification.js';
+
 // 复制到剪贴板的功能
 function copyToClipboard(text) {
     // 创建临时文本区域
@@ -8,22 +10,13 @@ function copyToClipboard(text) {
     
     try {
         document.execCommand('copy');
-        showCopyNotification();
+        notification.info('已复制到剪贴板', 1000);
     } catch (err) {
         console.error('复制失败:', err);
+        notification.error('复制失败', 1000);
     }
     
     document.body.removeChild(textarea);
-}
-
-function showCopyNotification() {
-    const notification = document.querySelector('.copy-notification');
-    notification.classList.add('show');
-    
-    // 1秒后隐藏提示
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 1000);
 }
 
 // 为结果添加点击事件处理
@@ -69,6 +62,5 @@ document.addEventListener('DOMContentLoaded', function() {
 // 导出函数
 export {
     copyToClipboard,
-    showCopyNotification,
     addResultClickHandler
 }; 

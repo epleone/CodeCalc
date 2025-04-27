@@ -1,4 +1,5 @@
 import { setTag, restoreTag } from './tag.js';
+import { notification } from './notification.js';
 
 export class Snapshot {
     // 定义最多保存的快照数量
@@ -586,27 +587,9 @@ export class Snapshot {
         this.addButton.disabled = !hasValidExpression;
     }
 
-    // 添加显示消息的方法
+    // 修改显示消息的方法
     showMessage(message) {
-        // 移除可能存在的旧消息
-        const oldMessage = document.querySelector('.snapshot-message');
-        if (oldMessage) {
-            oldMessage.remove();
-        }
-
-        // 创建消息元素
-        const messageElement = document.createElement('div');
-        messageElement.className = 'snapshot-message';
-        messageElement.textContent = message;
-        
-        // 添加到 body 中而不是面板中
-        document.body.appendChild(messageElement);
-        
-        // 3秒后自动移除
-        setTimeout(() => {
-            messageElement.classList.add('fade-out');
-            setTimeout(() => messageElement.remove(), 300);
-        }, 3000);
+        notification.error(message);
     }
 }
 

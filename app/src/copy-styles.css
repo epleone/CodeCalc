@@ -1,36 +1,11 @@
-/* 定义主题变量 */
 :root {
-    --copy-notification-bg: rgba(40, 167, 69, 0.9);
-    --copy-notification-color: #ffffff;
     --copy-hover-color: #1a1a1a;
     --copy-icon-color: #16580c;
 }
 
 :root[data-theme="dark"] {
-    --copy-notification-bg: rgba(0, 230, 118, 0.9);
-    --copy-notification-color: #1a1a1a;
     --copy-hover-color: #e0e0e0;
     --copy-icon-color: #00c853;
-}
-
-/* 复制功能相关样式 */
-.copy-notification {
-    position: fixed;
-    bottom: 4rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--copy-notification-bg);
-    color: var(--copy-notification-color);
-    padding: 0.5rem 1rem;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 1000;
-}
-
-.copy-notification.show {
-    opacity: 1;
 }
 
 /* 修改悬停样式 */

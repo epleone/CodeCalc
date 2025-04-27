@@ -15,6 +15,8 @@ import {
     handleCompletionKeyDown,
     shouldTriggerCompletion
 } from './completion.js';
+import { notification } from './notification.js';
+
 
 // 创建实例
 export const settings = new Settings();
@@ -351,6 +353,7 @@ function handleEnterKey(event, input) {
     if (event.shiftKey) {
         // 如果当前行为空，则返回
         if (input.value.trim() === '') {
+            notification.warning('无法在空行下方插入新行');
             return;
         }
 
@@ -373,6 +376,7 @@ function handleEnterKey(event, input) {
     if (utools.isMacOS() ? event.metaKey : event.ctrlKey) {
         // 如果当前行为空，则返回
         if (input.value.trim() === '') {
+            notification.warning('无法在空行下方插入新行');
             return;
         }
 
@@ -774,6 +778,8 @@ function clearAll() {
     
     // 在清空之后, 更新快照添加按钮状态
     snapshot.updateAddButtonState();
+
+    notification.error('页面已清空');
 
     // 聚焦到输入框
     input.focus();

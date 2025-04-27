@@ -498,50 +498,6 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     color: var(--snapshot-tab-line);
 }
 
-/* 消息提示样式 */
-.snapshot-message {
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
-    transform: translate(-50%, 0);
-    background: var(--snapshot-item-bg);
-    color: var(--snapshot-title);
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 13px;
-    z-index: 1010;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px var(--snapshot-shadow);
-    pointer-events: none;
-    animation: message-fade-in 0.3s ease;
-}
-
-.snapshot-message.fade-out {
-    animation: message-fade-out 0.3s ease forwards;
-}
-
-@keyframes message-fade-in {
-    from {
-        opacity: 0;
-        transform: translate(-50%, 20px);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, 0);
-    }
-}
-
-@keyframes message-fade-out {
-    from {
-        opacity: 1;
-        transform: translate(-50%, 0);
-    }
-    to {
-        opacity: 0;
-        transform: translate(-50%, -20px);
-    }
-}
-
 /* Tab 样式 - Material Design */
 .snapshot-tabs {
     display: flex;
