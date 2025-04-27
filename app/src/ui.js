@@ -421,9 +421,9 @@ function recalculateAllLines() {
     const lines = document.querySelectorAll('.expression-line');
     lines.forEach(line => {
         const input = line.querySelector('.input');
-        if (input.value.trim()) {  // 只计算有输入内容的行
-            calculateLine(input, true);
-        }
+        
+        // 空行一并处理
+        calculateLine(input, true);
     });
 }
 
