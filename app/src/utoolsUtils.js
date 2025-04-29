@@ -2,6 +2,32 @@ import { Calculator } from './calculator.min.js';
 
 const isUtoolsEnv = typeof utools !== 'undefined';
 
+// 处理正则匹配到的表达式
+function handleRegexInput(code, payload) {
+    let expr = payload.trim();
+
+    if (code === 'quickcalc') {
+        // 快速计算模式,去掉开头的>
+        if (expr.startsWith('>')) {
+            expr = expr.substring(1);
+        }
+    } else if (code === 'timestamp') {
+        // 时间戳模式,确保开头有@并统一分隔符为-
+        if (!expr.startsWith('@')) {
+            expr = '@' + expr;
+        }
+        expr = expr.replace(/\//g, '-');
+    }
+
+    // 去掉结尾的=
+    if (expr.endsWith('=')) {
+        expr = expr.substring(0, expr.length - 1);
+    }
+
+    return expr;
+}
+
+
 // 在 utools 环境中，则执行
 if (isUtoolsEnv) {
 
@@ -20,16 +46,18 @@ if (isUtoolsEnv) {
         const lastInput = inputs[inputs.length - 1];  // 获取最后一个输入框
 
         if(type == "regex") {
+            let expr = handleRegexInput(code, payload);
+
             // 如果最后一行不为空，则新增一行
             if (lastInput.value.trim() !== '') {
                 addNewLine();
                 const newInputs = document.querySelectorAll('.input');
                 const newLastInput = newInputs[newInputs.length - 1];
-                newLastInput.value = payload || "";
+                newLastInput.value = expr;
                 newLastInput.dispatchEvent(new Event('input'));
             } else {
                 // 如果最后一行为空，直接在最后一行输入
-                lastInput.value = payload || "";
+                lastInput.value = expr;
                 lastInput.dispatchEvent(new Event('input'));
             }
             // console.log('set precision:', 100);
@@ -54,29 +82,12 @@ if (isUtoolsEnv) {
         ({ code, type, payload }) => {
             if(type == "regex") {
                 let value = "";
-                let expr = payload.trim();
-
-                if( code == "quickcalc"){
-                    if (expr.startsWith('>')){
-                        expr = expr.substring(1);
-                    }
-                }else if( code == "timestamp"){
-                    if (!expr.startsWith('@')) {
-                        expr = '@' + expr;
-                    }
-                    expr = expr.replace(/\//g, '-');
-                }
-
-                let title = expr;
+                let expr = handleRegexInput(code, payload);
+                let title = "点击复制结果";
                 
                 try {
-                    // 如果expr最后一位是=，则去掉=
-                    if(expr.endsWith('=')){
-                        expr = expr.substring(0, expr.length - 1);
-                    }
                     const rslt = Calculator.calculate(expr);
                     value = rslt.value;
-                    // utools.showNotification(value);
                     if( code == "timestamp") {
                         title = rslt.info;
                     }

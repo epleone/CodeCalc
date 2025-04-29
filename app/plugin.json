@@ -7,7 +7,7 @@
     {
       "code": "codecalc",
       "explain": "代码计算器",
-      "cmds": ["Calculator", "CodeCalc", "Code计算器"]
+      "cmds": ["Code Calc", "Calculator", "Code计算器"]
     },
     {
       "code": "quickcalc",
