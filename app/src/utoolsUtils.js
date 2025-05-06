@@ -7,10 +7,11 @@ function handleRegexInput(code, payload) {
     let expr = payload.trim();
 
     if (code === 'quickcalc') {
-        // 快速计算模式,去掉开头的>
-        if (expr.startsWith('>')) {
-            expr = expr.substring(1);
+        // 通用计算，去掉结尾的=
+        if (expr.endsWith('=')) {
+            expr = expr.substring(0, expr.length - 1);
         }
+
     } else if (code === 'timestamp') {
         // 时间戳模式,确保开头有@并统一分隔符为-
         if (!expr.startsWith('@')) {
@@ -19,10 +20,7 @@ function handleRegexInput(code, payload) {
         expr = expr.replace(/\//g, '-');
     }
 
-    // 去掉结尾的=
-    if (expr.endsWith('=')) {
-        expr = expr.substring(0, expr.length - 1);
-    }
+    
 
     return expr;
 }
