@@ -133,8 +133,8 @@ const Calculator = (function() {
             
             const [type, value] = tokens[tokens.length - 1];
 
-            // 在后缀操作符中，%和‰后，必须是减法
-            if (value === '%' || value === '‰')
+            // 如果是在后缀操作符中后面(% ‰ !)，必须是加减法
+            if (type === 'operator' && OPERATORS[value]?.position === 'postfix')
                 return false;
             
             // 只有在这些情况下是二元运算符，其他都是一元运算符
@@ -845,6 +845,7 @@ const Calculator = (function() {
             // TODO: 添加超时处理
             clearMessages(); // 清除之前的消息
 
+            // TODO: 这里是集合，而不是字典了
             const operators = new Set(Object.keys(OPERATORS));
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));

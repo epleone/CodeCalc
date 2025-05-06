@@ -115,6 +115,29 @@ export const OPERATORS = {
         preventSelfReference: true,
         description: '千分号'
     },
+    '!': {
+        precedence: 5,
+        args: 1,
+        func: x => {
+            //如果太大，则返回无穷大
+            if (x.gt(150)) {
+                return Infinity;
+            }
+            // 检查输入是否为非负整数
+            if (!x.isInteger() || x.isNegative()) {
+                throw new Error('阶乘只能计算非负整数');
+            }
+            // 计算阶乘
+            let result = new Decimal(1);
+            for (let i = new Decimal(1); i.lte(x); i = i.plus(1)) {
+                result = result.times(i);
+            }
+            return result;
+        },
+        argTypes: 'decimal',
+        position: 'postfix',
+        description: '阶乘'
+    },
     
     // 位运算符
     '&': {
@@ -817,7 +840,7 @@ export const FUNCTIONS = {
     // 版本号
     'version': {
         args: 0,
-        func: () => 'CodeCalcCore 3.1.0',
+        func: () => 'CodeCalcCore 3.1.3',
         description: 'CodeCalcCore 版本号'
     }
 }; 
