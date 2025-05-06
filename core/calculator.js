@@ -134,7 +134,14 @@ const Calculator = (function() {
             const [type, value] = tokens[tokens.length - 1];
 
             // 如果是在后缀操作符中后面(% ‰ !)，必须是加减法
+            // console.log('type: ', type);
+            // console.log('value: ', value);
+            // console.log('OPERATORS[value]: ', OPERATORS[value]);
             if (type === 'operator' && OPERATORS[value]?.position === 'postfix')
+                return false;
+
+            // 单独处理 %， 会匹配到模运算符
+            if(value === '%')
                 return false;
             
             // 只有在这些情况下是二元运算符，其他都是一元运算符
