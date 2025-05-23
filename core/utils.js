@@ -156,31 +156,36 @@ const Utils = {
     // type: 目标类型 {decimal, number, bigint, string, any}
     convertTypes(value, type='default') {
         // console.log("convertTypes: ", value.toString(), type);
-        if(type === 'default') {
-            // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
-            if(isMatrix(value)) {
+        try {
+            if(type === 'default') {
+                // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
+                if(isMatrix(value)) {
+                    return value;
+                }
+                return new Decimal(value.toString());
+            }
+            if(type === 'decimal') {
+                // 不支持矩阵
+                return new Decimal(value.toString());
+            }  
+            if(type === 'number') {
+                return Number(value.toString());
+            }
+            if(type === 'bigint') {
+                return BigInt(value.toString());
+            }
+            if(type === 'string') {
+                return value.toString();
+            }
+            if(type === 'any') {
                 return value;
             }
-            return new Decimal(value.toString());
-        }
-        if(type === 'decimal') {
-            // 不支持矩阵
-            return new Decimal(value.toString());
-        }  
-        if(type === 'number') {
-            return Number(value.toString());
-        }
-        if(type === 'bigint') {
-            return BigInt(value.toString());
-        }
-        if(type === 'string') {
-            return value.toString();
-        }
-        if(type === 'any') {
-            return value;
-        }
 
-        throw new Error(`无法将 ${value} 转换为 ${type} 类型`);
+            throw new Error(`不支持的类型: ${type}`);
+
+        } catch (error) {
+            throw new Error(`无法将 ${value} 转换为 ${type} 类型`);
+        }
     },
 
     // 将不同的输出格式化成字符串
