@@ -2,13 +2,25 @@ import { Calculator } from './calculator.min.js';
 
 const isUtoolsEnv = typeof utools !== 'undefined';
 
+
+function isBase64(str) {
+    // 去除空格
+    str = str.trim();
+    // base64 字符集 + 结尾最多两个 =
+    return /^[A-Za-z0-9+/]+={0,2}$/.test(str) && str.length % 4 === 0;
+}
+
 // 处理正则匹配到的表达式
 function handleRegexInput(code, payload) {
     let expr = payload.trim();
 
     if (code === 'quickcalc') {
+        // 判断是否是base64编码，如果是则解码
+        if (isBase64(expr)) {
+            expr = 'str(' + expr + ').unbase64';
+        }
         // 通用计算，去掉结尾的=
-        if (expr.endsWith('=')) {
+        else if (expr.endsWith('=')) {
             expr = expr.substring(0, expr.length - 1);
         }
 
@@ -19,8 +31,6 @@ function handleRegexInput(code, payload) {
         }
         expr = expr.replace(/\//g, '-');
     }
-
-    
 
     return expr;
 }
