@@ -6,8 +6,7 @@ const isUtoolsEnv = typeof utools !== 'undefined';
 function isBase64(str) {
     // 去除空格
     str = str.trim();
-    // base64 字符集 + 结尾最多两个 =
-    return /^[A-Za-z0-9+/]+={0,2}$/.test(str) && str.length % 4 === 0;
+    return /^(?:[A-Za-z0-9+\/]{4}){3,}(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/.test(str);
 }
 
 // 处理正则匹配到的表达式
