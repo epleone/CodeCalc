@@ -608,7 +608,7 @@ function arrayToHtml(matString) {
 }
 
 // 计算当前行
-function calculateLine(input, ignoreAssignment=false) {
+function calculateLine(input, ignoreEmptyLine=false) {
     const resultContainer = input.parentElement.querySelector('.result-container');
     const result = resultContainer.querySelector('.result');
     const messageIcon = resultContainer.querySelector('.message-icon');
@@ -691,8 +691,10 @@ function calculateLine(input, ignoreAssignment=false) {
     }
 
     // 空输入处理
-    if (expression === '') {
+    if (!ignoreEmptyLine && expression === '') {
+        // 不设置 ignoreEmptyLine 时，会递归调用 calculateLine 导致栈溢出
         // TODO:清除当前行的变量，是否还有更好的做法？
+        console.log('空输入处理, 重新计算所有行');
         recalculateAllLines();
         clearState();
         return;
