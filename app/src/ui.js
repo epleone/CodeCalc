@@ -92,12 +92,29 @@ function handleBlur(event) {
 // 使用防抖包装的 autoResize 函数
 const autoResize = debounce(handleResize, 16);  // 约等于一帧的时间
 
-function CreateNewLine() {
+// 更新所有行的行号
+function updateLineNumbers() {
+    const lines = document.querySelectorAll('.expression-line');
+    lines.forEach((line, index) => {
+        const tagIcon = line.querySelector('.tag-icon');
+        if (tagIcon) {
+            tagIcon.textContent = `$${index + 1}`;
+        }
+    });
+}
+
+function CreateNewLine(lineNumber = null) {
+    // 如果没有提供行号，计算当前行数
+    if (lineNumber === null) {
+        const lines = document.querySelectorAll('.expression-line');
+        lineNumber = lines.length + 1;
+    }
+    
     // 创建新行
     const newLine = document.createElement('div');
     newLine.className = 'expression-line';
     newLine.innerHTML = `
-        ${Tag.createTagContainerHTML()}
+        ${Tag.createTagContainerHTML(lineNumber)}
         <textarea class="input" 
                   placeholder="输入表达式" 
                   rows="1"
@@ -186,6 +203,9 @@ function insertNewLine(currentLine) {
     
     // 初始化标签功能
     Tag.initializeTagButton(newLine);
+
+    // 更新所有行的行号
+    updateLineNumbers();
     
     // 为新行的结果添加点击处理
     const result = newLine.querySelector('.result');
@@ -414,6 +434,9 @@ function recalculateAllLines() {
     // 清除缓存
     Calculator.clearAllCache();
 
+    // 更新所有行的行号
+    updateLineNumbers();
+
     // 重新计算所有行
     const lines = document.querySelectorAll('.expression-line');
     lines.forEach(line => {
@@ -487,6 +510,9 @@ function initializeUI() {
     document.querySelectorAll('.expression-line').forEach(line => {
         Tag.initializeTagButton(line);
     });
+    
+    // 更新所有行的行号
+    updateLineNumbers();
 
     // 添加容器点击事件监听
     document.getElementById('expression-container')
@@ -588,17 +614,24 @@ function calculateLine(input, ignoreAssignment=false) {
     const result = resultContainer.querySelector('.result');
     const messageIcon = resultContainer.querySelector('.message-icon');
     const messageText = messageIcon.querySelector('.message-text');
-    const expression = input.value.trim();
+    let expression = input.value.trim();
+
+    const lines = document.querySelectorAll('.expression-line');
+    const currentLine = input.closest('.expression-line');
+    const currentIndex = Array.from(lines).indexOf(currentLine);
+    expression = `$${currentIndex + 1} = ${expression}`;
+
+    // 为啥赋值表达式需要重新计算所有行？
 
     // 是否忽略赋值表达式的副作用
-    if(!ignoreAssignment) {
-        // 检查是否为赋值表达式
-        const isAssignment = /=/.test(expression);
-        if (isAssignment) {
-            recalculateAllLines();
-            return;
-        }
-    }
+    // if(!ignoreAssignment) {
+    //     // 检查是否为赋值表达式
+    //     const isAssignment = /=/.test(expression);
+    //     if (isAssignment) {
+    //         recalculateAllLines();
+    //         return;
+    //     }
+    // }
 
     // 清除所有状态
     function clearState() {
@@ -732,25 +765,7 @@ function clearAll() {
     }
     
     // 清空和重置UI的代码...
-    const newLine = document.createElement('div');
-    newLine.className = 'expression-line';
-    newLine.innerHTML = `
-        ${Tag.createTagContainerHTML()}
-        <textarea class="input" 
-                  placeholder="输入表达式，例如: a = 1 + 2 * 3" 
-                  rows="1"
-                  oninput="handleInput(event); autoResize(this)"
-                  onfocus="handleFocus(event)" onblur="handleBlur(event)"
-                  onkeydown="handleKeyDown(event, this)"></textarea>
-        <div class="result-container">
-            <div class="result">
-                <span class="result-value"></span>
-            </div>
-            <div class="message-icon" style="display: none;">
-                <div class="message-text"></div>
-            </div>
-        </div>
-    `;
+    const newLine = CreateNewLine(1);
     
     // 清空容器并添加新行
     container.innerHTML = '';

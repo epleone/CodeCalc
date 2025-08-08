@@ -36,6 +36,9 @@
     top: -1px;
     z-index: 2;
     overflow: visible;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .tag-button {
@@ -63,24 +66,22 @@
 .tag {
     display: inline-flex;
     align-items: center;
-    padding: 0 12px;
-    padding-right: 24px;
+    padding: 0 8px;
+    padding-right: 20px;
     background-color: var(--tag-bg);
     border-radius: 3px;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--tag-color);
     cursor: pointer;
     transition: all 0.15s ease;
-    max-width: 200px;
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    height: 18px;
+    height: 20px;
     position: relative;
-    padding-left: 12px;
     font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
     border-left: 2px solid var(--tag-border-color);
-    margin-left: 2px;
 }
 
 /* 修改三角形颜色，使用与背景相同的变量 */
@@ -92,7 +93,7 @@
     width: 0;
     height: 0;
     border-style: solid;
-    border-width: 9px 9px 9px 0;
+    border-width: 10px 10px 10px 0;
     border-color: transparent var(--bg-expression-odd) transparent transparent;
     z-index: 2;
 }
@@ -189,12 +190,18 @@
     display: inline-block;
     font-weight: normal;
     transform: scale(1);
+    color: #9370DB;
+    font-weight: bold;
+    font-size: 12px;
+    text-shadow: 0 1px 3px rgba(147, 112, 219, 0.5);
+    letter-spacing: -0.5px;
 }
 
-/* 悬停时的放大加粗效果 */
+/* 悬停时的简约艺术效果 */
 .tag-button:hover .tag-icon {
-    transform: scale(1.2);
-    font-weight: bold;
+    color: #8A2BE2;
+    text-shadow: 0 2px 6px rgba(138, 43, 226, 0.6);
+    transform: scale(1.1) rotate(5deg);
 }
 
 /* 删除按钮 */
@@ -204,16 +211,16 @@
     right: 4px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 14px;
+    font-size: 12px;
     color: var(--tag-delete-color);
     opacity: 0;
     transition: all 0.15s ease;
     cursor: pointer;
     pointer-events: auto;
     z-index: 10;
-    width: 16px;
-    height: 16px;
-    line-height: 16px;
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
     text-align: center;
     border-radius: 50%;
     font-weight: bold;

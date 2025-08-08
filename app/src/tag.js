@@ -162,7 +162,6 @@ export function setTag(line, tagText) {
         if (existingTag) {
             existingTag.remove();
         }
-        tagButton.style.display = 'flex';
         return;
     }
     
@@ -177,8 +176,7 @@ export function setTag(line, tagText) {
     tag.className = 'tag';
     tag.textContent = tagText;
     
-    // 替换按钮为标签
-    tagButton.style.display = 'none';
+    // 在按钮后面添加标签，不隐藏按钮
     tagContainer.appendChild(tag);
     
     // 点击标签事件处理
@@ -190,7 +188,6 @@ export function setTag(line, tagText) {
             // 点击删除按钮
             e.stopPropagation();
             tag.remove();
-            tagButton.style.display = 'flex';
             
             // 清除提示框
             if (tooltipTimer) {
@@ -239,20 +236,16 @@ export function restoreTag(line, tagText) {
     if (existingTag) existingTag.remove();
     if (existingInput) existingInput.remove();
     
-    // 显示标签按钮（因为 setTag 需要它可见）
-    const tagButton = tagContainer.querySelector('.tag-button');
-    tagButton.style.display = 'flex';
-    
     // 使用 setTag 设置新标签
     setTag(line, tagText);
 }
 
 // 导出创建标签容器的HTML
-export function createTagContainerHTML() {
+export function createTagContainerHTML(lineNumber = 1) {
     return `
         <div class="tag-container">
             <button class="tag-button">
-                <span class="tag-icon">#</span>
+                <span class="tag-icon">$${lineNumber}</span>
             </button>
         </div>
     `;
