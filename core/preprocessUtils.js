@@ -122,7 +122,7 @@ function checkParentheses(expr, MAX_DEPTH = 1000) {
 // 检查变量名是否合法
 function checkVariableName(varName, operators, functions, constants) {
     // 检查是否是合法的变量名格式
-    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
+    if (!/^[a-zA-Z_$][a-zA-Z0-9_]*$/.test(varName)) {
         if (/\s/.test(varName)) {
             throw new Error(`变量名 "${varName}" 不能包含空格`);
         }
