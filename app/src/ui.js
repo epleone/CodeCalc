@@ -616,22 +616,11 @@ function calculateLine(input, ignoreAssignment=false) {
     const messageText = messageIcon.querySelector('.message-text');
     let expression = input.value.trim();
 
-    const lines = document.querySelectorAll('.expression-line');
-    const currentLine = input.closest('.expression-line');
-    const currentIndex = Array.from(lines).indexOf(currentLine);
-    expression = `$${currentIndex + 1} = ${expression}`;
-
-    // 为啥赋值表达式需要重新计算所有行？
-
-    // 是否忽略赋值表达式的副作用
-    // if(!ignoreAssignment) {
-    //     // 检查是否为赋值表达式
-    //     const isAssignment = /=/.test(expression);
-    //     if (isAssignment) {
-    //         recalculateAllLines();
-    //         return;
-    //     }
-    // }
+    const dollarNumberPattern = /^\s*\$\d+\s*=/;
+    if (dollarNumberPattern.test(expression)) {
+        setState('', 'error', '不允许赋值 `$数字` 的变量');
+        return;
+    }
 
     // 清除所有状态
     function clearState() {
@@ -704,12 +693,19 @@ function calculateLine(input, ignoreAssignment=false) {
 
     // 空输入处理
     if (expression === '') {
+        // TODO:清除当前行的变量，是否还有更好的做法？
+        recalculateAllLines();
         clearState();
         return;
     }
     result.classList.add('has-input');
 
     try {
+        const lines = document.querySelectorAll('.expression-line');
+        const currentLine = input.closest('.expression-line');
+        const currentIndex = Array.from(lines).indexOf(currentLine);
+        expression = `$${currentIndex + 1} = ${expression}`;
+
         const value = Calculator.calculate(expression);
         const messages = [];
         let type = null;
