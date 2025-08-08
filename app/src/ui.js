@@ -119,7 +119,7 @@ function CreateNewLine() {
     return newLine;
 }
 
-function addNewLine() {
+function addNewLine(moveCursor=true) {
     const container = document.getElementById('expression-container');
     const lines = document.querySelectorAll('.expression-line');
     
@@ -135,7 +135,9 @@ function addNewLine() {
     addResultClickHandler(result);
     
     const input = newLine.querySelector('.input');
-    input.focus();
+    if (moveCursor) {
+        input.focus();
+    }
 }
 
 function insertNewLine(currentLine) {
@@ -256,10 +258,10 @@ function handleKeyDown(event, input) {
             return;
         case 'Backspace':
             if (input.value === '') {
-                event.preventDefault();
-                handleLineDelete(input);
-                return;
-            }
+                    event.preventDefault();
+                    handleLineDelete(input);
+                    return;
+                }
             // 如果光标在行首且不是第一行，移动到上一行末尾
             if (input.selectionStart === 0 && input.selectionEnd === 0) {
                 const currentLine = input.closest('.expression-line');
@@ -445,6 +447,17 @@ function isLastExpression() {
     
     return true;
 }
+
+// 判断是否是最后一行
+function isLastLine() {
+    const container = document.getElementById('expression-container');
+    const lines = container.querySelectorAll('.expression-line');
+    const currentLine = document.activeElement.closest('.expression-line');
+    if (!currentLine) return false;
+    
+    const currentIndex = Array.from(lines).indexOf(currentLine);
+    return currentIndex === lines.length - 1;
+} 
 
 // 获取快捷键显示文本
 function getShortcutText(key) {
