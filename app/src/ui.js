@@ -203,9 +203,6 @@ function insertNewLine(currentLine) {
     
     // 初始化标签功能
     Tag.initializeTagButton(newLine);
-
-    // 更新所有行的行号
-    updateLineNumbers();
     
     // 为新行的结果添加点击处理
     const result = newLine.querySelector('.result');
@@ -216,13 +213,15 @@ function insertNewLine(currentLine) {
     newInput.focus();
     
     // 重新计算所有行的结果
-    const allLines = document.querySelectorAll('.expression-line');
-    allLines.forEach(line => {
-        const input = line.querySelector('.input');
-        if (input.value) {
-            calculateLine(input);
-        }
-    });
+    // const allLines = document.querySelectorAll('.expression-line');
+    // allLines.forEach(line => {
+    //     const input = line.querySelector('.input');
+    //     if (input.value) {
+    //         calculateLine(input);
+    //     }
+    // });
+
+    recalculateAllLines()
 }
 
 
