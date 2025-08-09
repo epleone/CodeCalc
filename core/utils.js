@@ -2,10 +2,12 @@
 import Decimal from 'decimal.js';
 import { DecMatrix, ComplexMatrix } from './matrix.js';
 import { config } from './cfg.js';
+
 Decimal.set({
     precision: 21,
     // toExpNeg: -7,        // 小于 1e-7 时使用科学记数法，在函数formatToDisplayString中会被格式化覆盖
     // toExpPos: 20,        // 大于 1e20 时使用科学记数法，默认21
+    minE: -21,              // 小于 1e-21 时截断为0
 });
 
 // 打印Decimal的配置
@@ -51,8 +53,9 @@ class Datestamp {
 }
 
 const M_CONST = {
-    'pi': Decimal.acos(-1),      // PI
-    'e': Decimal.exp(1),         // e
+    // 由于Decimal.js库没有内置数学常数，我们使用高精度字符串定义
+    'pi': new Decimal('3.1415926535897932384626433832795'),
+    'e': new Decimal('2.7182818284590452353602874713527'),
 };
 
 
