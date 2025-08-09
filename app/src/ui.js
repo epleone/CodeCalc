@@ -898,4 +898,5 @@ export {
     initializeUI,
     handleFocus,
     handleBlur,
+    recalculateAllLines,
 };

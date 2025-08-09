@@ -34,6 +34,21 @@ export class Settings {
                 this.togglePanel();
             }
         });
+        
+        // 添加 toCNToggle 切换监听器
+        this.initToggleListeners();
+    }
+    
+    // 初始化设置项的监听器
+    initToggleListeners() {
+        // 监听 toCNToggle 的变化
+        const toCNToggle = document.getElementById('toCNToggle');
+        if (toCNToggle) {
+            toCNToggle.addEventListener('change', () => {
+                // 当开关状态改变时，重新计算所有行
+                window.recalculateAllLines();
+            });
+        }
     }
     
     togglePanel() {
