@@ -5,12 +5,8 @@ import { Settings } from './settings.js';
 import { Snapshot } from './snapshot.js';
 import { shortcuts } from './shortcuts.js';
 import {
-    completions,
     isCompletionEnabled,
-    showCompletionHint,
     removeCompletionHint,
-    navigateCompletion,
-    applySelectedCompletion,
     checkCompletion,
     handleCompletionKeyDown,
     shouldTriggerCompletion
@@ -341,11 +337,28 @@ function handleInput(event) {
     // 移除补全提示
     removeCompletionHint(input);
     
+    // 自动添加下一行的逻辑
+    autoAddNextLineIfNeeded(input);
+    
     // 计算表达式
     if (isLastExpression()) {
         calculateLine(input);
     } else {
         recalculateAllLines();
+    }
+}
+
+// 自动添加下一行的函数
+function autoAddNextLineIfNeeded(input) {    
+    // 只在最后一行且有内容时自动添加新行
+    if (isLastLine(input) && input.value.trim() !== '') {
+        // 检查是否已经有下一行
+        const currentLine = input.closest('.expression-line');
+        const nextLine = currentLine.nextElementSibling;
+        if (!nextLine) {
+            // 自动添加新行，但不移动焦点
+            addNewLine(false);
+        }
     }
 }
 
@@ -471,10 +484,18 @@ function isLastExpression() {
 }
 
 // 判断是否是最后一行
-function isLastLine() {
+function isLastLine(input = null) {
     const container = document.getElementById('expression-container');
     const lines = container.querySelectorAll('.expression-line');
-    const currentLine = document.activeElement.closest('.expression-line');
+    
+    // 如果传入了input参数，使用传入的；否则使用当前焦点元素
+    let currentLine;
+    if (input) {
+        currentLine = input.closest('.expression-line');
+    } else {
+        currentLine = document.activeElement.closest('.expression-line');
+    }
+    
     if (!currentLine) return false;
     
     const currentIndex = Array.from(lines).indexOf(currentLine);
@@ -839,6 +860,7 @@ Object.assign(window, {
     autoResize,
     handleContainerClick,
     removeCompletionHint,
+    autoAddNextLineIfNeeded,
     
     // 计算相关函数
     calculateLine,
@@ -870,6 +892,7 @@ export {
     handleKeyDown,
     handleInput,
     handleAsteriskInput,
+    autoAddNextLineIfNeeded,
     clearAll,
     handleContainerClick,
     initializeUI,
