@@ -180,6 +180,9 @@ const Utils = {
                 return BigInt(value.toString());
             }
             if(type === 'string') {
+                if (typeof value === 'object' && value.value) {
+                    return value.value.toString();
+                }
                 return value.toString();
             }
             if(type === 'any') {
@@ -240,8 +243,111 @@ const Utils = {
             return { value: result.toString(), info: "isMatrix" };
         }
 
+        // 如果是对象，则返回对象
+        if (typeof result === 'object' && result.value) {
+            return {
+                value: result.value,
+                info: result.info || undefined,
+                warning: result.warning || undefined
+            };
+        }
+
         return result.toString();
     },
+
+    // 将数字格式化成中文数字 壹 贰 叁 肆 伍 陆 柒 捌 玖 拾 佰 仟 万 亿 兆
+    formatToChinese(x){
+        if(!isDecimal(x)) {
+            return  { value: x, warning: "无法将object转换为中文数字" }
+        }
+
+        let num = x.toNumber();
+
+        // Handle negative numbers
+        if (num < 0) {
+          return "负" + numberToChineseAmount(Math.abs(num));
+        }
+      
+        // Round to 2 decimal places for financial precision
+        num = Math.round(num * 100) / 100;
+        let str = num.toString();
+        let [integer, decimal = ""] = str.split(".");
+      
+        const CN_NUM = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
+        const CN_UNIT = ["", "拾", "佰", "仟"];
+        const CN_BIG_UNIT = ["", "万", "亿", "兆"];
+        const CN_DOT = ["角", "分"];
+      
+        // Process integer part
+        let integerPart = "";
+        if (integer === "0") {
+          integerPart = CN_NUM[0]; // Handle zero case
+        } else {
+          let groups = [];
+          // Split integer into groups of 4 digits (right to left)
+          for (let i = integer.length; i > 0; i -= 4) {
+            groups.unshift(integer.slice(Math.max(0, i - 4), i));
+          }
+      
+          let zeroPending = false; // Tracks if a zero needs to be added
+          for (let i = 0; i < groups.length; i++) {
+            let group = groups[i];
+            let groupStr = "";
+            let allZero = true; // Tracks if the group is all zeros
+      
+            // Process each digit in the group
+            for (let j = 0; j < group.length; j++) {
+              const digit = parseInt(group[j]);
+              const unitPos = group.length - j - 1;
+      
+              if (digit !== 0) {
+                allZero = false;
+                if (zeroPending) {
+                  groupStr += CN_NUM[0]; // Add pending zero
+                  zeroPending = false;
+                }
+                groupStr += CN_NUM[digit] + CN_UNIT[unitPos];
+              } else if (unitPos > 0 && !allZero) {
+                zeroPending = true; // Mark zero as pending
+              }
+            }
+      
+            // Append big unit (万, 亿, 兆) if group is not all zeros
+            if (!allZero) {
+              groupStr += CN_BIG_UNIT[groups.length - i - 1];
+              integerPart += groupStr;
+            } else if (integerPart && i < groups.length - 1) {
+              // Add zero between non-zero groups if needed
+              integerPart += CN_NUM[0];
+            }
+          }
+        }
+      
+        integerPart = integerPart || CN_NUM[0]; // Default to "零" if empty
+        integerPart += "元"; // Append "元"
+      
+        // Process decimal part
+        let decimalPart = "";
+        if (decimal && decimal !== "00") {
+          decimal = decimal.padEnd(2, "0").slice(0, 2); // Ensure exactly 2 decimal places
+          for (let i = 0; i < decimal.length; i++) {
+            const digit = parseInt(decimal[i]);
+            if (digit !== 0) {
+              decimalPart += CN_NUM[digit] + CN_DOT[i];
+            } else {
+              // Only add "零" if followed by a non-zero digit
+              if (i === 0 && decimal[1] !== "0") {
+                decimalPart += CN_NUM[0];
+              }
+            }
+          }
+        }
+      
+        decimalPart = decimalPart || "整"; // Default to "整" if no decimal part
+      
+        return { value: integerPart + decimalPart, info: `原始数字: ${num}` };
+    },
+      
 
     add(x, y) {        
         if (typeof x === 'string' || typeof y === 'string') {

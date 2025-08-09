@@ -716,6 +716,16 @@ export const FUNCTIONS = {
         argTypes: 'any',
         asProperty: true
     },
+
+    // 中文数字函数
+    'toCN': {
+        args: 1,
+        func: Utils.formatToChinese,
+        description: '转换为中文大写数字',
+        argTypes: 'any',
+        asProperty: true,
+    },
+
     // 日期函数
     'timestamp': {
         args: 8,

@@ -703,11 +703,13 @@ const Calculator = (function() {
                 if (node.value === '=') {
                     // 普通赋值
                     variables.set(left.value, rightValue);
+                    let strRightValue = Utils.convertTypes(rightValue, 'string');
+                    
                     if (left.value.startsWith('$')){
-                        addInfo(`默认变量: ${left.value} = ${rightValue}`)
+                        addInfo(`默认变量: ${left.value} = ${strRightValue}`)
                     }
                     else{
-                        addInfo(`自定义变量: ${left.value} = ${rightValue}`)
+                        addInfo(`自定义变量: ${left.value} = ${strRightValue}`)
                     }
                     
 
