@@ -523,13 +523,16 @@ const Calculator = (function() {
                 if (type === 'operator' && value === '@') {
                     // 看前一个token来判断是日期符号还是矩阵乘法
                     const prevToken = tokens[current - 1];
-                    
+                
+                    // console.log("prevToken: ", prevToken);
+
                     // 判断是否是矩阵乘法运算符 - 前面必须是可以作为操作数的token
                     const isMatmul = prevToken && (
                         prevToken[0] === 'string' ||  // 数字或变量
                         prevToken[0] === 'constant' || // 常量
                         prevToken[0] === 'function' || // 函数
-                        (prevToken[0] === 'delimiter' && prevToken[1] === ')') // 右括号
+                        (prevToken[0] === 'delimiter' && prevToken[1] === ')') || // 右括号
+                        (prevToken[0] === 'operator' && prevToken[1] === '.T')    // 转置操作符
                     );
 
                     if (isMatmul) {
@@ -953,4 +956,6 @@ function TEST(expr){
 // TEST('{{1 2 3}}');
 // TEST('{{1; 2; 3}}');
 // TEST('{{1 2 3};{4 5 6};{7 8 9}}');
+
+TEST('[1, 2].T @ [3, 4]');
 

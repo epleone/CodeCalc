@@ -789,6 +789,8 @@ describe('Matrix Operations', () => {
 
     test('矩阵乘法', () => {
       expect(Calculator.calculate('{1 2;3 4} @ {1 1;1 1}').value).toBe('{3,3;7,7}');
+      expect(Calculator.calculate('[1, 2].T @ [3, 4]').value).toBe('[11]');
+      expect(Calculator.calculate('{1, 2}.T @ {3, 4}').value).toBe('{3,4;6,8}');
     });
 
     test('矩阵转置', () => {
