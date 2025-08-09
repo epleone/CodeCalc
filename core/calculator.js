@@ -107,7 +107,7 @@ const Calculator = (function() {
             if (func.asProperty) {
                 operators.add('.' + name);
                 OPERATORS['.' + name] = {
-                    precedence: 8,
+                    precedence: func.precedence !== undefined ? func.precedence : 5,  // 和后置运算符 %, ‰, ! 的优先级相同
                     args: 1,
                     func: func.func,
                     position: 'postfix',

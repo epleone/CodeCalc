@@ -257,15 +257,20 @@ const Utils = {
 
     // 将数字格式化成中文数字 壹 贰 叁 肆 伍 陆 柒 捌 玖 拾 佰 仟 万 亿 兆
     formatToChinese(x){
+        console.log("formatToChinese x: ", x.toString());
         if(!isDecimal(x)) {
             return  { value: x, warning: "无法将object转换为中文数字" }
         }
 
         let num = x.toNumber();
 
+        console.log("num: ", num);
+
         // Handle negative numbers
+        let negative = false;
         if (num < 0) {
-          return "负" + numberToChineseAmount(Math.abs(num));
+            num = -num;
+            negative = true;
         }
       
         // Round to 2 decimal places for financial precision
@@ -345,7 +350,7 @@ const Utils = {
       
         decimalPart = decimalPart || "整"; // Default to "整" if no decimal part
       
-        return { value: integerPart + decimalPart, info: `原始数字: ${num}` };
+        return { value: (negative ? "负" : "") + integerPart + decimalPart, info: `原始数字: ${x.toNumber()}` };
     },
       
 

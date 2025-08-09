@@ -707,10 +707,20 @@ function calculateLine(input, ignoreEmptyLine=false) {
     result.classList.add('has-input');
 
     try {
+
+        // 如果勾选了将数字转换为大写中文，则添加.toCN 将数字转换为中文大写
+        const toCNToggle = document.getElementById('toCNToggle');
+        if (toCNToggle.checked) {
+            expression = `(${expression}).toCN`;
+        }
+
+        // 添加行号赋值
         const lines = document.querySelectorAll('.expression-line');
         const currentLine = input.closest('.expression-line');
         const currentIndex = Array.from(lines).indexOf(currentLine);
         expression = `$${currentIndex + 1} = ${expression}`;
+
+        console.log("expression: ", expression);
 
         const value = Calculator.calculate(expression);
         const messages = [];

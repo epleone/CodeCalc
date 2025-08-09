@@ -86,14 +86,14 @@ export const OPERATORS = {
         description: '角度转弧度'
     },
     'unary-': {
-        precedence: 5,
+        precedence: 6,
         args: 1,
         func: x => Utils.mapFuncArgs1('负号', x, x => x.neg()),
         position: 'prefix',
         description: '负号'
     },
     'unary+': {
-        precedence: 5,
+        precedence: 6,
         args: 1,
         func: x => x,
         position: 'prefix',
