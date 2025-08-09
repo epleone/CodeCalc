@@ -147,7 +147,7 @@ export const OPERATORS = {
         args: 2,
         func: (x, y) => {
             //打印x和y的类型
-            console.log(typeof x, typeof y);
+            // console.log(typeof x, typeof y);
             return x & y;
         },
         position: 'infix',
@@ -270,9 +270,9 @@ export const OPERATORS = {
         precedence: 0,
         args: 2,
         func: (oldValue, rightValue) => {
-            console.log("|=", oldValue, rightValue);
-            console.log("oldValue的类型:", typeof oldValue);
-            console.log("rightValue的类型:", typeof rightValue);
+            // console.log("|=", oldValue, rightValue);
+            // console.log("oldValue的类型:", typeof oldValue);
+            // console.log("rightValue的类型:", typeof rightValue);
             return oldValue | rightValue;
         },
         position: 'infix',

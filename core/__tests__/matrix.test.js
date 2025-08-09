@@ -867,7 +867,10 @@ describe('Matrix Operations', () => {
     test('三角函数', () => {
       expect(Calculator.calculate('a={pi/2, -pi/2; pi, -pi}').value).toBe('{1.570796,-1.570796;3.141593,-3.141593}');
       
-      expect(Calculator.calculate('sin(a)').value).toBe('{1,-1;0,-0}');
+      const sinA = Calculator.calculate('sin(a)').value;
+      // {1,-1;0,0} 或 {1,-1;0,-0} 都是对的
+      expect(['{1,-1;0,0}', '{1,-1;0,-0}']).toContain(sinA);
+
       expect(Calculator.calculate('cos(a)').value).toBe('{0,0;-1,-1}');
       expect(Calculator.calculate('tan({pi/4, -pi/4, pi/6})').value).toBe('{1,-1,0.57735}');
       

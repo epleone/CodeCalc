@@ -7,7 +7,6 @@ Decimal.set({
     precision: 21,
     // toExpNeg: -7,        // 小于 1e-7 时使用科学记数法，在函数formatToDisplayString中会被格式化覆盖
     // toExpPos: 20,        // 大于 1e20 时使用科学记数法，默认21
-    minE: -21,              // 小于 1e-21 时截断为0
 });
 
 // 打印Decimal的配置
@@ -220,6 +219,14 @@ const Utils = {
 
         if(isDecimal(result)) {
             // 检查result.toString()中含有e 
+            if(result.toString().includes('e-')) {
+                let str = result.toString();
+                let [coefficient, exponent] = str.split('e-');
+                if(exponent > 20) {
+                    return '0';
+                }
+            }
+
             if(result.toString().includes('e+') || result.toString().includes('e-')) {
                 // 保留16位小数
                 let str = result.toExponential(16);
@@ -259,100 +266,105 @@ const Utils = {
     },
 
     // 将数字格式化成中文数字 壹 贰 叁 肆 伍 陆 柒 捌 玖 拾 佰 仟 万 亿 兆
-    formatToChinese(x){
-        console.log("formatToChinese x: ", x.toString());
-        if(!isDecimal(x)) {
-            return  { value: x, warning: "无法将object转换为中文数字" }
+    formatToChinese(x) {
+        if (!isDecimal(x)) {
+            return { value: x, warning: "无法将object转换为中文数字" };
         }
-
+    
         let num = x.toNumber();
-
-        console.log("num: ", num);
-
-        // Handle negative numbers
+    
+        // 处理负数
         let negative = false;
         if (num < 0) {
             num = -num;
             negative = true;
         }
-      
-        // Round to 2 decimal places for financial precision
-        num = Math.round(num * 100) / 100;
+    
+        // 四舍五入到3位小数
+        num = Math.round(num * 1000) / 1000;
         let str = num.toString();
         let [integer, decimal = ""] = str.split(".");
-      
+    
         const CN_NUM = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
         const CN_UNIT = ["", "拾", "佰", "仟"];
         const CN_BIG_UNIT = ["", "万", "亿", "兆"];
-        const CN_DOT = ["角", "分"];
-      
-        // Process integer part
+        const CN_DOT = ["角", "分", "厘"];
+    
+        // 处理整数部分
         let integerPart = "";
         if (integer === "0") {
-          integerPart = CN_NUM[0]; // Handle zero case
+            integerPart = CN_NUM[0]; // 处理零的情况
         } else {
-          let groups = [];
-          // Split integer into groups of 4 digits (right to left)
-          for (let i = integer.length; i > 0; i -= 4) {
-            groups.unshift(integer.slice(Math.max(0, i - 4), i));
-          }
-      
-          let zeroPending = false; // Tracks if a zero needs to be added
-          for (let i = 0; i < groups.length; i++) {
-            let group = groups[i];
-            let groupStr = "";
-            let allZero = true; // Tracks if the group is all zeros
-      
-            // Process each digit in the group
-            for (let j = 0; j < group.length; j++) {
-              const digit = parseInt(group[j]);
-              const unitPos = group.length - j - 1;
-      
-              if (digit !== 0) {
-                allZero = false;
-                if (zeroPending) {
-                  groupStr += CN_NUM[0]; // Add pending zero
-                  zeroPending = false;
+            let groups = [];
+            // 将整数部分按4位分组（从右到左）
+            for (let i = integer.length; i > 0; i -= 4) {
+                groups.unshift(integer.slice(Math.max(0, i - 4), i));
+            }
+    
+            for (let i = 0; i < groups.length; i++) {
+                let group = groups[i];
+                let groupStr = "";
+                let allZero = true; // 跟踪组是否全为零
+                let zeroPending = false; // 跟踪组内是否需要“零”
+    
+                // 处理组内每个数字
+                for (let j = 0; j < group.length; j++) {
+                    const digit = parseInt(group[j]);
+                    const unitPos = group.length - j - 1;
+    
+                    if (digit !== 0) {
+                        allZero = false;
+                        if (zeroPending) {
+                            groupStr += CN_NUM[0]; // 添加组内待处理的“零”
+                            zeroPending = false;
+                        }
+                        groupStr += CN_NUM[digit] + CN_UNIT[unitPos];
+                    } else if (unitPos > 0 && !allZero) {
+                        zeroPending = true; // 标记组内“零”待处理
+                    }
                 }
-                groupStr += CN_NUM[digit] + CN_UNIT[unitPos];
-              } else if (unitPos > 0 && !allZero) {
-                zeroPending = true; // Mark zero as pending
-              }
+    
+                // 追加大单位（万、亿、兆），如果组不全为零
+                if (!allZero) {
+                    groupStr += CN_BIG_UNIT[groups.length - i - 1];
+                    integerPart += groupStr;
+                }
+    
+                // 组间“零”的添加
+                if (i < groups.length - 1 && !allZero) {
+                    // 检查后续组是否有非零数字
+                    let hasNonZero = false;
+                    for (let k = i + 1; k < groups.length; k++) {
+                        if (groups[k].match(/[1-9]/)) {
+                            hasNonZero = true;
+                            break;
+                        }
+                    }
+                    // 仅在需要时添加“零”：后续组有非零数字，且当前 integerPart 不以“零”结尾
+                    if (hasNonZero && !integerPart.endsWith(CN_NUM[0])) {
+                        integerPart += CN_NUM[0];
+                    }
+                }
             }
-      
-            // Append big unit (万, 亿, 兆) if group is not all zeros
-            if (!allZero) {
-              groupStr += CN_BIG_UNIT[groups.length - i - 1];
-              integerPart += groupStr;
-            } else if (integerPart && i < groups.length - 1) {
-              // Add zero between non-zero groups if needed
-              integerPart += CN_NUM[0];
-            }
-          }
         }
-      
-        integerPart = integerPart || CN_NUM[0]; // Default to "零" if empty
-        integerPart += "元"; // Append "元"
-      
-        // Process decimal part
+    
+        integerPart = integerPart || CN_NUM[0]; // 空则默认“零”
+        integerPart += "元"; // 追加“元”
+    
+        // 处理小数部分
         let decimalPart = "";
         if (decimal && decimal !== "00") {
-          decimal = decimal.padEnd(2, "0").slice(0, 2); // Ensure exactly 2 decimal places
-          for (let i = 0; i < decimal.length; i++) {
-            const digit = parseInt(decimal[i]);
-            if (digit !== 0) {
-              decimalPart += CN_NUM[digit] + CN_DOT[i];
-            } else {
-              // Only add "零" if followed by a non-zero digit
-              if (i === 0 && decimal[1] !== "0") {
-                decimalPart += CN_NUM[0];
-              }
+            decimal = decimal.padEnd(3, "0").slice(0, 3); // 确保3位小数
+            for (let i = 0; i < decimal.length; i++) {
+                const digit = parseInt(decimal[i]);
+                if (digit !== 0) {
+                    decimalPart += CN_NUM[digit] + CN_DOT[i];
+                }
             }
-          }
         }
-      
-        decimalPart = decimalPart || "整"; // Default to "整" if no decimal part
-      
+    
+        decimalPart = decimalPart || "整"; // 无小数则为“整”
+    
         return { value: (negative ? "负" : "") + integerPart + decimalPart, info: `原始数字: ${x.toNumber()}` };
     },
       
@@ -1036,8 +1048,8 @@ const Utils = {
             // 创建结果矩阵
             const result = args[0].clone();
 
-            console.log('result type:', typeof result.rows);
-            console.log('arg[0] type:', typeof args[0].rows);
+            // console.log('result type:', typeof result.rows);
+            // console.log('arg[0] type:', typeof args[0].rows);
             
             // 遍历其余矩阵，更新最大值
             for (let j = 1; j < args.length; j++) {
