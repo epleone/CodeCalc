@@ -44,6 +44,7 @@ export const OPERATORS = {
         precedence: 4,
         args: 2,
         func: Utils.multiply,
+        argTypes: 'any',
         position: 'infix',
         description: '乘法'
     },
@@ -51,6 +52,7 @@ export const OPERATORS = {
         precedence: 4,
         args: 2,
         func: Utils.divide,
+        argTypes: 'any',
         position: 'infix',
         description: '除法'
     },

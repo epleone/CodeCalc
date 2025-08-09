@@ -38,6 +38,11 @@ class Datestamp {
         return ym;
     }
 
+    times(scale) {
+        console.log("Datestamp times: ", this.year, this.month, this.timestamp, scale);
+        return new Datestamp(this.year * scale, this.month * scale, this.timestamp * scale);
+    }
+
     toString() {
         let ts = this.getYMString() + this.timestamp + 'ms';
         return ts;
@@ -184,7 +189,12 @@ const Utils = {
             throw new Error(`不支持的类型: ${type}`);
 
         } catch (error) {
-            throw new Error(`无法将 ${value} 转换为 ${type} 类型`);
+            if(isString(value) && value.startsWith('$')){
+                throw new Error(`默认变量 ${value} 还不能使用`);
+            }
+            else{
+                throw new Error(`无法将 ${value} 转换为 ${type} 类型`);
+            }
         }
     },
 
@@ -312,12 +322,30 @@ const Utils = {
     },
 
     multiply(x, y) {
+
+        // 支持时间间隔乘以数字
+        if(isDatestamp(x) && isDigital(y)) {
+            return x.times(y);
+        }
+
+        if(isDigital(x) && isDatestamp(y)) {
+            return y.times(x);
+        }
+
         // 不可以定义 argTypes: 'any', 需要转换参数类型到Decimal
         let mulOP = (x, y) => x.times(y);
         return addOpSupport('乘法', x, y, mulOP, mulOP);
     },
 
     divide(x, y) {
+        if(isDatestamp(x) && isDigital(y)) {
+            return x.times(1/y);
+        }
+
+        if(isDigital(x) && isDatestamp(y)) {
+            return y.times(1/x);
+        }
+
         // 不可以定义 argTypes: 'any', 需要转换参数类型
 
         // 不满足交换律

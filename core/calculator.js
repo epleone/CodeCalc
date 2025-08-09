@@ -703,7 +703,13 @@ const Calculator = (function() {
                 if (node.value === '=') {
                     // 普通赋值
                     variables.set(left.value, rightValue);
-                    addInfo(`添加变量 ${left.value}: ${rightValue}`)
+                    if (left.value.startsWith('$')){
+                        addInfo(`默认变量: ${left.value} = ${rightValue}`)
+                    }
+                    else{
+                        addInfo(`自定义变量: ${left.value} = ${rightValue}`)
+                    }
+                    
 
                     // 检查是否是x变量，提示无法使用x做为乘法
                     if (left.value === 'x') {

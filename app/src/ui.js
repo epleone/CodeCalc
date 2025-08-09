@@ -617,7 +617,7 @@ function calculateLine(input, ignoreEmptyLine=false) {
 
     const dollarNumberPattern = /^\s*\$\d+\s*=/;
     if (dollarNumberPattern.test(expression)) {
-        setState('', 'error', '不允许赋值 `$数字` 的变量');
+        setState('', 'error', '`$数字` 是默认保留变量名, 不允许赋值!');
         return;
     }
 
