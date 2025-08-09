@@ -39,7 +39,7 @@ class Datestamp {
     }
 
     times(scale) {
-        console.log("Datestamp times: ", this.year, this.month, this.timestamp, scale);
+        // console.log("Datestamp times: ", this.year, this.month, this.timestamp, scale);
         return new Datestamp(this.year * scale, this.month * scale, this.timestamp * scale);
     }
 

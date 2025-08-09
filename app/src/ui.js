@@ -690,15 +690,20 @@ function calculateLine(input, ignoreEmptyLine=false) {
         messageIcon.className = 'message-icon';  // 重置消息图标的类
     }
 
-    // 空输入处理
-    if (!ignoreEmptyLine && expression === '') {
-        // 不设置 ignoreEmptyLine 时，会递归调用 calculateLine 导致栈溢出
+    // TODO:空输入处理
+    if (expression === '') {
+        // 不设置 ignoreEmptyLine 时，recalculateAllLines 会递归调用 calculateLine 导致栈溢出
         // TODO:清除当前行的变量，是否还有更好的做法？
-        console.log('空输入处理, 重新计算所有行');
-        recalculateAllLines();
-        clearState();
+        if(!ignoreEmptyLine ){
+            console.log('空输入处理, 重新计算所有行');
+            recalculateAllLines();
+            clearState();
+        }
+
+        // 空行不处理
         return;
     }
+
     result.classList.add('has-input');
 
     try {

@@ -9,8 +9,14 @@ export class Notification {
     clearAll() {
         const notifications = document.querySelectorAll('.notification');
         notifications.forEach(notification => {
-            notification.remove();
+            if (notification && document.body.contains(notification)) {
+                notification.remove();
+            }
         });
+        // 如果当前实例的元素被清理了，也要重置引用
+        if (this.element && !document.body.contains(this.element)) {
+            this.element = null;
+        }
     }
 
     // 显示通知
@@ -28,11 +34,15 @@ export class Notification {
         
         // 设置定时器移除通知
         setTimeout(() => {
-            this.element.classList.add('fade-out');
-            setTimeout(() => {
-                this.element.remove();
-                this.element = null;
-            }, 300);
+            if (this.element && document.body.contains(this.element)) {
+                this.element.classList.add('fade-out');
+                setTimeout(() => {
+                    if (this.element && document.body.contains(this.element)) {
+                        this.element.remove();
+                        this.element = null;
+                    }
+                }, 300);
+            }
         }, duration);
     }
 
