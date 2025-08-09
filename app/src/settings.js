@@ -28,6 +28,8 @@ export class Settings {
         // 添加 ESC 键监听
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isPanelVisible) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.tooltipIcon.classList.remove('clicked');
                 this.togglePanel();
             }

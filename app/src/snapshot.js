@@ -30,6 +30,8 @@ export class Snapshot {
         // 添加 ESC 键监听
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isPanelVisible) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.togglePanel();
             }
         });
@@ -276,6 +278,7 @@ export class Snapshot {
             if (e.key === 'Enter') {
                 titleInput.blur();
             } else if (e.key === 'Escape') {
+                e.preventDefault();
                 timeHeader.classList.remove('editing');
                 titleInput.value = snapshot.title || '';
             }

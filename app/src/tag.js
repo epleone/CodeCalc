@@ -131,6 +131,8 @@ export function showTagInput(line) {
                 closeInput(true);
             }
         } else if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
             closeInput(true);
         }
     });
