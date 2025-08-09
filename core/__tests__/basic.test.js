@@ -457,7 +457,14 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('sin(0)').value).toBe('0');
       expect(Calculator.calculate('sin(pi/2)').value).toBe('1');
       expect(Calculator.calculate('sin(pi)').value).toBe('0');
-      
+      expect(Calculator.calculate('sin(-pi/2)').value).toBe('-1');
+      expect(Calculator.calculate('sin(-pi)').value).toBe('0');
+      expect(Calculator.calculate('sin(2*pi)').value).toBe('0');
+
+      // 特殊值
+      expect(Calculator.calculate('sin(pi/6)').value).toBe('0.5');
+      expect(Calculator.calculate('sin(-pi/6)').value).toBe('-0.5');
+
       // 矩阵正弦
       expect(() => Calculator.calculate('sin([0, pi/2])')).not.toThrow();
     });
@@ -466,6 +473,13 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('cos(0)').value).toBe('1');
       expect(Calculator.calculate('cos(pi/2)').value).toBe('0');
       expect(Calculator.calculate('cos(pi)').value).toBe('-1');
+      expect(Calculator.calculate('cos(-pi/2)').value).toBe('0');
+      expect(Calculator.calculate('cos(-pi)').value).toBe('-1');
+      expect(Calculator.calculate('cos(2*pi)').value).toBe('1');
+
+      // 特殊值
+      expect(Calculator.calculate('cos(pi/3)').value).toBe('0.5');
+      expect(Calculator.calculate('cos(-pi/3)').value).toBe('0.5');
       
       // 矩阵余弦
       expect(() => Calculator.calculate('cos([0, pi/2])')).not.toThrow();
