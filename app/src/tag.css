@@ -1,13 +1,9 @@
 /* 添加根变量 */
 :root {
-    --tag-bg: rgba(60, 60, 67, 0.06);
-    --tag-color: #454545;
-    --tag-hover-bg: rgba(60, 60, 67, 0.09);
-    --tag-hover-color: #2c2c2e;
-    --tag-border-color: #40c463;
-    --tag-hover-border-color: #2ea043;
-    --tag-triangle-color: #f8f9fa;
-    --tag-triangle-even-color: #e9ecef;
+    --tag-bg: rgba(147, 112, 219, 0.1);
+    --tag-color: #9370DB;
+    --tag-hover-bg: rgba(147, 112, 219, 0.15);
+    --tag-hover-color: #8A2BE2;
     --tag-delete-bg: #f8f9fa;
     --tag-delete-even-bg: #e9ecef;
     --tag-delete-color: #ff3b30;
@@ -15,14 +11,10 @@
 }
 
 :root[data-theme="dark"] {
-    --tag-bg: rgba(235, 235, 245, 0.08);
-    --tag-color: #e5e5e5;
-    --tag-hover-bg: rgba(235, 235, 245, 0.12);
-    --tag-hover-color: #ffffff;
-    --tag-border-color: #238636;
-    --tag-hover-border-color: #2ea043;
-    --tag-triangle-color: #1c1c1e;
-    --tag-triangle-even-color: #2c2c2e;
+    --tag-bg: rgba(147, 112, 219, 0.15);
+    --tag-color: #B19CD9;
+    --tag-hover-bg: rgba(147, 112, 219, 0.2);
+    --tag-hover-color: #C8A2C8;
     --tag-delete-bg: #1c1c1e;
     --tag-delete-even-bg: #2c2c2e;
     --tag-delete-color: #ff453a;
@@ -66,61 +58,29 @@
 .tag {
     display: inline-flex;
     align-items: center;
-    padding: 0 8px;
-    padding-right: 20px;
+    padding: 0 6px;
     background-color: var(--tag-bg);
-    border-radius: 3px;
-    font-size: 12px;
+    border-radius: 10px;
+    font-size: 11px;
     color: var(--tag-color);
     cursor: pointer;
-    transition: all 0.15s ease;
-    max-width: 180px;
+    transition: all 0.2s ease;
+    max-width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    height: 20px;
+    height: 18px;
     position: relative;
-    font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
-    border-left: 2px solid var(--tag-border-color);
-}
-
-/* 修改三角形颜色，使用与背景相同的变量 */
-.tag::before {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 10px 10px 10px 0;
-    border-color: transparent var(--bg-expression-odd) transparent transparent;
-    z-index: 2;
-}
-
-/* 偶数行的三角形颜色 */
-.expression-line:nth-child(even) .tag::before {
-    border-color: transparent var(--bg-expression-even) transparent transparent;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: blur(8px);
 }
 
 .tag:hover {
     background-color: var(--tag-hover-bg);
     color: var(--tag-hover-color);
-    border-left-color: var(--tag-hover-border-color);
-}
-
-/* hover状态保持相同的背景色 */
-.tag:hover::before {
-    border-color: transparent var(--bg-expression-odd) transparent transparent;
-}
-
-.tag:hover::after {
-    opacity: 0.7;
-    pointer-events: auto;
-}
-
-.tag:hover::after:hover {
-    opacity: 1;
+    transform: none;
 }
 
 /* 标签输入框样式 */
@@ -242,10 +202,7 @@
     background-color: var(--tag-delete-hover-bg);
 }
 
-/* hover状态保持相同的背景色 */
-.expression-line:nth-child(even) .tag:hover::before {
-    border-color: transparent var(--bg-expression-even) transparent transparent;
-}
+
 
 /* 添加提示框样式，当文本被截断时显示完整内容 */
 .tag[title] {
