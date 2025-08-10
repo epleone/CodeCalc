@@ -42,7 +42,10 @@ export function initializeTagButton(line) {
         
         tooltipTimer = setTimeout(() => {
             const rect = tagButton.getBoundingClientRect();
-            createTooltip('添加标签', rect.right + 5, rect.bottom + 5);
+            // 检查是否已经存在标签，显示相应的提示
+            const existingTag = line.querySelector('.tag');
+            const tooltipText = existingTag ? '修改标签' : '添加标签';
+            createTooltip(tooltipText, rect.right + 5, rect.bottom + 5);
         }, 300);
     });
     
@@ -164,13 +167,22 @@ export function setTag(line, tagText) {
         if (existingTag) {
             existingTag.remove();
         }
+        // 同时清除删除按钮
+        const existingDeleteBtn = tagContainer.querySelector('.tag-delete-btn');
+        if (existingDeleteBtn) {
+            existingDeleteBtn.remove();
+        }
         return;
     }
     
-    // 移除现有标签
+    // 移除现有标签和删除按钮
     const existingTag = tagContainer.querySelector('.tag');
+    const existingDeleteBtn = tagContainer.querySelector('.tag-delete-btn');
     if (existingTag) {
         existingTag.remove();
+    }
+    if (existingDeleteBtn) {
+        existingDeleteBtn.remove();
     }
     
     // 创建新标签
@@ -178,43 +190,23 @@ export function setTag(line, tagText) {
     tag.className = 'tag';
     tag.textContent = tagText;
     
-    // 在按钮后面添加标签，不隐藏按钮
+    // 创建独立的删除按钮
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'tag-delete-btn';
+    deleteBtn.innerHTML = '×';
+    deleteBtn.title = '删除标签';
+    
+    // 在按钮后面添加标签和删除按钮
     tagContainer.appendChild(tag);
+    tagContainer.appendChild(deleteBtn);
     
-    // 点击标签事件处理
-    tag.addEventListener('click', (e) => {
-        const rect = tag.getBoundingClientRect();
-        const isClickOnDelete = e.clientX > rect.right - 20 && e.clientX < rect.right + 4;
+    // 删除按钮点击事件
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        tag.remove();
+        deleteBtn.remove();
         
-        if (isClickOnDelete) {
-            // 点击删除按钮
-            e.stopPropagation();
-            tag.remove();
-            
-            // 清除提示框
-            if (tooltipTimer) {
-                clearTimeout(tooltipTimer);
-            }
-            if (currentTooltip) {
-                currentTooltip.remove();
-                currentTooltip = null;
-            }
-        } else {
-            // 点击标签其他区域进行编辑
-            showTagInput(line);
-        }
-    });
-    
-    tag.addEventListener('mouseenter', (e) => {
-        if (tooltipTimer) clearTimeout(tooltipTimer);
-        
-        tooltipTimer = setTimeout(() => {
-            const rect = tag.getBoundingClientRect();
-            createTooltip('点击编辑', rect.right + 5, rect.bottom + 5);
-        }, 300);
-    });
-    
-    tag.addEventListener('mouseleave', () => {
+        // 清除提示框
         if (tooltipTimer) {
             clearTimeout(tooltipTimer);
         }
@@ -222,6 +214,69 @@ export function setTag(line, tagText) {
             currentTooltip.remove();
             currentTooltip = null;
         }
+    });
+    
+    // 标签点击事件（只用于编辑）
+    tag.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showTagInput(line);
+    });
+    
+    // 标签悬停事件处理
+    tag.addEventListener('mouseenter', (e) => {
+        if (tooltipTimer) clearTimeout(tooltipTimer);
+        
+        // 显示删除按钮
+        deleteBtn.style.opacity = '1';
+        deleteBtn.style.pointerEvents = 'auto';
+        
+        tooltipTimer = setTimeout(() => {
+            const rect = tag.getBoundingClientRect();
+            createTooltip('点击编辑', rect.right + 5, rect.bottom + 5);
+        }, 300);
+    });
+    
+    tag.addEventListener('mouseleave', (e) => {
+        if (tooltipTimer) {
+            clearTimeout(tooltipTimer);
+        }
+        if (currentTooltip) {
+            currentTooltip.remove();
+            currentTooltip = null;
+        }
+        
+        // 延迟隐藏删除按钮，给用户时间移动到删除按钮上
+        setTimeout(() => {
+            // 检查鼠标是否在tag或删除按钮上
+            const isOverTag = tag.matches(':hover');
+            const isOverDeleteBtn = deleteBtn.matches(':hover');
+            
+            if (!isOverTag && !isOverDeleteBtn) {
+                deleteBtn.style.opacity = '0';
+                deleteBtn.style.pointerEvents = 'none';
+            }
+        }, 300);
+    });
+    
+    // 删除按钮悬停事件处理
+    deleteBtn.addEventListener('mouseenter', (e) => {
+        // 保持删除按钮可见
+        deleteBtn.style.opacity = '1';
+        deleteBtn.style.pointerEvents = 'auto';
+    });
+    
+    deleteBtn.addEventListener('mouseleave', (e) => {
+        // 延迟隐藏删除按钮，给用户时间移动到tag上
+        setTimeout(() => {
+            // 检查鼠标是否在tag或删除按钮上
+            const isOverTag = tag.matches(':hover');
+            const isOverDeleteBtn = deleteBtn.matches(':hover');
+            
+            if (!isOverTag && !isOverDeleteBtn) {
+                deleteBtn.style.opacity = '0';
+                deleteBtn.style.pointerEvents = 'none';
+            }
+        }, 100);
     });
 }
 
@@ -232,11 +287,13 @@ export function restoreTag(line, tagText) {
     const tagContainer = line.querySelector('.tag-container');
     if (!tagContainer) return;
     
-    // 清除现有标签和输入框
+    // 清除现有标签、输入框和删除按钮
     const existingTag = tagContainer.querySelector('.tag');
     const existingInput = tagContainer.querySelector('.tag-input-container');
+    const existingDeleteBtn = tagContainer.querySelector('.tag-delete-btn');
     if (existingTag) existingTag.remove();
     if (existingInput) existingInput.remove();
+    if (existingDeleteBtn) existingDeleteBtn.remove();
     
     // 使用 setTag 设置新标签
     setTag(line, tagText);

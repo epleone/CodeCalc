@@ -30,7 +30,7 @@
     overflow: visible;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 1px;
 }
 
 .tag-button {
@@ -75,6 +75,16 @@
     border: none;
     box-shadow: none;
     backdrop-filter: blur(8px);
+}
+
+/* 为tag添加#符号前缀 */
+.tag::before {
+    content: '#';
+    margin-right: 2px;
+    font-weight: bold;
+    color: #D32F2F;
+    opacity: 0.9;
+    font-size: 13px;
 }
 
 .tag:hover {
@@ -165,43 +175,47 @@
 }
 
 /* 删除按钮 */
-.tag::after {
-    content: '×';
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 12px;
-    color: var(--tag-delete-color);
-    opacity: 0;
-    transition: all 0.15s ease;
-    cursor: pointer;
-    pointer-events: auto;
-    z-index: 10;
-    width: 14px;
-    height: 14px;
-    line-height: 14px;
-    text-align: center;
-    border-radius: 50%;
-    font-weight: bold;
+.tag-delete-btn {
+    width: 16px;
+    height: 16px;
+    border: none;
     background-color: var(--tag-delete-bg);
+    border-radius: 50%;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--tag-delete-color);
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.15s ease;
+    opacity: 0;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     user-select: none;
+    padding: 0;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* 当鼠标悬停在tag上时显示删除按钮 */
+.tag:hover + .tag-delete-btn,
+.tag-delete-btn:hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.tag-delete-btn:hover {
+    background-color: var(--tag-delete-hover-bg);
+    transform: scale(1.1);
 }
 
 /* 偶数行删除按钮背景色 */
-.expression-line:nth-child(even) .tag::after {
+.expression-line:nth-child(even) .tag-delete-btn {
     background-color: var(--tag-delete-even-bg);
 }
 
-/* 删除其他所有的 .tag::after 相关规则，只保留这一个 hover 规则 */
-.tag:hover::after {
-    opacity: 1;
-    background-color: var(--tag-delete-hover-bg);
-}
-
+/* 移除原来的 .tag::after 相关规则 */
 
 
 /* 添加提示框样式，当文本被截断时显示完整内容 */
