@@ -6,22 +6,30 @@ export class Settings {
         this.overlay.className = 'settings-overlay';
         document.body.appendChild(this.overlay);
         
+        // 添加存储适配器，支持uTools和localStorage
+        this.storage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
+        
         // 添加图标点击效果
         this.tooltipIcon = document.querySelector('.tooltip-icon');
         // console.log('Tooltip icon element:', this.tooltipIcon);
         
-        // 直接在图标上添加点击事件
-        this.tooltipIcon.onclick = (e) => {
-            console.log('Tooltip icon clicked');
-            e.preventDefault();
-            e.stopPropagation();
-            this.tooltipIcon.classList.add('clicked');
-            this.togglePanel();
-        };
+        // 检查图标元素是否存在再添加事件
+        if (this.tooltipIcon) {
+            // 直接在图标上添加点击事件
+            this.tooltipIcon.onclick = (e) => {
+                console.log('Tooltip icon clicked');
+                e.preventDefault();
+                e.stopPropagation();
+                this.tooltipIcon.classList.add('clicked');
+                this.togglePanel();
+            };
+        }
         
         // 添加蒙版点击事件
         this.overlay.addEventListener('click', () => {
-            this.tooltipIcon.classList.remove('clicked');
+            if (this.tooltipIcon) {
+                this.tooltipIcon.classList.remove('clicked');
+            }
             this.togglePanel();
         });
         
@@ -30,32 +38,104 @@ export class Settings {
             if (e.key === 'Escape' && this.isPanelVisible) {
                 e.preventDefault();
                 e.stopPropagation();
-                this.tooltipIcon.classList.remove('clicked');
+                if (this.tooltipIcon) {
+                    this.tooltipIcon.classList.remove('clicked');
+                }
                 this.togglePanel();
             }
         });
         
-        // 添加 toCNToggle 切换监听器
+        // 初始化设置项并加载保存的设置
+        this.initSettings();
+    }
+    
+    // 初始化设置项
+    initSettings() {
+        // 加载保存的设置
+        this.loadSettings();
+        
+        // 初始化所有设置项的监听器
         this.initToggleListeners();
+    }
+    
+    // 保存设置到存储
+    saveSettings() {
+        try {
+            const settings = {
+                completionToggle: document.getElementById('completionToggle')?.checked ?? false,
+                historyToggle: document.getElementById('historyToggle')?.checked ?? false,
+                onlyCopyRsltToggle: document.getElementById('onlyCopyRsltToggle')?.checked ?? false,
+                toCNToggle: document.getElementById('toCNToggle')?.checked ?? false
+            };
+            
+            this.storage.setItem('calculatorSettings', JSON.stringify(settings));
+            console.log('设置已保存:', settings);
+        } catch (e) {
+            console.warn('保存设置失败:', e);
+        }
+    }
+    
+    // 从存储加载设置
+    loadSettings() {
+        try {
+            const saved = this.storage.getItem('calculatorSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                console.log('加载保存的设置:', settings);
+                
+                // 应用保存的设置到UI
+                this.applySettings(settings);
+            }
+            // 如果没有保存的设置，保持HTML中的默认值
+        } catch (e) {
+            console.warn('加载设置失败:', e);
+        }
+    }
+    
+    // 应用设置到UI
+    applySettings(settings) {
+        const completionToggle = document.getElementById('completionToggle');
+        const historyToggle = document.getElementById('historyToggle');
+        const onlyCopyRsltToggle = document.getElementById('onlyCopyRsltToggle');
+        const toCNToggle = document.getElementById('toCNToggle');
+        
+        if (completionToggle && settings.completionToggle !== undefined) completionToggle.checked = settings.completionToggle;
+        if (historyToggle && settings.historyToggle !== undefined) historyToggle.checked = settings.historyToggle;
+        if (onlyCopyRsltToggle && settings.onlyCopyRsltToggle !== undefined) onlyCopyRsltToggle.checked = settings.onlyCopyRsltToggle;
+        if (toCNToggle && settings.toCNToggle !== undefined) toCNToggle.checked = settings.toCNToggle;
     }
     
     // 初始化设置项的监听器
     initToggleListeners() {
-        // 监听 toCNToggle 的变化
-        const toCNToggle = document.getElementById('toCNToggle');
-        if (toCNToggle) {
-            toCNToggle.addEventListener('change', () => {
-                // 当开关状态改变时，重新计算所有行
-                window.recalculateAllLines();
-            });
-        }
+        // 监听所有设置项的变化
+        const settingIds = ['completionToggle', 'historyToggle', 'onlyCopyRsltToggle', 'toCNToggle'];
+        
+        settingIds.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', () => {
+                    // 保存设置
+                    this.saveSettings();
+                    
+                    // 特殊处理某些设置项
+                    if (id === 'toCNToggle') {
+                        // 当开关状态改变时，重新计算所有行
+                        if (typeof window.recalculateAllLines === 'function') {
+                            window.recalculateAllLines();
+                        }
+                    }
+                    
+                    console.log(`设置项 ${id} 已更新:`, element.checked);
+                });
+            }
+        });
     }
     
     togglePanel() {
         this.isPanelVisible = !this.isPanelVisible;
         if (this.isPanelVisible) {
-            // 使用全局 window.snapshot 替代导入的 snapshot
-            if (window.snapshot.isPanelVisible) {
+            // 使用全局 window.snapshot 替代导入的 snapshot，添加安全检查
+            if (window.snapshot && window.snapshot.isPanelVisible) {
                 window.snapshot.togglePanel();
             }
             // 移除当前焦点
@@ -78,13 +158,19 @@ export class Settings {
     }
 }
 
+// 创建全局实例
+const settings = new Settings();
+
 // 添加快捷键支持，Ctrl + P 打开设置页面
 document.addEventListener('keydown', (e) => {
-    const isCtrlP = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.code === 'KeyP';
+    // 检查 utools 是否存在
+    if (typeof utools !== 'undefined') {
+        const isCtrlP = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.code === 'KeyP';
 
-    if (isCtrlP) {
-        e.preventDefault();
-        settings.togglePanel();
+        if (isCtrlP) {
+            e.preventDefault();
+            settings.togglePanel();
+        }
     }
 });
 
