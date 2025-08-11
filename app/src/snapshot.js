@@ -54,6 +54,14 @@ export class Snapshot {
         document.addEventListener('input', () => {
             this.updateAddButtonState();
         });
+        
+        // 添加切换按钮点击事件
+        const toggleBtn = document.querySelector('.snapshot-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                this.togglePanel();
+            });
+        }
     }
     
     // 保存当前页面所有表达式的状态
@@ -525,8 +533,12 @@ export class Snapshot {
         this.isPanelVisible = !this.isPanelVisible;
         if (this.isPanelVisible) {
             // 使用全局 window.settings 替代导入的 settings
-            if (window.settings.isPanelVisible) {
+            if (window.settings && window.settings.isPanelVisible) {
                 window.settings.togglePanel();
+            }
+            // 如果快捷键面板打开，先关闭它
+            if (window.shortcuts && window.shortcuts.isPanelVisible) {
+                window.shortcuts.togglePanel();
             }
             // 移除当前焦点
             if (document.activeElement instanceof HTMLElement) {
@@ -598,11 +610,18 @@ export class Snapshot {
     }
 }
 
+// 创建实例并暴露到全局
+export const snapshot = new Snapshot();
+window.snapshot = snapshot;
+
 // 添加快捷键支持
 document.addEventListener('keydown', (e) => {
-    const isCtrlH = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.code === 'KeyH';
-    if (isCtrlH) {
-        e.preventDefault();
-        snapshot.togglePanel();
+    // 检查 utools 是否存在
+    if (typeof utools !== 'undefined') {
+        const isCtrlH = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.code === 'KeyH';
+        if (isCtrlH) {
+            e.preventDefault();
+            snapshot.togglePanel();
+        }
     }
 }); 

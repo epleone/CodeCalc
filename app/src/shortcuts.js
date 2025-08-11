@@ -24,8 +24,12 @@ export class Shortcuts {
         this.isPanelVisible = !this.isPanelVisible;
         if (this.isPanelVisible) {
             // 如果设置面板打开，先关闭它
-            if (window.settings.isPanelVisible) {
+            if (window.settings && window.settings.isPanelVisible) {
                 window.settings.togglePanel();
+            }
+            // 如果快照面板打开，先关闭它
+            if (window.snapshot && window.snapshot.isPanelVisible) {
+                window.snapshot.togglePanel();
             }
             // 移除当前焦点
             if (document.activeElement instanceof HTMLElement) {
@@ -49,18 +53,21 @@ export class Shortcuts {
 
 // 添加快捷键支持，Ctrl + / 打开快捷键面板
 document.addEventListener('keydown', (e) => {
-    // 检查是否是 Ctrl/Command + /
-    const isCtrlSlash = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === '/';
-        
-    if (isCtrlSlash) {
-        e.preventDefault();
-        e.stopPropagation();
-        shortcuts.togglePanel();
+    // 检查 utools 是否存在
+    if (typeof utools !== 'undefined') {
+        // 检查是否是 Ctrl/Command + /
+        const isCtrlSlash = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === '/';
+            
+        if (isCtrlSlash) {
+            e.preventDefault();
+            e.stopPropagation();
+            shortcuts.togglePanel();
+        }
     }
 });
 
-// 导出切换面板的函数
-window.toggleShortcutsPanel = () => shortcuts.togglePanel();
+// 切换面板功能已通过快捷键和全局实例 window.shortcuts 提供
 
 // 创建实例
 export const shortcuts = new Shortcuts(); 
+window.shortcuts = shortcuts;

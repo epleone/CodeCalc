@@ -95,6 +95,9 @@ export class Settings {
     
     // 应用设置到UI
     applySettings(settings) {
+        // 标记正在应用设置，避免触发保存
+        this.isApplyingSettings = true;
+        
         const completionToggle = document.getElementById('completionToggle');
         const historyToggle = document.getElementById('historyToggle');
         const onlyCopyRsltToggle = document.getElementById('onlyCopyRsltToggle');
@@ -106,6 +109,9 @@ export class Settings {
         if (onlyCopyRsltToggle && settings.onlyCopyRsltToggle !== undefined) onlyCopyRsltToggle.checked = settings.onlyCopyRsltToggle;
         if (toCNToggle && settings.toCNToggle !== undefined) toCNToggle.checked = settings.toCNToggle;
         if (AutoNextLine && settings.AutoNextLine !== undefined) AutoNextLine.checked = settings.AutoNextLine;
+        
+        // 完成应用设置
+        this.isApplyingSettings = false;
     }
     
     // 初始化设置项的监听器
@@ -117,6 +123,11 @@ export class Settings {
             const element = document.getElementById(id);
             if (element) {
                 element.addEventListener('change', () => {
+                    // 如果正在应用设置，不触发保存
+                    if (this.isApplyingSettings) {
+                        return;
+                    }
+                    
                     // 保存设置
                     this.saveSettings();
                     
@@ -139,6 +150,10 @@ export class Settings {
             if (window.snapshot && window.snapshot.isPanelVisible) {
                 window.snapshot.togglePanel();
             }
+            // 如果快捷键面板打开，先关闭它
+            if (window.shortcuts && window.shortcuts.isPanelVisible) {
+                window.shortcuts.togglePanel();
+            }
             // 移除当前焦点
             if (document.activeElement instanceof HTMLElement) {
                 document.activeElement.blur();
@@ -159,8 +174,9 @@ export class Settings {
     }
 }
 
-// 创建全局实例
-const settings = new Settings();
+// 创建实例并暴露到全局
+export const settings = new Settings();
+window.settings = settings;
 
 // 添加快捷键支持，Ctrl + P 打开设置页面
 document.addEventListener('keydown', (e) => {
@@ -174,6 +190,3 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
-
-// 导出切换面板的函数
-window.toggleSettingsPanel = () => settings.togglePanel(); 

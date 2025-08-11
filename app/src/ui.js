@@ -1,9 +1,9 @@
 import { Calculator } from './calculator.min.js';
 import * as Copy from './copy.js';
 import * as Tag from './tag.js';
-import { Settings } from './settings.js';
-import { Snapshot } from './snapshot.js';
-import { shortcuts } from './shortcuts.js';
+import './settings.js';
+import './shortcuts.js';
+import { snapshot } from './snapshot.js';
 import {
     isCompletionEnabled,
     removeCompletionHint,
@@ -14,14 +14,7 @@ import {
 import { notification } from './notification.js';
 
 
-// 创建实例
-export const settings = new Settings();
-export const snapshot = new Snapshot();
 
-// 导出面板切换函数
-export const toggleSnapshotPanel = () => snapshot.togglePanel();
-export const toggleSettingsPanel = () => settings.togglePanel();
-export const toggleShortcutsPanel = () => shortcuts.togglePanel();
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
@@ -527,7 +520,6 @@ function initializeUI() {
 
     // 将标签和快照相关函数添加到全局作用域
     Object.assign(window, Tag);
-    Object.assign(window, Snapshot);
     Object.assign(window, Copy);
     
     // 初始化所有行的标签功能
@@ -875,15 +867,7 @@ Object.assign(window, {
     
     // 初始化函数
     initializeUI,
-    
-    // 面板切换函数
-    toggleSnapshotPanel,
-    toggleSettingsPanel,
-    toggleShortcutsPanel,
-    
-    // 实例
-    settings,
-    snapshot,
+
     handleFocus,
     handleBlur,
 });
