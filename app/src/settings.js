@@ -65,7 +65,8 @@ export class Settings {
                 completionToggle: document.getElementById('completionToggle')?.checked ?? false,
                 historyToggle: document.getElementById('historyToggle')?.checked ?? false,
                 onlyCopyRsltToggle: document.getElementById('onlyCopyRsltToggle')?.checked ?? false,
-                toCNToggle: document.getElementById('toCNToggle')?.checked ?? false
+                toCNToggle: document.getElementById('toCNToggle')?.checked ?? false,
+                AutoNextLine: document.getElementById('AutoNextLine')?.checked ?? false
             };
             
             this.storage.setItem('calculatorSettings', JSON.stringify(settings));
@@ -98,17 +99,19 @@ export class Settings {
         const historyToggle = document.getElementById('historyToggle');
         const onlyCopyRsltToggle = document.getElementById('onlyCopyRsltToggle');
         const toCNToggle = document.getElementById('toCNToggle');
+        const AutoNextLine = document.getElementById('AutoNextLine');
         
         if (completionToggle && settings.completionToggle !== undefined) completionToggle.checked = settings.completionToggle;
         if (historyToggle && settings.historyToggle !== undefined) historyToggle.checked = settings.historyToggle;
         if (onlyCopyRsltToggle && settings.onlyCopyRsltToggle !== undefined) onlyCopyRsltToggle.checked = settings.onlyCopyRsltToggle;
         if (toCNToggle && settings.toCNToggle !== undefined) toCNToggle.checked = settings.toCNToggle;
+        if (AutoNextLine && settings.AutoNextLine !== undefined) AutoNextLine.checked = settings.AutoNextLine;
     }
     
     // 初始化设置项的监听器
     initToggleListeners() {
         // 监听所有设置项的变化
-        const settingIds = ['completionToggle', 'historyToggle', 'onlyCopyRsltToggle', 'toCNToggle'];
+        const settingIds = ['completionToggle', 'historyToggle', 'onlyCopyRsltToggle', 'toCNToggle', 'AutoNextLine'];
         
         settingIds.forEach(id => {
             const element = document.getElementById(id);
@@ -124,8 +127,6 @@ export class Settings {
                             window.recalculateAllLines();
                         }
                     }
-                    
-                    console.log(`设置项 ${id} 已更新:`, element.checked);
                 });
             }
         });

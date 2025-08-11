@@ -349,7 +349,11 @@ function handleInput(event) {
 }
 
 // 自动添加下一行的函数
-function autoAddNextLineIfNeeded(input) {    
+function autoAddNextLineIfNeeded(input) {
+    // 是否开启自动下一行
+    const AutoNextLine = document.getElementById('AutoNextLine');
+    if (!AutoNextLine.checked) return;
+
     // 只在最后一行且有内容时自动添加新行
     if (isLastLine(input) && input.value.trim() !== '') {
         // 检查是否已经有下一行
