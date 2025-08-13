@@ -582,8 +582,6 @@ export class Snapshot {
             input.dispatchEvent(new Event('input'));
         });
 
-        window.addNewLine();
-
         notification.info('快照已恢复');
 
         // 更新添加按钮状态

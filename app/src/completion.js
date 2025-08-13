@@ -17,7 +17,7 @@ function generateCompletions() {
             
              // 如果不是隐藏函数，添加到补全列表
             if (func.hidden) {
-                console.log(`隐藏函数: ${funcName}`);
+                // console.log(`隐藏函数: ${funcName}`);
                 continue;
             }else{
                 completions.push(`${funcName}(`);

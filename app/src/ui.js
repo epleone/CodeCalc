@@ -200,17 +200,9 @@ function insertNewLine(currentLine) {
     // 聚焦到新行
     const newInput = newLine.querySelector('.input');
     newInput.focus();
-    
-    // 重新计算所有行的结果
-    // const allLines = document.querySelectorAll('.expression-line');
-    // allLines.forEach(line => {
-    //     const input = line.querySelector('.input');
-    //     if (input.value) {
-    //         calculateLine(input);
-    //     }
-    // });
 
-    recalculateAllLines()
+    // 重新计算所有行的结果
+    recalculateAllLines();
 }
 
 

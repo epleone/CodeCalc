@@ -58,6 +58,23 @@ const M_CONST = {
 };
 
 
+// 定义类 ChineseNumber，用于保存中文数字转换结果
+class ChineseNumber {
+    constructor(value, CNValue) {
+        this.value = value;
+        this.CNValue = CNValue;
+    }
+
+    toCNString() {
+        return this.CNValue;
+    }
+
+    toString() {
+        return this.value.toString();
+    }
+
+}
+
 function isNumber(value) {
     return typeof value === 'number';
 }
@@ -68,6 +85,10 @@ function isBigInt(value) {
     
 function isDecimal(value) {
     return value instanceof Decimal;
+}
+
+function isChineseNumber(value) {
+    return value instanceof ChineseNumber;
 }
 
 // 判断是否是数字类型，可以相互转换
@@ -109,7 +130,6 @@ function isVector(value) {
 }
 
 
-
 function isComplexMatrix(value) {
     return value instanceof ComplexMatrix;
 }
@@ -135,6 +155,14 @@ function checkMatrixArgs(args0, args1) {
 
 // 添加标量和矩阵运算支持，注意是否满足交换律
 function addOpSupport(opName, x, y, op_xy, op_yx) {
+    if(isChineseNumber(x)) {
+        x = x.value;
+    }
+
+    if(isChineseNumber(y)) {
+        y = y.value;
+    }
+
     // 使用这个函数时，x和y都强制转换为Decimal类型 或者是 DecMatrix类型
     if(isDigital(x) && isDigital(y)) {
         return op_xy(x, y);
@@ -206,6 +234,8 @@ const Utils = {
     // 将不同的输出格式化成字符串
     formatToDisplayString(result) {
         // console.log('utils@cfg precision:', config.get('precision'));
+        // console.log('result的类型: ', typeof result);
+        // console.log('result: ', result);
 
         // 如果是Datestamp，则返回字符串
         if(isDatestamp(result)) {
@@ -253,6 +283,14 @@ const Utils = {
             return { value: result.toString(), info: "isMatrix" };
         }
 
+        // 如果是中文数字
+        if (isChineseNumber(result)) {
+            return {
+                value: result.toCNString(),
+                info: "原始值: " + result.toString(),
+            };
+        }
+
         // 如果是对象，则返回对象
         if (typeof result === 'object' && result.value) {
             return {
@@ -267,8 +305,12 @@ const Utils = {
 
     // 将数字格式化成中文数字 壹 贰 叁 肆 伍 陆 柒 捌 玖 拾 佰 仟 万 亿 兆
     formatToChinese(x) {
+        if(isChineseNumber(x)) {
+            return x;
+        }
+
         if (!isDecimal(x)) {
-            return { value: x, warning: "无法将object转换为中文数字" };
+            return { value: x, warning: `无法非数字类型转换为中文数字` };
         }
     
         let num = x.toNumber();
@@ -364,8 +406,9 @@ const Utils = {
         }
     
         decimalPart = decimalPart || "整"; // 无小数则为“整”
-    
-        return { value: (negative ? "负" : "") + integerPart + decimalPart, info: `原始数字: ${x.toNumber()}` };
+
+        // return { value: (negative ? "负" : "") + integerPart + decimalPart, info: `原始数字: ${x.toNumber()}` };
+        return new ChineseNumber(x, (negative ? "负" : "") + integerPart + decimalPart);
     },
       
 
