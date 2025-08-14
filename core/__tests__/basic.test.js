@@ -79,6 +79,101 @@ describe('Basic Functions and Operators Tests', () => {
     });
   });
 
+  describe('比较运算符', () => {
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+
+    test('等于运算符 ==', () => {
+      expect(Calculator.calculate('5 == 5').value).toBe('true');
+      expect(Calculator.calculate('5 == 6').value).toBe('false');
+      expect(Calculator.calculate('0 == 0').value).toBe('true');
+      expect(Calculator.calculate('-1 == -1').value).toBe('true');
+      expect(Calculator.calculate('3.14 == 3.14').value).toBe('true');
+      expect(Calculator.calculate('3.14 == 3.15').value).toBe('false');
+      
+      // 数学常数比较
+      expect(Calculator.calculate('pi == 3.14159').value).toBe('false'); // 精度不同
+      expect(Calculator.calculate('e == 2.71828').value).toBe('false'); // 精度不同
+    });
+
+    test('不等于运算符 !=', () => {
+      expect(Calculator.calculate('5 != 6').value).toBe('true');
+      expect(Calculator.calculate('5 != 5').value).toBe('false');
+      expect(Calculator.calculate('0 != 1').value).toBe('true');
+      expect(Calculator.calculate('-1 != 1').value).toBe('true');
+      expect(Calculator.calculate('3.14 != 3.15').value).toBe('true');
+      expect(Calculator.calculate('3.14 != 3.14').value).toBe('false');
+    });
+
+    test('大于运算符 >', () => {
+      expect(Calculator.calculate('5 > 3').value).toBe('true');
+      expect(Calculator.calculate('3 > 5').value).toBe('false');
+      expect(Calculator.calculate('0 > -1').value).toBe('true');
+      expect(Calculator.calculate('-1 > 0').value).toBe('false');
+      expect(Calculator.calculate('3.14 > 3.13').value).toBe('true');
+      expect(Calculator.calculate('3.13 > 3.14').value).toBe('false');
+      
+      // 边界值
+      expect(Calculator.calculate('1 > 1').value).toBe('false');
+      expect(Calculator.calculate('0 > 0').value).toBe('false');
+      expect(Calculator.calculate('-1 > -1').value).toBe('false');
+    });
+
+    test('小于运算符 <', () => {
+      expect(Calculator.calculate('3 < 5').value).toBe('true');
+      expect(Calculator.calculate('5 < 3').value).toBe('false');
+      expect(Calculator.calculate('-1 < 0').value).toBe('true');
+      expect(Calculator.calculate('0 < -1').value).toBe('false');
+      expect(Calculator.calculate('3.13 < 3.14').value).toBe('true');
+      expect(Calculator.calculate('3.14 < 3.13').value).toBe('false');
+      
+      // 边界值
+      expect(Calculator.calculate('1 < 1').value).toBe('false');
+      expect(Calculator.calculate('0 < 0').value).toBe('false');
+      expect(Calculator.calculate('-1 < -1').value).toBe('false');
+    });
+
+    test('大于等于运算符 >=', () => {
+      expect(Calculator.calculate('5 >= 3').value).toBe('true');
+      expect(Calculator.calculate('5 >= 5').value).toBe('true');
+      expect(Calculator.calculate('3 >= 5').value).toBe('false');
+      expect(Calculator.calculate('0 >= -1').value).toBe('true');
+      expect(Calculator.calculate('0 >= 0').value).toBe('true');
+      expect(Calculator.calculate('-1 >= 0').value).toBe('false');
+      expect(Calculator.calculate('3.14 >= 3.14').value).toBe('true');
+      expect(Calculator.calculate('3.14 >= 3.13').value).toBe('true');
+    });
+
+    test('小于等于运算符 <=', () => {
+      expect(Calculator.calculate('3 <= 5').value).toBe('true');
+      expect(Calculator.calculate('5 <= 5').value).toBe('true');
+      expect(Calculator.calculate('5 <= 3').value).toBe('false');
+      expect(Calculator.calculate('-1 <= 0').value).toBe('true');
+      expect(Calculator.calculate('0 <= 0').value).toBe('true');
+      expect(Calculator.calculate('0 <= -1').value).toBe('false');
+      expect(Calculator.calculate('3.14 <= 3.14').value).toBe('true');
+      expect(Calculator.calculate('3.13 <= 3.14').value).toBe('true');
+    });
+
+    test('比较运算符优先级', () => {
+      // 比较运算符优先级低于算术运算符
+      expect(Calculator.calculate('2 + 3 > 4').value).toBe('true');  // (2+3) > 4
+      expect(Calculator.calculate('2 * 3 < 7').value).toBe('true');  // (2*3) < 7
+      expect(Calculator.calculate('10 - 5 >= 3 + 2').value).toBe('true'); // (10-5) >= (3+2)
+      expect(Calculator.calculate('8 / 2 <= 3 + 1').value).toBe('true');  // (8/2) <= (3+1)
+    });
+
+    test('比较运算符与函数结合', () => {
+      expect(Calculator.calculate('sin(0) == 0').value).toBe('true');
+      expect(Calculator.calculate('cos(0) == 1').value).toBe('true');
+      expect(Calculator.calculate('sqrt(4) > 1').value).toBe('true');
+      expect(Calculator.calculate('pow(2,3) >= 8').value).toBe('true');
+      expect(Calculator.calculate('abs(-5) == 5').value).toBe('true');
+    });
+
+  });
+
   describe('一元运算符', () => {
     beforeEach(() => {
       Calculator.clearAllCache();
