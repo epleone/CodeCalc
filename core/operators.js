@@ -8,6 +8,8 @@ export const CONSTANTS = {
     'pi': M_CONST.pi,
     'e': M_CONST.e,
     'E': M_CONST.e,
+    'true': true,
+    'false': false,
 };
 
 // 定界符定义
@@ -317,6 +319,45 @@ export const OPERATORS = {
         isCompoundAssignment: true
     },
 
+    // 比较运算符
+    '==': {
+        precedence: 1,
+        args: 2,
+        func: (x, y) => x.equals(y),
+        position: 'infix',
+    },
+    '!=': {
+        precedence: 1,
+        args: 2,
+        func: (x, y) => !x.equals(y),
+        position: 'infix',
+    },
+    '>': {
+        precedence: 1,
+        args: 2,
+        func: (x, y) => x > y,
+        position: 'infix',
+    },
+    '<': {
+        precedence: 1,
+        args: 2,
+        func: (x, y) => x < y,
+        position: 'infix',
+    },
+    '>=': { 
+        precedence: 1,
+        args: 2,
+        func: (x, y) => x >= y,
+        position: 'infix',
+    },
+    '<=': { 
+        precedence: 1,
+        args: 2,
+        func: (x, y) => x <= y,
+        position: 'infix',
+    },
+    
+
     // 矩阵运算符
     'matmul@': {
         precedence: 4,
@@ -427,6 +468,7 @@ export const FUNCTIONS = {
     'num': {
         func: x => x,
         args: 1,
+        argTypes: 'number',
         description: '转换为数字'
     },
 
@@ -851,7 +893,15 @@ export const FUNCTIONS = {
     // if 函数
     'if': {
         func: (condition, trueValue, falseValue) => {
-            if (condition) {
+            let cond = condition;
+            // console.log(cond, typeof cond, cond.toString(), Boolean(cond.toString()));
+
+            if(typeof cond !== 'boolean'){
+                cond = Boolean(Number(cond));
+            }
+
+            // console.log("cond: ", cond);
+            if (cond) {
                 return trueValue;
             } else {
                 return falseValue;

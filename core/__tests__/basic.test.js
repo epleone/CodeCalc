@@ -776,6 +776,71 @@ describe('Basic Functions and Operators Tests', () => {
     });
   });
 
+  describe('条件函数', () => {
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+
+    test('if - 条件判断函数', () => {
+      // 基本条件判断
+      expect(Calculator.calculate('if(1, 10, 20)').value).toBe('10');
+      expect(Calculator.calculate('if(0, 10, 20)').value).toBe('20');
+      expect(Calculator.calculate('if(true, 10, 20)').value).toBe('10');
+      expect(Calculator.calculate('if(false, 10, 20)').value).toBe('20');
+      
+      // 数值条件判断
+      expect(Calculator.calculate('if(5 > 3, 1, 0)').value).toBe('1');
+      expect(Calculator.calculate('if(3 > 5, 1, 0)').value).toBe('0');
+      expect(Calculator.calculate('if(10 == 10, 123, 456)').value).toBe('123');
+      expect(Calculator.calculate('if(10 != 10, 789, 321)').value).toBe('321');
+      
+      // 复杂条件判断
+      expect(Calculator.calculate('if(2 + 3 == 5, 100, 200)').value).toBe('100');
+      expect(Calculator.calculate('if(2 * 3 == 7, 100, 200)').value).toBe('200');
+      expect(Calculator.calculate('if(sin(0) == 0, 1, 0)').value).toBe('1');
+      expect(Calculator.calculate('if(cos(0) == 1, 1, 0)').value).toBe('1');
+      
+      // 边界条件
+      expect(Calculator.calculate('if(-1, -1, 0)').value).toBe('-1');
+      expect(Calculator.calculate('if(0.001, 1, 0)').value).toBe('1');
+      expect(Calculator.calculate('if(0, 0, 1)').value).toBe('1');
+      
+      // 字符串条件（改为数字）
+      expect(Calculator.calculate('if(1, 11, 22)').value).toBe('11');
+      expect(Calculator.calculate('if(0, 11, 22)').value).toBe('22');
+      
+      // 数学表达式条件
+      expect(Calculator.calculate('if(pi > 3, 314, 3)').value).toBe('314');
+      expect(Calculator.calculate('if(e > 2, 271, 2)').value).toBe('271');
+      expect(Calculator.calculate('if(sqrt(4) == 2, 2, 0)').value).toBe('2');
+      
+      // 嵌套条件
+      expect(Calculator.calculate('if(if(1, 1, 0), 1000, 2000)').value).toBe('1000');
+      expect(Calculator.calculate('if(if(0, 1, 0), 1000, 2000)').value).toBe('2000');
+
+    });
+
+    test('if - 函数嵌套', () => {
+      // 第二、第三个参数用表达式或函数
+      expect(Calculator.calculate('if(true, 1+1, 0+3)').value).toBe('2');
+      expect(Calculator.calculate('if(false, 1+1, 0+3)').value).toBe('3');
+      expect(Calculator.calculate('if(1, sqrt(9), pow(2,2))').value).toBe('3');
+      expect(Calculator.calculate('if(0, sqrt(9), pow(2,2))').value).toBe('4');
+
+      // 使用函数作为参数
+      expect(Calculator.calculate('if(true, sin(0), cos(0))').value).toBe('0');
+      expect(Calculator.calculate('if(false, sin(0), cos(0))').value).toBe('1');
+
+      // 配合矩阵运算
+      expect(Calculator.calculate('if(1, [1,2,3], [4,5,6])').value).toBe('[1,2,3]');
+      expect(Calculator.calculate('if(0, [1,2,3], [4,5,6])').value).toBe('[4,5,6]');
+      expect(Calculator.calculate('if(1, [1,2,3] + 1, 3 + [4,5,6])').value).toBe('[2,3,4]');
+      expect(Calculator.calculate('if(1, [1,2,3] * 2, 3 * [4,5,6])').value).toBe('[2,4,6]');
+      expect(Calculator.calculate('if(1, [1,2,3] / 2, 3 / [4,5,6])').value).toBe('[0.5,1,1.5]');
+
+    });
+  });
+
   describe('版本函数', () => {
     beforeEach(() => {
       Calculator.clearAllCache();
