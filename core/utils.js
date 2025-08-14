@@ -66,6 +66,9 @@ class ChineseNumber {
     }
 
     toCNString() {
+        if(this.CNValue === null) {
+            return  this.value;
+        }
         return this.CNValue;
     }
 
@@ -285,9 +288,12 @@ const Utils = {
 
         // 如果是中文数字
         if (isChineseNumber(result)) {
+            const hasCNValue = result.CNValue !== null;
+
             return {
                 value: result.toCNString(),
-                info: "原始值: " + result.toString(),
+                info: hasCNValue ? "原始值: " + result.toString() : undefined,
+                warning: hasCNValue ? undefined : `无法转换为中文数字`
             };
         }
 
@@ -310,7 +316,7 @@ const Utils = {
         }
 
         if (!isDecimal(x)) {
-            return { value: x, warning: `无法非数字类型转换为中文数字` };
+            return new ChineseNumber(x, null);
         }
     
         let num = x.toNumber();

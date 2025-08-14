@@ -847,6 +847,20 @@ export const FUNCTIONS = {
         hidden: true,
         description: '按列拼接矩阵'
     },
+
+    // if 函数
+    'if': {
+        func: (condition, trueValue, falseValue) => {
+            if (condition) {
+                return trueValue;
+            } else {
+                return falseValue;
+            }
+        },
+        args: 3,
+        argTypes: 'any',
+        description: 'if(条件, 真值, 假值)'
+    },
     
     
     // 版本号
