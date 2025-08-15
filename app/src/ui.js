@@ -351,13 +351,23 @@ function autoAddNextLineIfNeeded(input) {
     }
 }
 
-// 将当前行的值设为上一行的结果
-function copyPreviousResult(currentLine) {
-    const previousResult = currentLine.querySelector('.result-value').textContent;
+// 将当前行的结果值填入下一行
+function copyPreviousResult(currentLine, copyVariable=true) {
     const newInput = currentLine.nextElementSibling.querySelector('.input');
-    if (previousResult) {
-        newInput.value = previousResult;
+
+    if (copyVariable) {
+        // 当 copyVariable=true 时，填入 $行号 格式
+        const lines = document.querySelectorAll('.expression-line');
+        const currentIndex = Array.from(lines).indexOf(currentLine);
+        newInput.value = `$${currentIndex + 1} `;
         newInput.dispatchEvent(new Event('input'));
+    } else {
+        // 当 copyVariable=false 时，将当前行的结果值填入下一行
+        const previousResult = currentLine.querySelector('.result-value').textContent;
+        if (previousResult) {
+            newInput.value = previousResult;
+            newInput.dispatchEvent(new Event('input'));
+        }
     }
 }
 
