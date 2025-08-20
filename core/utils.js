@@ -14,6 +14,27 @@ Decimal.set({
 // console.log("Decimal toExpPos: ", Decimal.toExpNeg);
 // console.log("Decimal toExpPos: ", Decimal.toExpPos);
 
+
+const M_CONST = {
+    // 由于Decimal.js库没有内置数学常数，我们使用高精度字符串定义
+    'pi': new Decimal('3.1415926535897932384626433832795'),
+    'e': new Decimal('2.7182818284590452353602874713527'),
+};
+
+// 定义类 CCObj，用于保存计算结果
+class CCObj {
+    constructor(value, info, warning) {
+        this.value = value;
+        this.info = info;
+        this.warning = warning;
+    }
+
+    toString() {
+        return this.value.toString();
+    }
+}
+
+
 // 类 datestamp, 包含三个属性，year, month, timestamp
 class Datestamp {
     constructor(year, month, timestamp) {
@@ -51,12 +72,6 @@ class Datestamp {
 
 }
 
-const M_CONST = {
-    // 由于Decimal.js库没有内置数学常数，我们使用高精度字符串定义
-    'pi': new Decimal('3.1415926535897932384626433832795'),
-    'e': new Decimal('2.7182818284590452353602874713527'),
-};
-
 
 // 定义类 ChineseNumber，用于保存中文数字转换结果
 class ChineseNumber {
@@ -76,6 +91,11 @@ class ChineseNumber {
         return this.value.toString();
     }
 
+}
+
+// 判断是否是CCObj
+function isCCObj(value) {
+    return value instanceof CCObj;
 }
 
 function isNumber(value) {

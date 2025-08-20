@@ -9,7 +9,8 @@ import {
     removeCompletionHint,
     checkCompletion,
     handleCompletionKeyDown,
-    shouldTriggerCompletion
+    shouldTriggerCompletion,
+    refreshCompletions
 } from './completion.js';
 import { notification } from './notification.js';
 
@@ -753,6 +754,14 @@ function calculateLine(input, ignoreEmptyLine=false) {
         if (value.info && value.info.length > 0) {
             messages.push(...value.info.map(msg => ({ text: msg, type: 'info' })));
             type = type || 'info';
+            
+            // 检查是否定义了自定义函数，如果是则刷新补全列表
+            const hasCustomFunctionInfo = value.info.some(msg => 
+                typeof msg === 'string' && msg.includes('自定义函数已定义')
+            );
+            if (hasCustomFunctionInfo) {
+                refreshCompletions();
+            }
         }
 
         if (messages.length > 0) {

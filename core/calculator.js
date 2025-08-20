@@ -17,6 +17,14 @@ import {
     processMatrix
 } from './preprocessUtils.js';
 
+import {
+    addCustomFunction,
+    removeCustomFunction,
+    getCustomFunctions,
+    clearCustomFunctions,
+    isFunctionDefinition
+} from './customFunctions.js';
+
 import { Utils } from './utils.js';
 import { config } from './cfg.js';
 /**
@@ -863,6 +871,21 @@ const Calculator = (function() {
             // TODO: 添加超时处理
             clearMessages(); // 清除之前的消息
 
+            // 检查是否是函数定义
+            if (isFunctionDefinition(expr)) {
+                try {
+                    const funcName = addCustomFunction(expr, this, FUNCTIONS);
+                    addInfo(`自定义函数已定义: ${funcName}`);
+                    return {
+                        value: `函数 ${funcName} 定义成功`,
+                        info: infos.length > 0 ? infos : null,
+                        warning: warnings.length > 0 ? warnings : null
+                    };
+                } catch (error) {
+                    throw new Error(`函数定义失败: ${error.message}`);
+                }
+            }
+
             // TODO: 这里是集合，而不是字典了
             const operators = new Set(Object.keys(OPERATORS));
             const functions = new Set(Object.keys(FUNCTIONS));
@@ -921,6 +944,21 @@ const Calculator = (function() {
         clearAllCache() {
             variables.clear();  // 清除所有变量
             clearMessages();    // 清除所有消息
+        },
+
+        // 获取自定义函数列表
+        getCustomFunctions() {
+            return getCustomFunctions();
+        },
+
+        // 删除自定义函数
+        removeCustomFunction(funcName) {
+            return removeCustomFunction(funcName, FUNCTIONS);
+        },
+
+        // 清除所有自定义函数
+        clearCustomFunctions() {
+            clearCustomFunctions(FUNCTIONS);
         }
     };
 })();

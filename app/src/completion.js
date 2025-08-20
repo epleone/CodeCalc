@@ -47,7 +47,12 @@ function generateCompletions() {
 }
 
 // 生成补全列表
-const completions = generateCompletions();
+let completions = generateCompletions();
+
+// 手动刷新补全列表的函数
+function refreshCompletions() {
+    completions = generateCompletions();
+}
 
 // 全局变量
 let isCompletionEnabled = true;
@@ -423,6 +428,7 @@ function handleCompletionKeyDown(event, input) {
 
 export {
     completions,
+    refreshCompletions,
     isCompletionEnabled,
     hasUsedArrowKeys,
     showCompletionHint,
