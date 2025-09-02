@@ -597,6 +597,15 @@ function processTimestamp(expr) {
         return finalResult;
     }
 
+    // console.log('processTimestamp 输入1:', expr);
+
+    // 如果表达式是 #1234567890， 转变成 #1234567890ms > @
+    if (/^\s*(\$\d+\s*=\s*)?(#)\s*(-?\d+)\s*$/.test(expr)) {
+        expr = expr + "ms > @";
+    } 
+
+    // console.log('processTimestamp 输入2:', expr);
+
     // 用正则表达式将 `>#` 替换为 `>timestamp`
     expr = expr.replace(/>\s*#/g, '>timestamp');
 

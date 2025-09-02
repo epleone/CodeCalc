@@ -14,6 +14,27 @@ Decimal.set({
 // console.log("Decimal toExpPos: ", Decimal.toExpNeg);
 // console.log("Decimal toExpPos: ", Decimal.toExpPos);
 
+
+const M_CONST = {
+    // 由于Decimal.js库没有内置数学常数，我们使用高精度字符串定义
+    'pi': new Decimal('3.1415926535897932384626433832795'),
+    'e': new Decimal('2.7182818284590452353602874713527'),
+};
+
+// 定义类 CCObj，用于保存计算结果
+class CCObj {
+    constructor(value, info, warning) {
+        this.value = value;
+        this.info = info;
+        this.warning = warning;
+    }
+
+    toString() {
+        return this.value.toString();
+    }
+}
+
+
 // 类 datestamp, 包含三个属性，year, month, timestamp
 class Datestamp {
     constructor(year, month, timestamp) {
@@ -51,12 +72,6 @@ class Datestamp {
 
 }
 
-const M_CONST = {
-    // 由于Decimal.js库没有内置数学常数，我们使用高精度字符串定义
-    'pi': new Decimal('3.1415926535897932384626433832795'),
-    'e': new Decimal('2.7182818284590452353602874713527'),
-};
-
 
 // 定义类 ChineseNumber，用于保存中文数字转换结果
 class ChineseNumber {
@@ -76,6 +91,11 @@ class ChineseNumber {
         return this.value.toString();
     }
 
+}
+
+// 判断是否是CCObj
+function isCCObj(value) {
+    return value instanceof CCObj;
 }
 
 function isNumber(value) {
@@ -698,11 +718,21 @@ const Utils = {
 
     // 时间戳格式化成日期字符串
     formatDate(x) {
+        let date;
         if(isDatestamp(x)){
-            throw new Error(`无法将时间间隔转成日期, 请使用"> #"`);
-        }
+            let year = Number(x.year);
+            let month = Number(x.month);
+            let ts = Number(x.timestamp);
 
-        const date = new Date(x);
+            date = new Date(ts);
+            year = date.getFullYear() + year;
+            month = date.getMonth() + month;
+            date.setFullYear(year);
+            date.setMonth(month);
+        }else{  
+            date = new Date(x);
+        }
+        
         //判断是否是日期
         if(isNaN(date.getTime())){
             throw new Error(`无法将${x}转成日期`);
