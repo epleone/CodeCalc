@@ -74,6 +74,20 @@ describe('日期时间数据类型测试', () => {
         });
     });
 
+    describe('时间戳转日期', () => {
+        beforeEach(() => {
+            Calculator.clearAllCache();
+        });
+
+        test('时间戳转日期', () => {
+            expect(Calculator.calculate('#1693827361289').value).toBe('2023-09-04 19:36:01');
+            expect(Calculator.calculate('#1584201600000').value).toBe('2020-03-15');
+            expect(Calculator.calculate('#1582992000000').value).toBe('2020-03-01');
+            expect(Calculator.calculate('#-315648000000').value).toBe('1960-01-01');
+            expect(Calculator.calculate('#-2209017943000').value).toBe('1900-01-01');
+        });
+    });
+
     describe('时间间隔语法糖', () => {
         beforeEach(() => {
             Calculator.clearAllCache();
@@ -128,7 +142,7 @@ describe('日期时间数据类型测试', () => {
             expect(() => Calculator.calculate('#1dd')).toThrow();
             expect(() => Calculator.calculate('#1dh')).toThrow();
             expect(() => Calculator.calculate('#d1')).toThrow();
-            expect(() => Calculator.calculate('#1')).toThrow();
+            expect(() => Calculator.calculate('#1t')).toThrow();
             expect(() => Calculator.calculate('#1x')).toThrow();
         });
     });
@@ -455,5 +469,36 @@ describe('日期时间数据类型测试', () => {
             expect(Calculator.calculate('#1m/10').value).toBe('0.1月+0ms');
             expect(Calculator.calculate('#1y/10').value).toBe('0.1年+0ms');
         });
+    });
+
+    describe('可视化>@测试', () => {
+        beforeEach(() => {
+            Calculator.clearAllCache();
+        });
+
+        test('测试日期', () => {
+           // todo
+
+        });
+
+        test('测试时间戳', () => {
+          // todo
+        });
+    });
+
+    describe('可视化>#测试', () => {
+        beforeEach(() => {
+            Calculator.clearAllCache();
+        });
+
+        test('测试日期', () => {
+           // todo
+
+        });
+
+        test('测试时间戳', () => {
+          // todo
+        });
+        
     });
 });

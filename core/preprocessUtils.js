@@ -601,7 +601,7 @@ function processTimestamp(expr) {
 
     // 如果表达式是 #1234567890， 转变成 #1234567890ms > @
     if (/^\s*(\$\d+\s*=\s*)?(#)\s*(-?\d+)\s*$/.test(expr)) {
-        expr = expr + "ms > @";
+        expr = expr + "ms >#@";
     } 
 
     // console.log('processTimestamp 输入2:', expr);

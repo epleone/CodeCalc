@@ -23,10 +23,25 @@ const M_CONST = {
 
 // 定义类 CCObj，用于保存计算结果
 class CCObj {
-    constructor(value, info, warning) {
-        this.value = value;
+    constructor(value, info=null, warning=null) {
+        this.value = value;     // 参与计算的值
         this.info = info;
         this.warning = warning;
+
+        // TODO: 后续统一显示的值
+        this.visValue = null;  // 外部显示的值
+    }
+
+    setVValue(visValue) {
+        this.visValue = visValue;
+    }
+
+    getVValue()
+    {
+        // 如果外部设置了，是使用设置的值
+        if(this.visValue) return this.visValue;
+        // todo 根据类型返回结果
+        // ChineseNumber 和 formatToDisplayString 都不需要了
     }
 
     toString() {
@@ -178,14 +193,6 @@ function checkMatrixArgs(args0, args1) {
 
 // 添加标量和矩阵运算支持，注意是否满足交换律
 function addOpSupport(opName, x, y, op_xy, op_yx) {
-    if(isChineseNumber(x)) {
-        x = x.value;
-    }
-
-    if(isChineseNumber(y)) {
-        y = y.value;
-    }
-
     // 使用这个函数时，x和y都强制转换为Decimal类型 或者是 DecMatrix类型
     if(isDigital(x) && isDigital(y)) {
         return op_xy(x, y);
@@ -214,6 +221,17 @@ const Utils = {
     // type: 目标类型 {decimal, number, bigint, string, any}
     convertTypes(value, type='default') {
         // console.log("convertTypes: ", value.toString(), type);
+
+        // 如果是CCObj，先获取value参与计算
+        if(isCCObj(value)) {
+            value = value.value;
+        }
+
+        // 如果是中文数字，先获取value参与计算
+        if(isChineseNumber(value)) {
+            value = value.value;
+        }
+    
         try {
             if(type === 'default') {
                 // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
@@ -222,6 +240,7 @@ const Utils = {
                 }
                 return new Decimal(value.toString());
             }
+
             if(type === 'decimal') {
                 // 不支持矩阵
                 return new Decimal(value.toString());
@@ -259,6 +278,25 @@ const Utils = {
         // console.log('utils@cfg precision:', config.get('precision'));
         // console.log('result的类型: ', typeof result);
         // console.log('result: ', result);
+
+        // 如果是CCObj，则返回value
+        if(isCCObj(result)) {
+
+            // 如果是日期，则返回日期字符串
+            if(isDate(result.value)) {
+                return {
+                    value: Utils.formatDate(result.value), 
+                    info: result.info || undefined,
+                    warning: result.warning || undefined
+                };
+            }
+
+            return {
+                value: result.value,
+                info: result.info || undefined,
+                warning: result.warning || undefined
+            };
+        }
 
         // 如果是Datestamp，则返回字符串
         if(isDatestamp(result)) {
@@ -454,7 +492,7 @@ const Utils = {
             newDate.setMonth(newDate.getMonth() + y.month);
             // 加上毫秒
             newDate.setMilliseconds(newDate.getMilliseconds() + y.timestamp);
-            return newDate;
+            return new CCObj(newDate);
         }
 
         if(isDate(y) && isDatestamp(x))
@@ -464,7 +502,7 @@ const Utils = {
             newDate.setMonth(newDate.getMonth() + x.month);
             // 加上毫秒
             newDate.setMilliseconds(newDate.getMilliseconds() + x.timestamp);
-            return newDate;
+            return new CCObj(newDate);
         }
 
         if(isDate(x) && isDate(y))
@@ -501,7 +539,7 @@ const Utils = {
                 newDate.setMonth(newDate.getMonth() - y.month);
                 // 减去毫秒
                 newDate.setMilliseconds(newDate.getMilliseconds() - y.timestamp);
-                return newDate;
+                return new CCObj(newDate);
             }else if(isDate(y)){
                 const timestamp = x.getTime() - y.getTime();
                 return new Datestamp(0, 0, timestamp);
@@ -716,23 +754,31 @@ const Utils = {
         return date.getTime();
     },
 
-    // 时间戳格式化成日期字符串
-    formatDate(x) {
-        let date;
-        if(isDatestamp(x)){
-            let year = Number(x.year);
-            let month = Number(x.month);
-            let ts = Number(x.timestamp);
-
-            date = new Date(ts);
-            year = date.getFullYear() + year;
-            month = date.getMonth() + month;
-            date.setFullYear(year);
-            date.setMonth(month);
-        }else{  
-            date = new Date(x);
+    // 时间戳转日期
+    CovertTimestampToDate(x) {
+        if(!isDatestamp(x)){
+            throw new Error(`无法将非时间戳转成日期`);
         }
-        
+
+        const ts = Number(x.timestamp);
+        const date = new Date(ts);
+
+        const year = date.getFullYear() + Number(x.year);
+        const month = date.getMonth() + Number(x.month);
+        date.setFullYear(year);
+        date.setMonth(month);
+        // return date;
+
+        return new CCObj(date);
+    },
+
+    // 格式化成日期字符串
+    formatDate(x) {
+        if(isDatestamp(x)){
+            throw new Error(`无法将时间间隔转成日期, 请使用"> #"`);
+        }
+
+        const date = new Date(x);
         //判断是否是日期
         if(isNaN(date.getTime())){
             throw new Error(`无法将${x}转成日期`);
@@ -754,6 +800,10 @@ const Utils = {
 
     // 时间戳可视化成时间差
     formatDateStamp(x) {
+        if(isDate(x)){
+            return new CCObj(x.getTime(), "时间戳对应日期：" + Utils.formatDate(x));
+        }
+
         if(!isDatestamp(x)){
             throw new Error(`"> #"只能可视化时间间隔类型`);
         }

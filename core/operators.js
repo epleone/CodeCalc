@@ -453,7 +453,17 @@ export const OPERATORS = {
     '>#S': {
         alias: '>#s',
         description: '时间差转成秒数'
-    }
+    },
+
+    // 时间戳转日期操作符
+    '>#@': {
+        precedence: 0,
+        args: 1,
+        func: Utils.CovertTimestampToDate,
+        argTypes: 'any', 
+        position: 'postfix',
+        hidden: true,
+    },
 };
 
 // 函数定义
@@ -916,7 +926,7 @@ export const FUNCTIONS = {
     // 版本号
     'version': {
         args: 0,
-        func: () => 'CodeCalcCore 3.1.5',
+        func: () => 'CodeCalcCore 3.1.6',
         description: 'CodeCalcCore 版本号'
     }
 }; 
