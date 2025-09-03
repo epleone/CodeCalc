@@ -6,7 +6,8 @@ const isUtoolsEnv = typeof utools !== 'undefined';
 function isBase64(str) {
     // 去除空格
     str = str.trim();
-    return /^(?:[A-Za-z0-9+\/]{4}){3,}(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/.test(str);
+    // 必须至少包含三个字母，进一步降低误判概率
+    return /^(?=(?:.*[A-Za-z]){3,})(?:[A-Za-z0-9+\/]{4}){3,}(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/.test(str);
 }
 
 // 处理正则匹配到的表达式
