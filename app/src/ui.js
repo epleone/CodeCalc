@@ -1,4 +1,5 @@
 import { Calculator } from './calculator.min.js';
+import { addCustomFunctionFromStorage, FUNCTIONS } from './calculator.min.js';
 import * as Copy from './copy.js';
 import * as Tag from './tag.js';
 import './settings.js';
@@ -15,12 +16,16 @@ import {
 import { notification } from './notification.js';
 
 
-
-
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
 });
 
+
+function AddCustomFunctions() {
+    addCustomFunctionFromStorage(Calculator, FUNCTIONS);
+    // 刷新补全列表以包含从存储加载的自定义函数
+    refreshCompletions();
+}
 
 // 防抖函数
 const debounce = (fn, delay) => {
@@ -524,7 +529,7 @@ function initializeUI() {
     // 将标签和快照相关函数添加到全局作用域
     Object.assign(window, Tag);
     Object.assign(window, Copy);
-    
+
     // 初始化所有行的标签功能
     document.querySelectorAll('.expression-line').forEach(line => {
         Tag.initializeTagButton(line);
@@ -562,6 +567,11 @@ function initializeUI() {
 
     // 初始化快捷键显示
     updateShortcutsDisplay();
+
+    // 添加自定义函数，使用 setTimeout 异步执行
+    setTimeout(() => {
+        AddCustomFunctions();
+    }, 0);
 }
 
 function handleAsteriskInput(event, input) {
@@ -898,4 +908,5 @@ export {
     handleFocus,
     handleBlur,
     recalculateAllLines,
+    AddCustomFunctions,
 };

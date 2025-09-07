@@ -1,6 +1,7 @@
-import { addCustomFunction, isFunctionDefinition, clearCustomFunctions } from '../../core/customFunctions.js';
 import { OPERATORS, FUNCTIONS, CONSTANTS } from './calculator.min.js';
+import { addCustomFunctionFromStorage, isFunctionDefinition } from './calculator.min.js';
 import { notification } from './notification.js';
+import { AddCustomFunctions } from './ui.js';
 
 export class CustomFunctions {
     constructor() {
@@ -134,6 +135,9 @@ export class CustomFunctions {
             
             // 重置编辑状态
             this.editingIndex = null;
+            
+            // 退出函数页面时，自动调用AddCustomFunctions刷新自定义函数
+            AddCustomFunctions();
         }
     }
     
@@ -639,6 +643,10 @@ export class CustomFunctions {
             const match = definition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/);
             if (!match) {
                 throw new Error('函数定义格式错误');
+            }
+
+            if(!isFunctionDefinition(definition)){
+                throw new Error('isFunctionDefinition: 函数定义格式错误');
             }
             
             const [, name, paramStr] = match;

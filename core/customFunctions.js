@@ -86,7 +86,7 @@ function validateName(name) {
 }
 
 
-function addCustomFunction(definition, calculator, FUNCTIONS) {
+function addCustomFunction(calculator, FUNCTIONS, definition) {
 
     definition = removeLineNumber(definition);
 
@@ -151,11 +151,34 @@ function isFunctionDefinition(expr) {
     return /^[a-zA-Z_$][a-zA-Z0-9_]*\s*\([^)]*\)\s*=\s*.+/.test(expr);
 }
 
+function addCustomFunctionFromStorage(calculator, FUNCTIONS) {
+    console.log("Add CustomFunction From Storage");
+    clearCustomFunctions(FUNCTIONS);
+    
+    try {
+        const storage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
+        const savedFunctions = JSON.parse(storage.getItem('customFunctions') || '{}');
+        for (const funcName of Object.keys(savedFunctions)) {
+            const funcData = savedFunctions[funcName];
+            if (funcData && funcData.definition) {
+                try {
+                    addCustomFunction(calculator, FUNCTIONS, funcData.definition);
+                } catch (error) {
+                    console.error(`加载自定义函数 "${funcName}" 失败:`, error.message);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('从存储加载自定义函数失败:', error.message);
+    }
+}
+
+
 export {
-    createCustomFunction,
+    isFunctionDefinition,
+    getCustomFunctions,
     addCustomFunction,
     removeCustomFunction,
-    getCustomFunctions,
-    clearCustomFunctions,
-    isFunctionDefinition
+    addCustomFunctionFromStorage,
+    clearCustomFunctions
 };
