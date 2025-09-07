@@ -1,4 +1,5 @@
 import { addCustomFunction, isFunctionDefinition, clearCustomFunctions } from '../../core/customFunctions.js';
+import { OPERATORS, FUNCTIONS, CONSTANTS } from './calculator.min.js';
 import { notification } from './notification.js';
 
 export class CustomFunctions {
@@ -9,6 +10,10 @@ export class CustomFunctions {
         
         // 添加存储适配器
         this.storage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
+
+        // 删除旧的存储
+        // this.storage.removeItem('customFunctions');
+        // this.storage.removeItem('customFunctionsMetadata');
         
         // 等待DOM加载完成后初始化
         if (document.readyState === 'loading') {
@@ -155,8 +160,8 @@ export class CustomFunctions {
         
         const functionsHTML = functionNames.map((name, index) => {
             const func = storedFunctions[name];
-            // 使用保存的definition或者重构definition
-            const definition = func.definition || `${func.name}(${func.params?.join(', ') || ''}) = ${func.expression}`;
+            // 使用保存的definition
+            const definition = func.definition;
             const description = func.description || '';
             const paramType = func.paramType || 'any';
             
@@ -295,9 +300,12 @@ export class CustomFunctions {
         const functionItem = listContainer.querySelector(`[data-index="${index}"]`);
         if (!functionItem) return false;
         
-        const funcName = functionItem.dataset.functionName;
-        // 如果函数名为空，说明这是一个新添加但未保存的函数
-        return !funcName || funcName.trim() === '';
+        const bodyInput = functionItem.querySelector('.function-body-input');
+        if (!bodyInput) return false;
+        
+        const inputValue = bodyInput.value.trim();
+        // 如果输入框为空，说明这是一个空函数
+        return !inputValue;
     }
     
     // 处理保存按钮点击
@@ -432,10 +440,23 @@ export class CustomFunctions {
             }
             const newFuncName = match[1];
             
-            // 检查函数名是否与内置函数冲突
-            const builtinFunctions = ['sin', 'cos', 'tan', 'log', 'ln', 'sqrt', 'abs', 'floor', 'ceil', 'round', 'max', 'min', 'pow', 'exp'];
-            if (builtinFunctions.includes(newFuncName.toLowerCase())) {
-                this.showError(`函数名 "${newFuncName}" 与内置函数冲突，请使用其他名称`);
+            // 检查函数名是否与内置名称冲突
+            const builtinNames = new Set([
+                ...Object.keys(OPERATORS),
+                ...Object.keys(FUNCTIONS),
+                ...Object.keys(CONSTANTS)
+            ]);
+            
+            if (builtinNames.has(newFuncName)) {
+                this.showError(`函数名 "${newFuncName}" 与内置名称冲突，请使用其他名称`);
+                bodyInput.focus();
+                return;
+            }
+            
+            // 检查函数名是否与已有自定义函数重复
+            const storedFunctions = this.getStoredFunctions();
+            if (storedFunctions[newFuncName] && newFuncName !== oldFuncName) {
+                this.showError(`函数名 "${newFuncName}" 已存在，请使用其他名称`);
                 bodyInput.focus();
                 return;
             }
@@ -585,43 +606,23 @@ export class CustomFunctions {
         const listContainer = this.panel?.querySelector('#custom-functions-list');
         if (!listContainer) return;
         
-        // 这里可以保存参数类型到元数据
-        // 目前先保存到localStorage
         const functionItem = listContainer.querySelector(`[data-index="${index}"]`);
         const funcName = functionItem.dataset.functionName;
         if (funcName) {
-            // 直接保存参数类型，不触发重新渲染
-            this.saveFunctionMetadata(funcName, null, paramType);
+            // 直接更新主存储中的参数类型
+            try {
+                const savedFunctions = JSON.parse(this.storage.getItem('customFunctions') || '{}');
+                if (savedFunctions[funcName]) {
+                    savedFunctions[funcName].paramType = paramType;
+                    this.storage.setItem('customFunctions', JSON.stringify(savedFunctions));
+                    console.log(`函数 "${funcName}" 的参数类型已更新为: ${paramType}`);
+                }
+            } catch (error) {
+                console.warn('更新参数类型失败:', error);
+            }
         }
     }
     
-    saveFunctionMetadata(funcName, description, paramType) {
-        try {
-            const metadata = JSON.parse(this.storage.getItem('customFunctionsMetadata') || '{}');
-            if (!metadata[funcName]) {
-                metadata[funcName] = {};
-            }
-            if (description !== null) {
-                metadata[funcName].description = description;
-            }
-            if (paramType !== null) {
-                metadata[funcName].paramType = paramType;
-            }
-            this.storage.setItem('customFunctionsMetadata', JSON.stringify(metadata));
-        } catch (error) {
-            console.warn('保存函数元数据失败:', error);
-        }
-    }
-    
-    loadFunctionMetadata(funcName) {
-        try {
-            const metadata = JSON.parse(this.storage.getItem('customFunctionsMetadata') || '{}');
-            return metadata[funcName] || {};
-        } catch (error) {
-            console.warn('加载函数元数据失败:', error);
-            return {};
-        }
-    }
     
     // 纯数据管理方法 - 保存自定义函数数据
     saveCustomFunctionData(oldFuncName, funcName, definition, description, paramType) {
@@ -640,19 +641,16 @@ export class CustomFunctions {
                 throw new Error('函数定义格式错误');
             }
             
-            const [, name, paramStr, expression] = match;
+            const [, name, paramStr] = match;
             const params = paramStr.trim() ? paramStr.split(',').map(p => p.trim()) : [];
             
             // 保存函数数据
             savedFunctions[funcName] = {
                 name: funcName,
                 params: params,
-                expression: expression,
                 definition: definition,
                 description: description || '',
-                paramType: paramType || 'any',
-                created: savedFunctions[funcName]?.created || new Date().toISOString(),
-                updated: new Date().toISOString()
+                paramType: paramType || 'any'
             };
             
             this.storage.setItem('customFunctions', JSON.stringify(savedFunctions));
@@ -690,10 +688,6 @@ export class CustomFunctions {
         }
     }
     
-    saveFunctionsToStorage() {
-        // 这个方法现在主要用于兼容性，实际保存由saveCustomFunctionData处理
-        console.log('saveFunctionsToStorage 已被 saveCustomFunctionData 替代');
-    }
     
     // 应用自定义函数到计算器（当计算器可用时调用）
     applyFunctionsToCalculator() {
@@ -709,7 +703,7 @@ export class CustomFunctions {
             const storedFunctions = this.getStoredFunctions();
             Object.values(storedFunctions).forEach(func => {
                 try {
-                    const definition = func.definition || `${func.name}(${func.params?.join(',') || ''}) = ${func.expression}`;
+                    const definition = func.definition;
                     addCustomFunction(definition, calculator, FUNCTIONS);
                     console.log(`已应用函数到计算器: ${func.name}`);
                 } catch (error) {

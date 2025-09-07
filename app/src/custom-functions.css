@@ -14,6 +14,7 @@
     --cf-item-shadow: rgba(0, 0, 0, 0.04);
     --cf-item-hover-border: #9a6dff;
     --cf-item-hover-shadow: rgba(0, 0, 0, 0.08);
+    --cf-item-editing-outer-border: #e0e0e0;
     --cf-item-editing-bg: #fefbff;
     --cf-item-editing-shadow: rgba(154, 109, 255, 0.2);
     --cf-text-primary: #1a1a1a;
@@ -25,6 +26,7 @@
     --cf-input-focus-bg: #ffffff;
     --cf-input-focus-border: #9a6dff;
     --cf-input-focus-shadow: rgba(154, 109, 255, 0.1);
+    --cf-input-edit-border: #d0d0d0;
     --cf-selector-bg: #f8f9fa;
     --cf-selector-border: #e0e0e0;
     --cf-selector-disabled-bg: #f5f5f5;
@@ -69,6 +71,7 @@
     --cf-item-shadow: rgba(0, 0, 0, 0.2);
     --cf-item-hover-border: #9a6dff;
     --cf-item-hover-shadow: rgba(0, 0, 0, 0.3);
+    --cf-item-editing-outer-border: #4a4a4a;
     --cf-item-editing-bg: #1f1a2e;
     --cf-item-editing-shadow: rgba(154, 109, 255, 0.3);
     --cf-text-primary: #e0e0e0;
@@ -80,6 +83,7 @@
     --cf-input-focus-bg: #2a2a2a;
     --cf-input-focus-border: #9a6dff;
     --cf-input-focus-shadow: rgba(154, 109, 255, 0.1);
+    --cf-input-edit-border: #6a6a6a;
     --cf-selector-bg: #3a3a3a;
     --cf-selector-border: #4a4a4a;
     --cf-selector-disabled-bg: #2a2a2a;
@@ -132,7 +136,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: #000000;
+    background: var(--cf-panel-bg);
     z-index: 1001;
     display: none;
     flex-direction: column;
@@ -177,7 +181,7 @@
     overflow-y: auto;
     padding: 0;
     box-sizing: border-box;
-    background-color: #ffffff;
+    background-color: var(--cf-content-bg);
     border-radius: 0;
     margin: 0;
     box-shadow: none;
@@ -207,13 +211,13 @@
     padding: 12px;
     margin-bottom: 8px;
     border-radius: 10px;
-    background-color: #f8f9fa;
-    border: 1px solid #e8e8e8;
+    background-color: var(--cf-item-bg);
+    border: 1px solid var(--cf-item-border);
     gap: 0;
     min-height: auto;
     position: relative;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 8px var(--cf-item-shadow);
     cursor: grab;
 }
 
@@ -273,7 +277,7 @@
     font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Consolas", monospace;
     font-size: 16px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--cf-text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -357,14 +361,14 @@
 
 .custom-function-item:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    border-color: #d0d0d0;
+    box-shadow: 0 8px 24px var(--cf-item-hover-shadow);
+    border-color: var(--cf-item-hover-border);
 }
 
 .custom-function-item.editing {
-    border-color: #9a6dff;
-    box-shadow: 0 8px 24px rgba(154, 109, 255, 0.2);
-    background-color: #fefbff;
+    border-color: var(--cf-item-editing-outer-border);
+    box-shadow: 0 8px 24px var(--cf-item-editing-shadow);
+    background-color: var(--cf-item-editing-bg);
 }
 
 
@@ -403,6 +407,34 @@
 /* 编辑模式中的函数输入框 */
 .function-edit-first-row .function-body-input {
     flex: 1;
+    border-color: var(--cf-input-edit-border);
+    background: var(--cf-input-bg);
+}
+
+.function-edit-first-row .function-body-input:focus {
+    border-color: var(--cf-input-focus-border);
+    box-shadow: 0 0 0 3px var(--cf-input-focus-shadow);
+    background-color: var(--cf-input-focus-bg);
+}
+
+.function-edit-first-row .function-desc-input {
+    border-color: var(--cf-input-edit-border);
+    background: var(--cf-input-bg);
+}
+
+.function-edit-first-row .function-desc-input:focus {
+    border-color: var(--cf-input-focus-border);
+    box-shadow: 0 0 0 3px var(--cf-input-focus-shadow);
+    background-color: var(--cf-input-focus-bg);
+}
+
+/* 确保编辑模式下的输入框在失焦后使用正确的边框颜色 */
+.custom-function-item.editing .function-body-input:not(:focus) {
+    border-color: var(--cf-input-edit-border) !important;
+}
+
+.custom-function-item.editing .function-desc-input:not(:focus) {
+    border-color: var(--cf-input-edit-border) !important;
 }
 
 /* 保存编辑按钮 */
@@ -668,16 +700,16 @@
 }
 
 .add-function-btn:disabled {
-    background: #cccccc !important;
-    color: #999999 !important;
+    background: var(--cf-text-disabled) !important;
+    color: var(--cf-text-muted) !important;
     opacity: 0.6 !important;
     transform: none !important;
     box-shadow: none !important;
 }
 
 .add-function-btn:disabled:hover {
-    background: #cccccc !important;
-    color: #999999 !important;
+    background: var(--cf-text-disabled) !important;
+    color: var(--cf-text-muted) !important;
     transform: none !important;
     box-shadow: none !important;
 }
@@ -690,7 +722,7 @@
     justify-content: center;
     padding: 60px 20px;
     text-align: center;
-    color: #999999;
+    color: var(--cf-empty-text);
 }
 
 .empty-functions-icon {
