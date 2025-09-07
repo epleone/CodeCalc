@@ -31,6 +31,10 @@ export class Shortcuts {
             if (window.snapshot && window.snapshot.isPanelVisible) {
                 window.snapshot.togglePanel();
             }
+            // 如果自定义函数面板打开，先关闭它
+            if (window.customFunctions && window.customFunctions.isPanelVisible) {
+                window.customFunctions.togglePanel();
+            }
             // 移除当前焦点
             if (document.activeElement instanceof HTMLElement) {
                 document.activeElement.blur();

@@ -151,13 +151,28 @@
     <!-- 自定义函数面板 -->
     <div id="custom-functions-panel" class="custom-functions-panel">
         <div class="custom-functions-header">
-            <h3>自定义函数管理</h3>
+            <div class="header-left">
+                <div class="app-logo">
+                    <div class="logo-icon">⚡</div>
+                    <span class="app-title">自定义函数</span>
+                </div>
+                <div class="tab-container">
+                    <div class="tab active">
+                        <span>函数管理</span>
+                        <button class="tab-close">×</button>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="action-btn">⋯</button>
+                </div>
+            </div>
         </div>
         <div class="custom-functions-content">
             <div id="custom-functions-list">
                 <!-- 函数列表将动态插入到这里 -->
             </div>
-            
             <div class="add-function-container">
                 <button class="add-function-btn" id="add-function-btn">
                     添加函数
@@ -197,11 +212,6 @@
                     • 矩阵函数：sum, mean, max, min, sort, reshape, repeat<br>
                     • 矩阵属性：A.T(转置), A.det(行列式), A.inv(求逆)<br>
                     • 矩阵分析：solve(A,b), eigenvalues(A)<br>
-                    <br>
-                    自定义函数：<br>
-                    • 创建函数：myFunc(x,y) = x^2 + y^2<br>
-                    • 使用函数：myFunc(3,4) → 计算结果<br>
-                    • 管理界面：Ctrl + I 打开函数管理<br>
                     <br>
                     <span style="font-weight: bold;" class="shortcut-text">Ctrl + / : 显示全部快捷键</span> <br>
                     <br>

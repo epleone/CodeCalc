@@ -26,11 +26,6 @@ export class CustomFunctions {
             return;
         }
         
-        // 创建蒙版
-        this.overlay = document.createElement('div');
-        this.overlay.className = 'custom-functions-overlay';
-        document.body.appendChild(this.overlay);
-        
         // 绑定事件
         this.bindEvents();
         
@@ -39,10 +34,6 @@ export class CustomFunctions {
     }
     
     bindEvents() {
-        // 蒙版点击事件
-        this.overlay.addEventListener('click', () => {
-            this.togglePanel();
-        });
         
         // ESC键监听
         document.addEventListener('keydown', (e) => {
@@ -53,38 +44,30 @@ export class CustomFunctions {
             }
         });
         
-        // 底部按钮（添加/保存）
-        const bottomBtn = this.panel?.querySelector('#add-function-btn');
-        if (bottomBtn) {
-            bottomBtn.addEventListener('click', () => {
+        // 添加按钮（添加/保存）
+        const addBtn = this.panel?.querySelector('#add-function-btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
                 this.handleBottomButtonClick();
             });
         }
+        
+        // 初始化拖拽排序功能
+        this.initDragAndDrop();
     }
     
     handleBottomButtonClick() {
-        if (this.editingIndex !== null) {
-            // 当前处于编辑状态，执行保存操作
-            this.saveFunction(this.editingIndex);
-        } else {
-            // 当前处于浏览状态，添加新函数
-            this.addNewFunction();
-        }
+        // 底部按钮始终执行添加新函数操作，不再根据编辑状态改变
+        this.addNewFunction();
     }
     
     updateBottomButton() {
         const bottomBtn = this.panel?.querySelector('#add-function-btn');
         if (!bottomBtn) return;
         
-        if (this.editingIndex !== null) {
-            // 编辑模式：显示保存
-            bottomBtn.textContent = '保存函数';
-            bottomBtn.style.background = 'linear-gradient(135deg, #9a6dff 0%, #7c4dff 100%)';
-        } else {
-            // 浏览模式：显示添加
-            bottomBtn.textContent = '添加函数';
-            bottomBtn.style.background = 'linear-gradient(135deg, #9a6dff 0%, #7c4dff 100%)';
-        }
+        // 底部按钮始终显示"添加函数"，不再根据编辑状态改变
+        bottomBtn.textContent = '添加函数';
+        bottomBtn.style.background = 'linear-gradient(135deg, #9a6dff 0%, #7c4dff 100%)';
     }
     
     togglePanel() {
@@ -112,7 +95,6 @@ export class CustomFunctions {
             }
             
             this.panel.classList.add('show');
-            this.overlay.classList.add('show');
             document.body.style.overflow = 'hidden';
             
             // 只在面板打开时渲染一次
@@ -122,7 +104,6 @@ export class CustomFunctions {
             this.updateBottomButton();
         } else {
             this.panel.classList.remove('show');
-            this.overlay.classList.remove('show');
             document.body.style.overflow = '';
             
             // 退出面板，聚焦输入框
@@ -174,22 +155,28 @@ export class CustomFunctions {
         
         // 绑定事件（使用事件委托，只绑定一次）
         this.bindFunctionItemEvents();
+        
+        // 更新拖拽手柄
+        this.updateDragHandles();
     }
     
     createFunctionItemHTML(index, definition, description, paramType, funcName) {
         return `
             <div class="custom-function-item" data-index="${index}" data-function-name="${funcName}">
-                <!-- 浏览模式：紧凑单行显示 -->
+                <!-- 浏览模式：OTP Authenticator 风格 -->
                 <div class="function-browse-row">
-                    <span class="param-type-badge" data-type="${paramType}">${paramType}</span>
+                    <div class="drag-handle"></div>
                     <div class="function-content-area">
-                        <span class="function-definition">${definition}</span>
+                        <div class="function-definition-row">
+                            <span class="param-type-badge" data-type="${paramType}">${paramType}</span>
+                            <div class="function-definition">${definition}</div>
+                        </div>
                         <div class="function-actions-overlay">
-                            <button class="function-edit-btn" data-index="${index}">
-                                编辑
+                            <button class="function-edit-btn" data-index="${index}" title="编辑">
+                                ✏️
                             </button>
-                            <button class="function-delete-btn" data-index="${index}" data-function-name="${funcName}">
-                                删除
+                            <button class="function-delete-btn" data-index="${index}" data-function-name="${funcName}" title="删除">
+                                🗑️
                             </button>
                         </div>
                     </div>
@@ -211,9 +198,14 @@ export class CustomFunctions {
                                data-original="${definition}"
                                placeholder="输入函数定义，如: myFunc(x,y) = x^2 + y"
                                readonly>
+                        
+                        <button class="function-save-btn" data-index="${index}" title="保存编辑">
+                            ✓
+                        </button>
+                        <button class="function-exit-btn" data-index="${index}" title="退出编辑">
+                            ✕
+                        </button>
                     </div>
-                    
-
                 </div>
             </div>
         `;
@@ -243,6 +235,14 @@ export class CustomFunctions {
             e.preventDefault();
             const funcName = target.dataset.functionName;
             this.deleteFunction(funcName);
+        } else if (target.classList.contains('function-save-btn')) {
+            e.preventDefault();
+            const index = parseInt(target.dataset.index);
+            this.handleSaveClick(index);
+        } else if (target.classList.contains('function-exit-btn')) {
+            e.preventDefault();
+            const index = parseInt(target.dataset.index);
+            this.handleExitClick(index);
         }
     }
     
@@ -253,11 +253,11 @@ export class CustomFunctions {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const index = parseInt(target.dataset.index);
-                this.saveFunction(index);
+                this.handleSaveClick(index);
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 const index = parseInt(target.dataset.index);
-                this.cancelEdit(index);
+                this.handleExitClick(index);
             }
         }
     }
@@ -270,6 +270,73 @@ export class CustomFunctions {
             const index = parseInt(target.dataset.index);
             this.updateParamType(index, target.value);
         }
+    }
+    
+    // 检测函数是否为空（新添加但未保存的函数）
+    isFunctionEmpty(index) {
+        const listContainer = this.panel?.querySelector('#custom-functions-list');
+        if (!listContainer) return false;
+        
+        const functionItem = listContainer.querySelector(`[data-index="${index}"]`);
+        if (!functionItem) return false;
+        
+        const funcName = functionItem.dataset.functionName;
+        // 如果函数名为空，说明这是一个新添加但未保存的函数
+        return !funcName || funcName.trim() === '';
+    }
+    
+    // 处理保存按钮点击
+    handleSaveClick(index) {
+        if (this.isFunctionEmpty(index)) {
+            this.showError('请先输入函数定义');
+            return;
+        }
+        this.saveFunction(index);
+    }
+    
+    // 处理退出按钮点击
+    handleExitClick(index) {
+        if (this.isFunctionEmpty(index)) {
+            // 如果是空函数，删除这一行
+            this.deleteEmptyFunction(index);
+        } else {
+            // 如果是已存在的函数，取消编辑
+            this.cancelEdit(index);
+        }
+    }
+    
+    // 删除空函数行
+    deleteEmptyFunction(index) {
+        const listContainer = this.panel?.querySelector('#custom-functions-list');
+        if (!listContainer) return;
+        
+        const functionItem = listContainer.querySelector(`[data-index="${index}"]`);
+        if (!functionItem) return;
+        
+        // 移除DOM元素
+        functionItem.remove();
+        
+        // 重置编辑状态
+        this.editingIndex = null;
+        
+        // 更新底部按钮
+        this.updateBottomButton();
+        
+        // 检查是否还有其他函数，如果没有则显示空状态
+        const remainingItems = listContainer.querySelectorAll('.custom-function-item');
+        if (remainingItems.length === 0) {
+            listContainer.innerHTML = `
+                <div class="empty-functions-state">
+                    <div class="empty-functions-icon">📝</div>
+                    <div class="empty-functions-text">
+                        还没有自定义函数<br>
+                        点击下方按钮创建您的第一个函数
+                    </div>
+                </div>
+            `;
+        }
+        
+        this.showSuccess('已取消添加函数');
     }
     
     toggleEditMode(index) {
@@ -305,7 +372,7 @@ export class CustomFunctions {
             this.updateBottomButton();
         } else {
             // 保存编辑
-            this.saveFunction(index);
+            this.handleSaveClick(index);
         }
     }
     
@@ -647,6 +714,94 @@ export class CustomFunctions {
     
     showSuccess(message) {
         notification.info(message, 1500);
+    }
+    
+    // 初始化拖拽排序功能
+    initDragAndDrop() {
+        const listContainer = this.panel?.querySelector('#custom-functions-list');
+        if (!listContainer) return;
+        
+        let draggedElement = null;
+        let draggedIndex = null;
+        
+        // 拖拽开始
+        listContainer.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('drag-handle') || e.target.closest('.drag-handle')) {
+                draggedElement = e.target.closest('.custom-function-item');
+                draggedIndex = parseInt(draggedElement.dataset.index);
+                draggedElement.style.opacity = '0.5';
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+        
+        // 拖拽结束
+        listContainer.addEventListener('dragend', (e) => {
+            if (draggedElement) {
+                draggedElement.style.opacity = '';
+                draggedElement = null;
+                draggedIndex = null;
+            }
+        });
+        
+        // 拖拽悬停
+        listContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        
+        // 拖拽放置
+        listContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!draggedElement) return;
+            
+            const targetElement = e.target.closest('.custom-function-item');
+            if (!targetElement || targetElement === draggedElement) return;
+            
+            const targetIndex = parseInt(targetElement.dataset.index);
+            this.reorderFunctions(draggedIndex, targetIndex);
+        });
+        
+        // 为拖拽手柄添加draggable属性
+        this.updateDragHandles();
+    }
+    
+    // 更新拖拽手柄
+    updateDragHandles() {
+        const listContainer = this.panel?.querySelector('#custom-functions-list');
+        if (!listContainer) return;
+        
+        const dragHandles = listContainer.querySelectorAll('.drag-handle');
+        dragHandles.forEach(handle => {
+            handle.draggable = true;
+        });
+    }
+    
+    // 重新排序函数
+    reorderFunctions(fromIndex, toIndex) {
+        const storedFunctions = this.getStoredFunctions();
+        const functionNames = Object.keys(storedFunctions);
+        
+        if (fromIndex < 0 || fromIndex >= functionNames.length || 
+            toIndex < 0 || toIndex >= functionNames.length) {
+            return;
+        }
+        
+        // 移动数组元素
+        const [movedFunction] = functionNames.splice(fromIndex, 1);
+        functionNames.splice(toIndex, 0, movedFunction);
+        
+        // 重新保存排序后的函数
+        const reorderedFunctions = {};
+        functionNames.forEach(name => {
+            reorderedFunctions[name] = storedFunctions[name];
+        });
+        
+        this.storage.setItem('customFunctions', JSON.stringify(reorderedFunctions));
+        
+        // 重新渲染列表
+        this.renderFunctionsList();
+        
+        this.showSuccess('函数顺序已更新');
     }
 }
 
