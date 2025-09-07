@@ -37,17 +37,16 @@ function handleRegexInput(code, payload) {
 
 // 在 utools 环境中，则执行
 if (isUtoolsEnv) {
+    // 在页面加载前就设置主题，避免闪烁
+    if(utools.isDarkColors()) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
 
     // utools 相关代码保持不变
     utools.onPluginEnter(({ code, type, payload }) => {
-        //utools.isDarkColors
-        if(utools.isDarkColors()) {
-            // console.log("dark");
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            // console.log("light");
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
+        // 主题已经在页面加载前设置，这里不需要重复设置
 
         const inputs = document.querySelectorAll('.input');
         const lastInput = inputs[inputs.length - 1];  // 获取最后一个输入框

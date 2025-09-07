@@ -4,6 +4,10 @@
 - [ ]  快照图标bug, win10?
 
 
+优化 addCustomFunctionFromStorage 函数
+数据读取在外部做好，然后传入分成添加的和删除的两部分。
+
+
 
 ## RoadMap 
 

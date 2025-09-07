@@ -4,6 +4,7 @@ import * as Copy from './copy.js';
 import * as Tag from './tag.js';
 import './settings.js';
 import './shortcuts.js';
+import './custom-functions.js';
 import { snapshot } from './snapshot.js';
 import {
     isCompletionEnabled,

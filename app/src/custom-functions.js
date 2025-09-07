@@ -444,23 +444,26 @@ export class CustomFunctions {
             }
             const newFuncName = match[1];
             
+            // 检查函数名是否与已有自定义函数重复
+            const storedFunctions = this.getStoredFunctions();
+            if (storedFunctions[newFuncName] && newFuncName !== oldFuncName) {
+                this.showError(`函数名 "${newFuncName}" 已存在，请使用其他名称`);
+                bodyInput.focus();
+                return;
+            }
+
             // 检查函数名是否与内置名称冲突
             const builtinNames = new Set([
                 ...Object.keys(OPERATORS),
                 ...Object.keys(FUNCTIONS),
                 ...Object.keys(CONSTANTS)
             ]);
+
+            // 移除自定义的函数名
+            builtinNames.delete(oldFuncName);
             
             if (builtinNames.has(newFuncName)) {
                 this.showError(`函数名 "${newFuncName}" 与内置名称冲突，请使用其他名称`);
-                bodyInput.focus();
-                return;
-            }
-            
-            // 检查函数名是否与已有自定义函数重复
-            const storedFunctions = this.getStoredFunctions();
-            if (storedFunctions[newFuncName] && newFuncName !== oldFuncName) {
-                this.showError(`函数名 "${newFuncName}" 已存在，请使用其他名称`);
                 bodyInput.focus();
                 return;
             }
@@ -645,6 +648,7 @@ export class CustomFunctions {
                 throw new Error('函数定义格式错误');
             }
 
+            // todo: test
             if(!isFunctionDefinition(definition)){
                 throw new Error('isFunctionDefinition: 函数定义格式错误');
             }
@@ -837,43 +841,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// 确保在DOM加载完成后创建实例
-let customFunctions;
-
-function initCustomFunctions() {
-    if (!customFunctions) {
-        customFunctions = new CustomFunctions();
-        window.customFunctions = customFunctions;
-    }
-    return customFunctions;
-}
-
-// 立即尝试初始化或等待DOM加载
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCustomFunctions);
-} else {
-    initCustomFunctions();
-}
-
-// 监听计算器初始化，自动应用自定义函数
-let calculatorCheckInterval;
-function checkAndApplyFunctions() {
-    if (window.calculator && window.FUNCTIONS && customFunctions) {
-        console.log('检测到计算器已初始化，开始应用自定义函数');
-        customFunctions.applyFunctionsToCalculator();
-        if (calculatorCheckInterval) {
-            clearInterval(calculatorCheckInterval);
-            calculatorCheckInterval = null;
-        }
-    }
-}
-
-// 定期检查计算器是否已初始化
-calculatorCheckInterval = setInterval(checkAndApplyFunctions, 1000);
-
-// 页面加载完成后也检查一次
-window.addEventListener('load', () => {
-    setTimeout(checkAndApplyFunctions, 100);
-});
-
-export { customFunctions, initCustomFunctions };
+// 创建自定义函数面板实例并导出到全局
+export const customFunctions = new CustomFunctions();
+window.customFunctions = customFunctions;
