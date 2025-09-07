@@ -57,7 +57,11 @@ export class CustomFunctions {
     }
     
     handleBottomButtonClick() {
-        // 底部按钮始终执行添加新函数操作，不再根据编辑状态改变
+        // 如果按钮被禁用（编辑状态），不执行任何操作
+        if (this.editingIndex !== null) {
+            return;
+        }
+        // 非编辑状态：添加新函数
         this.addNewFunction();
     }
     
@@ -65,9 +69,20 @@ export class CustomFunctions {
         const bottomBtn = this.panel?.querySelector('#add-function-btn');
         if (!bottomBtn) return;
         
-        // 底部按钮始终显示"添加函数"，不再根据编辑状态改变
+        // 底部按钮始终显示"添加函数"，但在编辑状态下禁用
         bottomBtn.textContent = '添加函数';
-        bottomBtn.style.background = 'linear-gradient(135deg, #9a6dff 0%, #7c4dff 100%)';
+        
+        if (this.editingIndex !== null) {
+            // 编辑状态：禁用按钮
+            bottomBtn.disabled = true;
+            bottomBtn.style.background = '#cccccc';
+            bottomBtn.style.opacity = '0.6';
+        } else {
+            // 非编辑状态：启用按钮
+            bottomBtn.disabled = false;
+            bottomBtn.style.background = 'linear-gradient(135deg, #9a6dff 0%, #7c4dff 100%)';
+            bottomBtn.style.opacity = '1';
+        }
     }
     
     togglePanel() {

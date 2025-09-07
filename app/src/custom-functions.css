@@ -170,19 +170,19 @@
     display: none;
 }
 
-.header-left {
+.custom-functions-panel .header-left {
     display: flex;
     align-items: center;
     gap: 16px;
 }
 
-.app-logo {
+.custom-functions-panel .app-logo {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.logo-icon {
+.custom-functions-panel .logo-icon {
     width: 24px;
     height: 24px;
     background: #000000;
@@ -194,18 +194,18 @@
     color: #ffffff;
 }
 
-.app-title {
+.custom-functions-panel .app-title {
     color: #ffffff;
     font-size: 16px;
     font-weight: 500;
 }
 
-.tab-container {
+.custom-functions-panel .tab-container {
     display: flex;
     align-items: center;
 }
 
-.tab {
+.custom-functions-panel .tab {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -216,12 +216,12 @@
     font-size: 14px;
 }
 
-.tab.active {
+.custom-functions-panel .tab.active {
     background: #444444;
     color: #ffffff;
 }
 
-.tab-close {
+.custom-functions-panel .tab-close {
     background: none;
     border: none;
     color: #ffffff;
@@ -237,21 +237,21 @@
     transition: background-color 0.2s;
 }
 
-.tab-close:hover {
+.custom-functions-panel .tab-close:hover {
     background: #555555;
 }
 
-.header-right {
+.custom-functions-panel .header-right {
     display: flex;
     align-items: center;
 }
 
-.header-actions {
+.custom-functions-panel .header-actions {
     display: flex;
     align-items: center;
 }
 
-.action-btn {
+.custom-functions-panel .action-btn {
     background: #000000;
     border: none;
     color: #ffffff;
@@ -262,7 +262,7 @@
     transition: background-color 0.2s;
 }
 
-.action-btn:hover {
+.custom-functions-panel .action-btn:hover {
     background: #333333;
 }
 
@@ -329,9 +329,9 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: 16px;
-    margin-bottom: 12px;
-    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
     background-color: #f8f9fa;
     border: 1px solid #e8e8e8;
     gap: 0;
@@ -350,8 +350,8 @@
 .function-browse-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-height: 48px;
+    gap: 10px;
+    min-height: 36px;
 }
 
 /* 拖拽手柄 */
@@ -438,10 +438,10 @@
 .param-type-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
-    font-size: 11px;
+    padding: 3px 8px;
+    font-size: 10px;
     font-weight: 500;
-    border-radius: 12px;
+    border-radius: 10px;
     white-space: nowrap;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -501,9 +501,9 @@
 .function-edit-first-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-height: 40px;
-    margin-bottom: 8px;
+    gap: 10px;
+    min-height: 32px;
+    margin-bottom: 6px;
 }
 
 /* 编辑模式第二行：保存按钮居中 */
@@ -542,7 +542,7 @@
 /* 参数类型选择器 */
 .param-type-selector {
     min-width: 70px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     border: 1px solid var(--cf-selector-border);
     border-radius: 6px;
     background-color: var(--cf-selector-bg);
@@ -564,7 +564,7 @@
 /* 编辑模式中的参数类型选择器 - 与类型徽章对齐 */
 .function-edit-first-row .param-type-selector {
     min-width: 80px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     padding-right: 28px;
     font-weight: 500;
     flex-shrink: 0;
@@ -577,13 +577,13 @@
 
 /* 保存编辑按钮 */
 .function-save-btn {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     background: rgba(76, 175, 80, 0.1);
     color: #4caf50;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -610,13 +610,13 @@
 
 /* 退出编辑按钮 */
 .function-exit-btn {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     background: rgba(255, 45, 45, 0.1);
     color: #ff2d2d;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -691,10 +691,10 @@
     border: 1.5px solid var(--cf-input-border);
     background: var(--cf-input-bg);
     outline: none;
-    padding: 10px 12px;
+    padding: 6px 10px;
     min-width: 0;
     color: var(--cf-text-primary);
-    border-radius: 8px;
+    border-radius: 6px;
     box-sizing: border-box;
     transition: all 0.2s ease;
     font-weight: 500;
@@ -848,6 +848,21 @@
                 0 2px 6px var(--cf-add-btn-shadow);
 }
 
+.add-function-btn:disabled {
+    background: #cccccc !important;
+    color: #999999 !important;
+    opacity: 0.6 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.add-function-btn:disabled:hover {
+    background: #cccccc !important;
+    color: #999999 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 /* 空状态 */
 .empty-functions-state {
     display: flex;
@@ -931,12 +946,12 @@
     }
     
     .custom-function-item {
-        padding: 12px;
-        margin-bottom: 8px;
+        padding: 10px;
+        margin-bottom: 6px;
     }
     
     .function-browse-row {
-        min-height: 40px;
+        min-height: 32px;
     }
     
     .function-definition {
