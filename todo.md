@@ -7,6 +7,17 @@
 优化 addCustomFunctionFromStorage 函数
 数据读取在外部做好，然后传入分成添加的和删除的两部分。
 
+面板界面延迟加载
+// 在需要显示快捷键面板时加载
+document.getElementById('showShortcutPanel').addEventListener('click', async () => {
+  const { initShortcutPanel } = await import('./shortcutPanel.js');
+  initShortcutPanel(); // 初始化快捷键面板
+});
+
+加载页面，显示loading ...
+
+“大写人民币”这个插件的大部分使用场景应该会与财务工作有关，可参考财政部发布的《会计基础工作规范》中对大写金额的书写要求。
+
 
 
 ## RoadMap 
