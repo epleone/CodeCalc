@@ -6,7 +6,7 @@ export default {
   input: 'calculator.js',
   output: {
     file: '../app/src/calculator.min.js',
-    format: 'esm',
+    format: 'cjs',
     exports: 'named',
     name: 'Calculator',
     sourcemap: false

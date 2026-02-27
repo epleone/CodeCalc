@@ -63,4 +63,43 @@ export class Notification {
 }
 
 // 创建全局通知实例
-export const notification = new Notification(); 
+export const notification = new Notification();
+
+// 轻量通用 tooltip（基于坐标弹出）
+let globalTooltip = null;
+
+export function showTooltip(text, x, y, className = 'notification-tips') {
+    if (globalTooltip && document.body.contains(globalTooltip)) {
+        globalTooltip.remove();
+    }
+
+    const tooltip = document.createElement('div');
+    tooltip.className = className;
+    tooltip.textContent = text;
+    document.body.appendChild(tooltip);
+
+    const rect = tooltip.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const margin = 20;
+    let finalX = Math.min(x, viewportWidth - rect.width - margin);
+    let finalY = Math.min(y, viewportHeight - rect.height - margin);
+
+    tooltip.style.left = `${finalX}px`;
+    tooltip.style.top = `${finalY}px`;
+
+    requestAnimationFrame(() => {
+        tooltip.classList.add('active');
+    });
+
+    globalTooltip = tooltip;
+    return tooltip;
+}
+
+export function hideTooltip() {
+    if (globalTooltip && document.body.contains(globalTooltip)) {
+        globalTooltip.remove();
+    }
+    globalTooltip = null;
+}

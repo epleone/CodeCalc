@@ -2,6 +2,7 @@
   "name": "CodeCalc",
   "pluginName": "Code Calculator",
   "main": "index.html",
+  "preload": "preload.js",
   "logo": "logo.png",
   "features": [
     {
@@ -29,7 +30,7 @@
         {
           "type": "regex",
           "label": "通用计算",
-          "match": "/^(?!.*(?:[a-zA-Z\uFF21-\uFF3A\uFF41-\uFF5A][0-9\uFF10-\uFF19]|[0-9\uFF10-\uFF19][a-zA-Z\uFF21-\uFF3A\uFF41-\uFF5A]))[ -~π°‰\uFF01-\uFF5E]{1,}\\s*=$/"
+          "match": "/^(?!.*[0-9\\uFF10-\\uFF19][a-zA-Z\\uFF21-\\uFF3A\\uFF41-\\uFF5A])[ -~π°‰\\uFF01-\\uFF5E]{1,}\\s*=$/"
         }
       ]
     },

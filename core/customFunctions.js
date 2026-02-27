@@ -86,6 +86,7 @@ function validateName(name) {
 }
 
 
+// TODO: 自定义函数应该单独保存，而不是添加到FUNCTIONS中
 function addCustomFunction(calculator, FUNCTIONS, definition) {
 
     definition = removeLineNumber(definition);
@@ -151,6 +152,8 @@ function isFunctionDefinition(expr) {
     return /^[a-zA-Z_$][a-zA-Z0-9_]*\s*\([^)]*\)\s*=\s*.+/.test(expr);
 }
 
+
+// 从Storage中加载自定义函数，存储在customFunctions中，并添加到FUNCTIONS中
 function addCustomFunctionFromStorage(calculator, FUNCTIONS) {
     console.log("Add CustomFunction From Storage");
     clearCustomFunctions(FUNCTIONS);

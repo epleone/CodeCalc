@@ -178,9 +178,14 @@ export class Settings {
     }
 }
 
-// 创建实例并暴露到全局
-export const settings = new Settings();
-window.settings = settings;
+let settings = null;
+
+export function ensureSettings() {
+    if (settings) return settings;
+    settings = new Settings();
+    window.settings = settings;
+    return settings;
+}
 
 // 添加快捷键支持，Ctrl + P 打开设置页面
 document.addEventListener('keydown', (e) => {
@@ -190,7 +195,7 @@ document.addEventListener('keydown', (e) => {
 
         if (isCtrlP) {
             e.preventDefault();
-            settings.togglePanel();
+            ensureSettings().togglePanel();
         }
     }
 });

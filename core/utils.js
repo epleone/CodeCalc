@@ -24,7 +24,7 @@ const M_CONST = {
 // 定义类 CCObj，用于保存计算结果
 class CCObj {
     constructor(value, info, warning) {
-        this.value = value;
+        this.value = value;     // TODO: 定义用于计算的值，以及用于显示的值
         this.info = info;
         this.warning = warning;
     }

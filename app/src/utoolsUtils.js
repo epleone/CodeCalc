@@ -1,7 +1,5 @@
-import { Calculator } from './calculator.min.js';
-
+const Calculator = window.CodeCalcCore.Calculator;
 const isUtoolsEnv = typeof utools !== 'undefined';
-
 
 function isBase64(str) {
     // 去除空格

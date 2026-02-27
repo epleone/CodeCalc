@@ -56,6 +56,22 @@
     --cf-edit-btn-color: #4a4a4a;
     --cf-edit-btn-hover-bg: #9a6dff;
     --cf-edit-btn-hover-border: #9a6dff;
+
+    /* Modern SaaS 卡片/文字（支持暗色） */
+    --cf-card-border: #f1f5f9;
+    --cf-card-hover-border: #e2e8f0;
+    --cf-card-hover-bg: #f8fafc;
+    --cf-code-color: #1e293b;
+    --cf-title-color: #8033ba;
+    --cf-handle-hover-color: #64748b;
+    --cf-handle-hover-bg: rgba(148, 163, 184, 0.12);
+    --cf-drag-placeholder-border: #cbd5e1;
+    --cf-drag-placeholder-bg: rgba(148, 163, 184, 0.08);
+
+    /* 更克制的阴影（Linear / Vercel） */
+    --cf-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --cf-card-hover-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    --cf-card-drag-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
 }
 
 :root[data-theme="dark"] {
@@ -127,6 +143,21 @@
     --cf-exit-btn-hover-bg: rgba(255, 45, 45, 0.25);
     --cf-exit-btn-hover-color: #ff5252;
     --cf-exit-btn-hover-border: rgba(255, 45, 45, 0.5);
+
+    /* Modern SaaS 卡片/文字（暗色主题） */
+    --cf-card-border: rgba(255, 255, 255, 0.10);
+    --cf-card-hover-border: rgba(255, 255, 255, 0.14);
+    --cf-card-hover-bg: rgba(255, 255, 255, 0.04);
+    --cf-code-color: rgba(226, 232, 240, 0.92);
+    --cf-title-color: #936bf3;
+    --cf-handle-hover-color: rgba(226, 232, 240, 0.78);
+    --cf-handle-hover-bg: rgba(255, 255, 255, 0.06);
+    --cf-drag-placeholder-border: rgba(255, 255, 255, 0.18);
+    --cf-drag-placeholder-bg: rgba(255, 255, 255, 0.05);
+
+    --cf-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --cf-card-hover-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
+    --cf-card-drag-shadow: 0 16px 36px rgba(0, 0, 0, 0.48);
 }
 
 /* 自定义函数面板基础样式 - 全屏布局 */
@@ -202,65 +233,117 @@
     max-height: calc(100vh - 100px);
 }
 
+/* 空状态时让内容真正居中（不受列表 padding 影响） */
+#custom-functions-list.cf-list-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
 /* 自定义函数项 - 卡片式设计 */
 .custom-function-item {
     width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border-radius: 16px;
     background-color: var(--cf-item-bg);
-    border: 1px solid var(--cf-item-border);
+    border: 1px solid var(--cf-card-border);
     gap: 0;
     min-height: auto;
     position: relative;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px var(--cf-item-shadow);
-    cursor: grab;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    box-shadow: var(--cf-card-shadow);
+    cursor: default;
 }
 
-.custom-function-item:active {
-    cursor: grabbing;
-}
+/* 拖拽由手柄控制，避免整行误触 */
 
 /* 浏览模式行 */
 .function-browse-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     min-height: 36px;
 }
 
-/* 拖拽手柄 */
+/* 左侧置顶按钮（替代拖拽手柄） */
 .drag-handle {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    cursor: grab;
-    padding: 4px;
-    color: #999999;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    border: none;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(100, 116, 139, 0.85);
     font-size: 12px;
     line-height: 1;
+    touch-action: none;
+    user-select: none;
+    background-color: transparent;
+    box-shadow: none;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        opacity 0.12s ease,
+        color 0.18s ease,
+        background-color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.12s ease;
+}
+
+:root[data-theme="dark"] .drag-handle {
+    color: rgba(148, 163, 184, 0.78);
 }
 
 .drag-handle:active {
-    cursor: grabbing;
+    transform: translateY(0.5px) scale(0.96);
 }
 
 .drag-handle::before {
-    content: "⋮";
+    content: "↑";
     display: block;
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1;
+}
+
+.custom-function-item:hover .drag-handle,
+.custom-function-item.editing .drag-handle {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.drag-handle:hover {
+    color: var(--cf-handle-hover-color);
+    background-color: var(--cf-handle-hover-bg);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+/* 拖拽占位符 */
+.cf-drag-placeholder {
+    display: none;
+}
+
+/* 拖拽中的卡片（fixed 定位跟随指针） */
+.custom-function-item.cf-dragging {
+    cursor: default;
 }
 
 /* 函数内容区域 - 包含函数定义和悬浮按钮 */
 .function-content-area {
     flex: 1;
-    position: relative;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 /* 函数定义行容器 */
@@ -275,9 +358,9 @@
 /* 函数定义显示 */
 .function-definition {
     font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Consolas", monospace;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
-    color: var(--cf-text-primary);
+    color: var(--cf-code-color);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -322,24 +405,22 @@
 
 /* 悬浮按钮容器 - 水平排列右对齐 */
 .function-actions-overlay {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
+    pointer-events: none;
 }
 
-/* 鼠标悬停时显示悬浮按钮 */
+/* 鼠标悬停时显示悬浮按钮（整行 hover） */
 .custom-function-item:hover .function-actions-overlay {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* 编辑模式容器 */
@@ -360,9 +441,10 @@
 
 
 .custom-function-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px var(--cf-item-hover-shadow);
-    border-color: var(--cf-item-hover-border);
+    transform: translateY(-1px);
+    box-shadow: var(--cf-card-hover-shadow);
+    border-color: var(--cf-card-hover-border);
+    background-color: var(--cf-card-hover-bg);
 }
 
 .custom-function-item.editing {
@@ -375,33 +457,59 @@
 
 /* 参数类型选择器 */
 .param-type-selector {
-    min-width: 70px;
-    padding: 6px 8px;
+    min-width: 82px;
+    padding: 5px 10px;
+    border-radius: 999px;
     border: 1px solid var(--cf-selector-border);
-    border-radius: 6px;
-    background-color: var(--cf-selector-bg);
+    background-color: rgba(15, 23, 42, 0.02);
     color: var(--cf-text-secondary);
-    font-size: 12px;
-    font-weight: 400;
+    font-size: 11px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease, transform 0.1s ease;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='7,10 12,15 17,10'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
-    background-position: right 6px center;
-    background-size: 12px;
-    padding-right: 24px;
+    background-position: right 9px center;
+    background-size: 11px;
+    padding-right: 28px;
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.08);
 }
 
 /* 编辑模式中的参数类型选择器 - 与类型徽章对齐 */
 .function-edit-first-row .param-type-selector {
-    min-width: 80px;
-    padding: 6px 8px;
-    padding-right: 28px;
-    font-weight: 500;
+    min-width: 90px;
+    padding: 5px 12px;
+    padding-right: 30px;
+    font-weight: 600;
     flex-shrink: 0;
+}
+
+.param-type-selector:hover {
+    background-color: rgba(15, 23, 42, 0.04);
+}
+
+.param-type-selector:focus {
+    outline: none;
+    border-color: var(--cf-input-focus-border);
+    box-shadow: 0 0 0 2px var(--cf-input-focus-shadow);
+    background-color: #ffffff;
+}
+
+:root[data-theme="dark"] .param-type-selector {
+    background-color: rgba(15, 23, 42, 0.4);
+    border-color: rgba(148, 163, 184, 0.35);
+    color: rgba(226, 232, 240, 0.92);
+}
+
+:root[data-theme="dark"] .param-type-selector:hover {
+    background-color: rgba(15, 23, 42, 0.7);
+}
+
+:root[data-theme="dark"] .param-type-selector:focus {
+    background-color: rgba(15, 23, 42, 0.9);
 }
 
 /* 编辑模式中的函数输入框 */
@@ -580,77 +688,75 @@
 }
 
 
-/* 编辑按钮 */
-.function-edit-btn {
-    padding: 6px 12px;
-    border: 1px solid var(--cf-edit-btn-border);
-    border-radius: 6px;
-    background-color: var(--cf-edit-btn-bg);
-    color: var(--cf-edit-btn-color);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 50px;
-    text-align: center;
-}
-
-.function-edit-btn:hover {
-    background-color: var(--cf-edit-btn-hover-bg);
-    border-color: var(--cf-edit-btn-hover-border);
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px var(--cf-btn-edit-shadow);
-}
-
-/* 悬浮按钮样式 - 苹果风格方形按钮设计 */
-.function-actions-overlay .function-edit-btn,
-.function-actions-overlay .function-delete-btn {
+/* 悬浮操作按钮 - Modern Clean SaaS 风格 */
+.cf-icon-button {
     width: 28px;
     height: 28px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: 999px;
     border: none;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    text-align: center;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    line-height: 1;
-    display: flex;
+    padding: 4px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    background-color: transparent;
+    transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cf-icon {
+    width: 16px;
+    height: 16px;
 }
 
 .function-actions-overlay .function-edit-btn {
-    background: rgba(142, 142, 147, 0.12);
-    color: #8e8e93;
-    border: 0.5px solid rgba(142, 142, 147, 0.2);
+    color: #4f46e5;
 }
 
 .function-actions-overlay .function-edit-btn:hover {
-    background: rgba(142, 142, 147, 0.18);
-    color: #636366;
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background-color: #e0e7ff;
+    color: #3730a3;
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+}
+
+.function-actions-overlay .function-edit-btn:active {
+    transform: scale(0.95);
 }
 
 .function-actions-overlay .function-delete-btn {
-    background: rgba(255, 45, 45, 0.15);
-    color: #ff2d2d;
-    border: 0.5px solid rgba(255, 45, 45, 0.3);
+    color: #e11d48;
 }
 
 .function-actions-overlay .function-delete-btn:hover {
-    background: rgba(255, 45, 45, 0.25);
-    color: #ff0000;
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(255, 45, 45, 0.4);
+    background-color: #fee2e2;
+    color: #b91c1c;
+    transform: scale(1.12);
+    box-shadow:
+        0 0 0 1px rgba(248, 113, 113, 0.8),
+        0 6px 16px rgba(225, 29, 72, 0.35);
+}
+
+.function-actions-overlay .function-delete-btn:active {
+    transform: scale(0.95);
+}
+
+/* 上移 / 下移：保持中性色，避免视觉噪音 */
+.function-actions-overlay .function-move-up-btn,
+.function-actions-overlay .function-move-down-btn {
+    color: rgba(100, 116, 139, 0.95);
+}
+
+.function-actions-overlay .function-move-up-btn:hover,
+.function-actions-overlay .function-move-down-btn:hover {
+    background-color: rgba(148, 163, 184, 0.10);
+    color: rgba(30, 64, 175, 0.95);
+    transform: scale(1.06);
+    box-shadow: 0 3px 8px rgba(148, 163, 184, 0.35);
+}
+
+.function-actions-overlay .function-move-up-btn:active,
+.function-actions-overlay .function-move-down-btn:active {
+    transform: scale(0.96);
 }
 
 
@@ -715,54 +821,159 @@
 }
 
 /* 空状态 */
-.empty-functions-state {
+.cf-empty-state {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
-    text-align: center;
-    color: var(--cf-empty-text);
+    width: 100%;
 }
 
-.empty-functions-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.6;
-    filter: grayscale(0.3);
+/* 极简欢迎态：两行（提示 + 示例） */
+.cf-empty-min {
+    flex-direction: column;
+    gap: 10px;
 }
 
-.empty-functions-text {
+.cf-empty-min-card {
+    /* Material-ish elevated card, 4:3 */
+    height: 210px;
+    aspect-ratio: 9 / 6;
+    width: auto;
+    max-width: min(560px, 100%);
+    border-radius: 18px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    background: #ffffff;
+    box-shadow:
+        0 2px 4px rgba(15, 23, 42, 0.12),
+        0 16px 32px rgba(15, 23, 42, 0.16);
+    padding: 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+:root[data-theme="dark"] .cf-empty-min-card {
+    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.40),
+        0 20px 48px rgba(0, 0, 0, 0.60);
+}
+
+.cf-empty-min-row1 {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    color: var(--cf-code-color);
+    font-weight: 650;
+    letter-spacing: -0.01em;
     font-size: 14px;
-    line-height: 1.6;
-    max-width: 280px;
-    font-weight: 400;
+    line-height: 1.2;
+    font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 
+.cf-empty-min-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #1d4ed8;
+    background: rgba(29, 78, 216, 0.10);
+    border: 1px solid rgba(29, 78, 216, 0.18);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10);
+    flex: 0 0 auto;
+}
 
-/* 删除按钮 */
-.function-delete-btn {
-    padding: 6px 12px;
-    border: 1px solid var(--cf-btn-delete-color);
-    border-radius: 6px;
-    background-color: transparent;
-    color: var(--cf-btn-delete-color);
+:root[data-theme="dark"] .cf-empty-min-icon {
+    color: #93c5fd;
+    background: rgba(147, 197, 253, 0.10);
+    border-color: rgba(147, 197, 253, 0.18);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.cf-empty-min-icon-svg {
+    width: 16px;
+    height: 16px;
+}
+
+.cf-empty-min-text {
+    color: var(--cf-title-color);
+    opacity: 1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: 15px;
+}
+
+.cf-empty-min-row2 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.cf-empty-example-codeblock {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--cf-card-border);
+    background: #f8fafc;
+    box-sizing: border-box;
+    overflow: hidden;
+    width: 100%;
+    text-align: left;
+}
+
+:root[data-theme="dark"] .cf-empty-example-codeblock {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.cf-empty-example-codeblock code {
+    font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Consolas", monospace;
     font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 50px;
-    text-align: center;
-    margin-left: 6px;
+    color: var(--cf-code-color);
+    white-space: pre-wrap;
+    word-break: break-word;
+    opacity: 0.92;
 }
 
-.function-delete-btn:hover {
-    background-color: var(--cf-btn-delete-color);
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px var(--cf-btn-delete-shadow);
+/* 代码块内语法高亮（与全局补全色系一致） */
+.cf-code-fence {
+    color: rgba(148, 163, 184, 0.9);
 }
 
+.cf-code-meta {
+    color: rgba(148, 163, 184, 0.95);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.cf-code-fn {
+    color: var(--completion-function-selected);
+    font-weight: 650;
+}
+
+.cf-code-param {
+    color: rgba(100, 116, 139, 0.95);
+}
+
+:root[data-theme="dark"] .cf-code-param {
+    color: rgba(203, 213, 225, 0.85);
+}
+
+.cf-code-op {
+    color: var(--completion-property-selected);
+}
+
+.cf-code-num {
+    color: var(--completion-constant-selected);
+}
 
 
 /* 响应式设计 */

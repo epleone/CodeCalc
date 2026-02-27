@@ -1,11 +1,9 @@
-import { Calculator } from './calculator.min.js';
-import { addCustomFunctionFromStorage, FUNCTIONS } from './calculator.min.js';
 import * as Copy from './copy.js';
 import * as Tag from './tag.js';
-import './settings.js';
-import './shortcuts.js';
-import './custom-functions.js';
-import { snapshot } from './snapshot.js';
+import { ensureSettings } from './settings.js';
+import { ensureShortcuts } from './shortcuts.js';
+import { ensureCustomFunctions } from './custom-functions.js';
+import { ensureSnapshot } from './snapshot.js';
 import {
     isCompletionEnabled,
     removeCompletionHint,
@@ -16,6 +14,11 @@ import {
 } from './completion.js';
 import { notification } from './notification.js';
 
+
+const Calculator = window.CodeCalcCore.Calculator;
+const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
+const CONSTANTS = window.CodeCalcCore.CONSTANTS;
+const addCustomFunctionFromStorage = window.CodeCalcCore.addCustomFunctionFromStorage;
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
@@ -111,14 +114,17 @@ function CreateNewLine(lineNumber = null) {
     newLine.className = 'expression-line';
     newLine.innerHTML = `
         ${Tag.createTagContainerHTML(lineNumber)}
-        <textarea class="input" 
-                  placeholder="输入表达式" 
-                  rows="1"
-                  oninput="handleInput(event); autoResize(this)"
-                  onkeydown="handleKeyDown(event, this)"
-                  onfocus="handleFocus(event)"
-                  onblur="handleBlur(event)"
-                  onclick="removeCompletionHint(this)"></textarea>
+        <div class="expression-input">
+            <div class="input-highlight"></div>
+            <textarea class="input" 
+                      placeholder="输入表达式" 
+                      rows="1"
+                      oninput="handleInput(event); autoResize(this)"
+                      onkeydown="handleKeyDown(event, this)"
+                      onfocus="handleFocus(event)"
+                      onblur="handleBlur(event)"
+                      onclick="removeCompletionHint(this)"></textarea>
+        </div>
         <div class="result-container">
             <div class="result">
                 <span class="result-value"></span>
@@ -142,6 +148,12 @@ function addNewLine(moveCursor=true) {
     
     // 初始化标签功能
     Tag.initializeTagButton(newLine);
+
+    // 初始化语法高亮
+    attachInputHighlight(newLine);
+
+    // 初始化语法高亮
+    attachInputHighlight(newLine);
     
     // 为新行的结果添加点击处理
     const result = newLine.querySelector('.result');
@@ -525,15 +537,123 @@ function updateShortcutsDisplay() {
     });
 }
 
+// ========= 表达式语法高亮（函数 / 常量） =========
+
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const FUNCTION_NAMES = Object.keys(FUNCTIONS)
+    .filter(name => /^[a-zA-Z_]/.test(name))
+    .map(escapeRegExp)
+    .sort((a, b) => b.length - a.length);
+
+const CONSTANT_NAMES = Object.keys(CONSTANTS || {})
+    .filter(name => /^[a-zA-Z_]/.test(name))
+    .map(escapeRegExp)
+    .sort((a, b) => b.length - a.length);
+
+// 单字母常量（比如 e）容易与科学计数法等冲突，边界策略更严格
+const CONSTANT_NAMES_1 = CONSTANT_NAMES.filter(n => n.length === 1);
+const CONSTANT_NAMES_N = CONSTANT_NAMES.filter(n => n.length > 1);
+
+function escapeHTML(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function buildFuncRegex(names) {
+    if (!names.length) return null;
+    // 允许：行首 / 非单词字符 / 2xsin( 这种写法（x 作为乘号） / 2sin( 隐式乘法
+    // 仅当后面跟 '(' 时认为是函数调用，避免高亮变量名
+    const prefix = '(^|[^A-Za-z0-9_]|(?:\\d)x|\\d)';
+    const name = '(' + names.join('|') + ')';
+    const suffix = '(?=\\s*\\()';
+    return new RegExp(prefix + name + suffix, 'g');
+}
+
+function buildConstRegex(names, allowDigitPrefix) {
+    if (!names.length) return null;
+    const name = '(' + names.join('|') + ')';
+    const suffix = '(?=$|[^A-Za-z0-9_])';
+    const prefix = allowDigitPrefix
+        ? '(^|[^A-Za-z0-9_]|(?:\\d)x|\\d)'
+        : '(^|[^A-Za-z0-9_])';
+    return new RegExp(prefix + name + suffix, 'g');
+}
+
+const FUNCTION_REGEX = buildFuncRegex(FUNCTION_NAMES);
+// 单字母常量：不允许 1e2 这种数字前缀（避免与科学计数法冲突），但允许 1xe 这种把 x 当乘号的写法
+const CONST_REGEX_1 = (() => {
+    if (!CONSTANT_NAMES_1.length) return null;
+    const name = '(' + CONSTANT_NAMES_1.join('|') + ')';
+    const suffix = '(?=$|[^A-Za-z0-9_])';
+    const prefix = '(^|[^A-Za-z0-9_]|(?:\\d)x|(?:\\))x)';
+    return new RegExp(prefix + name + suffix, 'g');
+})();
+const CONST_REGEX_N = buildConstRegex(CONSTANT_NAMES_N, true);
+
+// 科学计数法：1e2 / 1e-2 / 1.23e+4（只高亮 e）
+const SCI_REGEX = /(^|[^A-Za-z0-9_])(\d+(?:\.\d+)?)(e)([+-]?\d+)(?=$|[^A-Za-z0-9_])/gi;
+
+function highlightExpressionText(raw) {
+    let text = escapeHTML(raw);
+
+    // 常量先替换，避免被函数替换干扰
+    if (CONST_REGEX_N) {
+        text = text.replace(CONST_REGEX_N, '$1<span class="cc-syntax-const">$2</span>');
+    }
+    if (CONST_REGEX_1) {
+        text = text.replace(CONST_REGEX_1, '$1<span class="cc-syntax-const">$2</span>');
+    }
+    if (FUNCTION_REGEX) {
+        text = text.replace(FUNCTION_REGEX, '$1<span class="cc-syntax-func">$2</span>');
+    }
+
+    // 科学计数法最后处理，避免与常量/函数高亮嵌套
+    text = text.replace(SCI_REGEX, '$1$2<span class="cc-syntax-sci">$3</span>$4');
+
+    // 确保空行仍然有高度
+    if (text === '') {
+        return '&nbsp;';
+    }
+    return text;
+}
+
+function attachInputHighlight(expressionLine) {
+    const wrapper = expressionLine.querySelector('.expression-input');
+    const textarea = wrapper?.querySelector('.input');
+    const highlight = wrapper?.querySelector('.input-highlight');
+    if (!wrapper || !textarea || !highlight) return;
+
+    const sync = () => {
+        highlight.innerHTML = highlightExpressionText(textarea.value);
+        highlight.scrollTop = textarea.scrollTop;
+    };
+
+    textarea.addEventListener('input', sync);
+    textarea.addEventListener('scroll', () => {
+        highlight.scrollTop = textarea.scrollTop;
+    });
+
+    // 初始同步一次
+    sync();
+}
+
 function initializeUI() {
 
     // 将标签和快照相关函数添加到全局作用域
     Object.assign(window, Tag);
     Object.assign(window, Copy);
 
-    // 初始化所有行的标签功能
+    // 初始化所有行的标签功能与语法高亮
     document.querySelectorAll('.expression-line').forEach(line => {
         Tag.initializeTagButton(line);
+        attachInputHighlight(line);
     });
     
     // 更新所有行的行号
@@ -569,10 +689,28 @@ function initializeUI() {
     // 初始化快捷键显示
     updateShortcutsDisplay();
 
-    // 添加自定义函数，使用 setTimeout 异步执行
-    setTimeout(() => {
-        AddCustomFunctions();
-    }, 0);
+    // 首屏先出，再在空闲时初始化“面板功能”和自定义函数（避免启动卡顿）
+    const scheduleIdle = (fn, timeout = 800) => {
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(fn, { timeout });
+        } else {
+            setTimeout(fn, 0);
+        }
+    };
+
+    requestAnimationFrame(() => {
+        scheduleIdle(() => {
+            // 面板功能（懒实例化，但这里在 idle 预热；不影响首屏）
+            ensureSettings();
+            ensureShortcuts();
+            ensureCustomFunctions();
+
+            // 快照相对更重，稍微晚一点预热；如不想预热可删除此行
+            scheduleIdle(() => ensureSnapshot(), 2000);
+
+            AddCustomFunctions();
+        });
+    });
 }
 
 function handleAsteriskInput(event, input) {
@@ -640,7 +778,11 @@ function arrayToHtml(matString) {
 
 // 计算当前行
 function calculateLine(input, ignoreEmptyLine=false) {
-    const resultContainer = input.parentElement.querySelector('.result-container');
+    const expressionLine = input.closest('.expression-line');
+    if (!expressionLine) return;
+
+    const resultContainer = expressionLine.querySelector('.result-container');
+    if (!resultContainer) return;
     const result = resultContainer.querySelector('.result');
     const messageIcon = resultContainer.querySelector('.message-icon');
     const messageText = messageIcon.querySelector('.message-text');
@@ -789,7 +931,7 @@ function clearAll() {
     const container = document.getElementById('expression-container');
     
     // 在清空之前保存历史记录
-    snapshot.takeSnapshot(false);
+    ensureSnapshot().takeSnapshot(false);
     
     // 添加快照图标动画效果
     const snapshotButton = document.querySelector('.snapshot-toggle-btn');
@@ -845,13 +987,16 @@ function clearAll() {
     
     // 初始化标签功能
     Tag.initializeTagButton(newLine);
+
+    // 初始化语法高亮（clearAll 生成的第一行需要显式初始化）
+    attachInputHighlight(newLine);
     
     // 为新行的结果添加点击处理
     const newResult = newLine.querySelector('.result');
     addResultClickHandler(newResult);
     
     // 在清空之后, 更新快照添加按钮状态
-    snapshot.updateAddButtonState();
+    ensureSnapshot().updateAddButtonState();
 
     notification.error('页面已清空');
 

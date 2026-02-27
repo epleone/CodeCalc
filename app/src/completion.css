@@ -14,7 +14,7 @@
     --completion-property-color: #607d8b;
     --completion-property-selected: #455a64;
     --completion-constant-color: #795548;
-    --completion-constant-selected: #5d4037;
+    --completion-constant-selected: #2f7a5b;
     --completion-description: #999;
     --completion-description-selected: #666;
 }
@@ -30,11 +30,11 @@
     --completion-scrollbar: rgba(255, 255, 255, 0.1);
     --completion-scrollbar-hover: rgba(255, 255, 255, 0.15);
     --completion-function-color: #e0e0e0;
-    --completion-function-selected: #64b5f6;
+    --completion-function-selected: #A5B4FC;
     --completion-property-color: #90a4ae;
     --completion-property-selected: #b0bec5;
     --completion-constant-color: #bcaaa4;
-    --completion-constant-selected: #d7ccc8;
+    --completion-constant-selected: #7fbfa4;
     --completion-description: #888;
     --completion-description-selected: #aaa;
 }

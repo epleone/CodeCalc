@@ -1,4 +1,6 @@
-import { OPERATORS, FUNCTIONS, CONSTANTS } from './calculator.min.js';
+const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
+const CONSTANTS = window.CodeCalcCore.CONSTANTS;
+
 
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {

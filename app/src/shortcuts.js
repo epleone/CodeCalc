@@ -65,13 +65,18 @@ document.addEventListener('keydown', (e) => {
         if (isCtrlSlash) {
             e.preventDefault();
             e.stopPropagation();
-            shortcuts.togglePanel();
+            ensureShortcuts().togglePanel();
         }
     }
 });
 
 // 切换面板功能已通过快捷键和全局实例 window.shortcuts 提供
 
-// 创建实例
-export const shortcuts = new Shortcuts(); 
-window.shortcuts = shortcuts;
+let shortcuts = null;
+
+export function ensureShortcuts() {
+    if (shortcuts) return shortcuts;
+    shortcuts = new Shortcuts();
+    window.shortcuts = shortcuts;
+    return shortcuts;
+}

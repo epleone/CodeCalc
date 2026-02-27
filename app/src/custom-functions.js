@@ -1,13 +1,19 @@
-import { OPERATORS, FUNCTIONS, CONSTANTS } from './calculator.min.js';
-import { addCustomFunctionFromStorage, isFunctionDefinition } from './calculator.min.js';
-import { notification } from './notification.js';
-import { AddCustomFunctions } from './ui.js';
+import { notification, showTooltip, hideTooltip } from './notification.js';
+import { AddCustomFunctions } from './ui.js';  // TODO?
+
+const OPERATORS = window.CodeCalcCore.OPERATORS;
+const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
+const CONSTANTS = window.CodeCalcCore.CONSTANTS;
+const isFunctionDefinition = window.CodeCalcCore.isFunctionDefinition;
+const addCustomFunctionFromStorage = window.CodeCalcCore.addCustomFunctionFromStorage;
+
 
 export class CustomFunctions {
     constructor() {
         this.isPanelVisible = false;
         this.editingIndex = null;
         this.eventsBound = false;
+        this.tooltipTimer = null;
         
         // 添加存储适配器
         this.storage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
@@ -58,8 +64,7 @@ export class CustomFunctions {
             });
         }
         
-        // 初始化拖拽排序功能
-        this.initDragAndDrop();
+        // 目前不启用拖拽排序
     }
     
     handleBottomButtonClick() {
@@ -150,17 +155,36 @@ export class CustomFunctions {
         const functionNames = Object.keys(storedFunctions);
         
         if (functionNames.length === 0) {
+            listContainer.classList.add('cf-list-empty');
             listContainer.innerHTML = `
-                <div class="empty-functions-state">
-                    <div class="empty-functions-icon">📝</div>
-                    <div class="empty-functions-text">
-                        还没有自定义函数<br>
-                        点击下方按钮创建您的第一个函数
+                <div class="cf-empty-state cf-empty-min">
+                    <div class="cf-empty-min-card">
+                        <div class="cf-empty-min-row1">
+                            <span class="cf-empty-min-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" class="cf-empty-min-icon-svg">
+                                    <path d="M8 9l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M16 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M14 7l-4 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </svg>
+                            </span>
+                            <span class="cf-empty-min-text">还没有定义函数</span>
+                        </div>
+                        <div class="cf-empty-min-row2">
+                            <pre class="cf-empty-example-codeblock"><code><span class="cf-code-fence">\`\`\`</span> <span class="cf-code-meta">示例</span>
+<span class="cf-code-fn">func1</span>(<span class="cf-code-param">x</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span> <span class="cf-code-op">+</span> <span class="cf-code-num">1</span>
+<span class="cf-code-fn">func2</span>(<span class="cf-code-param">x</span>, <span class="cf-code-param">y</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span><span class="cf-code-op">**</span><span class="cf-code-num">2</span> <span class="cf-code-op">+</span> <span class="cf-code-param">y</span>
+<span class="cf-code-fence">\`\`\`</span></code></pre>
+                        </div>
                     </div>
                 </div>
             `;
+
+            // 空状态也要绑定事件（事件委托只绑定一次）
+            this.bindFunctionItemEvents();
             return;
         }
+
+        listContainer.classList.remove('cf-list-empty');
         
         const functionsHTML = functionNames.map((name, index) => {
             const func = storedFunctions[name];
@@ -179,28 +203,49 @@ export class CustomFunctions {
         
         // 绑定事件（使用事件委托，只绑定一次）
         this.bindFunctionItemEvents();
-        
-        // 更新拖拽手柄
-        this.updateDragHandles();
+
+        // 默认选中第一行，方便显示置顶箭头
+        const firstItem = listContainer.querySelector('.custom-function-item');
+        if (firstItem && !firstItem.classList.contains('selected')) {
+            firstItem.classList.add('selected');
+        }
     }
     
     createFunctionItemHTML(index, definition, description, paramType, funcName) {
         return `
             <div class="custom-function-item" data-index="${index}" data-function-name="${funcName}">
-                <!-- 浏览模式：OTP Authenticator 风格 -->
+                <!-- 浏览模式：Modern Clean SaaS 风格 -->
                 <div class="function-browse-row">
-                    <div class="drag-handle"></div>
+                    <button class="drag-handle" type="button" data-tooltip="置顶此函数"></button>
                     <div class="function-content-area">
                         <div class="function-definition-row">
                             <span class="param-type-badge" data-type="${paramType}">${paramType}</span>
                             <div class="function-definition">${definition}</div>
                         </div>
                         <div class="function-actions-overlay">
-                            <button class="function-edit-btn" data-index="${index}" title="编辑">
-                                ✏️
+                            <button class="function-move-up-btn cf-icon-button" data-index="${index}" data-tooltip="上移" aria-label="上移">
+                                <svg class="cf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                    <polyline points="6 15 12 9 18 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                                </svg>
                             </button>
-                            <button class="function-delete-btn" data-index="${index}" data-function-name="${funcName}" title="删除">
-                                🗑️
+                            <button class="function-move-down-btn cf-icon-button" data-index="${index}" data-tooltip="下移" aria-label="下移">
+                                <svg class="cf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                    <polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                                </svg>
+                            </button>
+                            <button class="function-edit-btn cf-icon-button" data-index="${index}" data-tooltip="编辑函数" aria-label="编辑函数">
+                                <svg class="cf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M15.232 5.232l3.536 3.536M16.732 3.732a2.5 2.5 0 113.536 3.536L7.5 20.036 3 21l.964-4.5L16.732 3.732z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </svg>
+                            </button>
+                            <button class="function-delete-btn cf-icon-button" data-index="${index}" data-function-name="${funcName}" data-tooltip="删除函数" aria-label="删除函数">
+                                <svg class="cf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                    <polyline points="3 6 5 6 21 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                                    <path d="M19 6l-1 14H6L5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M10 11v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M14 11v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M9 6V4h6v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -223,10 +268,10 @@ export class CustomFunctions {
                                placeholder="输入函数定义，如: myFunc(x,y) = x^2 + y"
                                readonly>
                         
-                        <button class="function-save-btn" data-index="${index}" title="保存编辑">
+                        <button class="function-save-btn" data-index="${index}" data-tooltip="保存编辑">
                             ✓
                         </button>
-                        <button class="function-exit-btn" data-index="${index}" title="退出编辑">
+                        <button class="function-exit-btn" data-index="${index}" data-tooltip="退出编辑">
                             ✕
                         </button>
                     </div>
@@ -244,28 +289,98 @@ export class CustomFunctions {
             listContainer.addEventListener('click', this.handleListClick.bind(this));
             listContainer.addEventListener('keydown', this.handleListKeydown.bind(this));
             listContainer.addEventListener('change', this.handleListChange.bind(this));
+
+            listContainer.addEventListener('mouseover', this.handleListMouseOver.bind(this));
+            listContainer.addEventListener('mouseout', this.handleListMouseOut.bind(this));
+
             this.eventsBound = true;
         }
+    }
+
+    handleListMouseOver(e) {
+        const target = e.target.closest('.drag-handle, .function-move-up-btn, .function-move-down-btn, .function-edit-btn, .function-delete-btn, .function-save-btn, .function-exit-btn');
+        if (!target) return;
+
+        const text = target.dataset.tooltip;
+        if (!text) return;
+
+        if (this.tooltipTimer) {
+            clearTimeout(this.tooltipTimer);
+        }
+
+        this.tooltipTimer = setTimeout(() => {
+            const rect = target.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.bottom + 8;
+            showTooltip(text, x, y);
+        }, 260);
+    }
+
+    handleListMouseOut(e) {
+        const from = e.target.closest('.drag-handle, .function-move-up-btn, .function-move-down-btn, .function-edit-btn, .function-delete-btn, .function-save-btn, .function-exit-btn');
+        if (!from) return;
+
+        const related = e.relatedTarget;
+        if (related && related.closest && related.closest('.drag-handle, .function-move-up-btn, .function-move-down-btn, .function-edit-btn, .function-delete-btn, .function-save-btn, .function-exit-btn') === from) {
+            return;
+        }
+
+        if (this.tooltipTimer) {
+            clearTimeout(this.tooltipTimer);
+            this.tooltipTimer = null;
+        }
+        hideTooltip();
     }
     
     handleListClick(e) {
         const target = e.target;
         
-        if (target.classList.contains('function-edit-btn')) {
+        const editBtn = target.closest('.function-edit-btn');
+        const deleteBtn = target.closest('.function-delete-btn');
+        const moveTopBtn = target.closest('.drag-handle');
+        const moveUpBtn = target.closest('.function-move-up-btn');
+        const moveDownBtn = target.closest('.function-move-down-btn');
+        const saveBtn = target.closest('.function-save-btn');
+        const exitBtn = target.closest('.function-exit-btn');
+        
+        if (moveTopBtn) {
             e.preventDefault();
-            const index = parseInt(target.dataset.index);
+            const item = moveTopBtn.closest('.custom-function-item');
+            const index = parseInt(item?.dataset.index);
+            if (!Number.isNaN(index)) {
+                this.reorderFunctions(index, 0);
+            }
+        } else if (moveUpBtn) {
+            e.preventDefault();
+            const item = moveUpBtn.closest('.custom-function-item');
+            const index = parseInt(item?.dataset.index);
+            if (!Number.isNaN(index) && index > 0) {
+                this.reorderFunctions(index, index - 1);
+            }
+        } else if (moveDownBtn) {
+            e.preventDefault();
+            const item = moveDownBtn.closest('.custom-function-item');
+            const index = parseInt(item?.dataset.index);
+            const listContainer = this.panel?.querySelector('#custom-functions-list');
+            const total = listContainer ? listContainer.querySelectorAll('.custom-function-item').length : 0;
+            if (!Number.isNaN(index) && index < total - 1) {
+                this.reorderFunctions(index, index + 1);
+            }
+        } else if (editBtn) {
+            e.preventDefault();
+            const index = parseInt(editBtn.dataset.index);
             this.toggleEditMode(index);
-        } else if (target.classList.contains('function-delete-btn')) {
+        } else if (deleteBtn) {
             e.preventDefault();
-            const funcName = target.dataset.functionName;
+            const funcName = deleteBtn.dataset.functionName;
             this.deleteFunction(funcName);
-        } else if (target.classList.contains('function-save-btn')) {
+        } else if (saveBtn) {
             e.preventDefault();
-            const index = parseInt(target.dataset.index);
+            const index = parseInt(saveBtn.dataset.index);
             this.handleSaveClick(index);
-        } else if (target.classList.contains('function-exit-btn')) {
+        } else if (exitBtn) {
             e.preventDefault();
-            const index = parseInt(target.dataset.index);
+            const index = parseInt(exitBtn.dataset.index);
             this.handleExitClick(index);
         }
     }
@@ -349,19 +464,8 @@ export class CustomFunctions {
         // 更新底部按钮
         this.updateBottomButton();
         
-        // 检查是否还有其他函数，如果没有则显示空状态
-        const remainingItems = listContainer.querySelectorAll('.custom-function-item');
-        if (remainingItems.length === 0) {
-            listContainer.innerHTML = `
-                <div class="empty-functions-state">
-                    <div class="empty-functions-icon">📝</div>
-                    <div class="empty-functions-text">
-                        还没有自定义函数<br>
-                        点击下方按钮创建您的第一个函数
-                    </div>
-                </div>
-            `;
-        }
+        // 重新渲染（自动回到空状态 UI）
+        this.renderFunctionsList();
         
         this.showSuccess('已取消添加函数');
     }
@@ -561,8 +665,9 @@ export class CustomFunctions {
         if (!listContainer) return;
         
         // 如果当前是空状态，清空容器
-        if (listContainer.querySelector('.empty-functions-state')) {
+        if (listContainer.querySelector('.cf-empty-state')) {
             listContainer.innerHTML = '';
+            listContainer.classList.remove('cf-list-empty');
         }
         
         // 添加一个新的空函数项用于编辑
@@ -737,66 +842,6 @@ export class CustomFunctions {
         notification.info(message, 1500);
     }
     
-    // 初始化拖拽排序功能
-    initDragAndDrop() {
-        const listContainer = this.panel?.querySelector('#custom-functions-list');
-        if (!listContainer) return;
-        
-        let draggedElement = null;
-        let draggedIndex = null;
-        
-        // 拖拽开始
-        listContainer.addEventListener('dragstart', (e) => {
-            if (e.target.classList.contains('drag-handle') || e.target.closest('.drag-handle')) {
-                draggedElement = e.target.closest('.custom-function-item');
-                draggedIndex = parseInt(draggedElement.dataset.index);
-                draggedElement.style.opacity = '0.5';
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        });
-        
-        // 拖拽结束
-        listContainer.addEventListener('dragend', (e) => {
-            if (draggedElement) {
-                draggedElement.style.opacity = '';
-                draggedElement = null;
-                draggedIndex = null;
-            }
-        });
-        
-        // 拖拽悬停
-        listContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        });
-        
-        // 拖拽放置
-        listContainer.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (!draggedElement) return;
-            
-            const targetElement = e.target.closest('.custom-function-item');
-            if (!targetElement || targetElement === draggedElement) return;
-            
-            const targetIndex = parseInt(targetElement.dataset.index);
-            this.reorderFunctions(draggedIndex, targetIndex);
-        });
-        
-        // 为拖拽手柄添加draggable属性
-        this.updateDragHandles();
-    }
-    
-    // 更新拖拽手柄
-    updateDragHandles() {
-        const listContainer = this.panel?.querySelector('#custom-functions-list');
-        if (!listContainer) return;
-        
-        const dragHandles = listContainer.querySelectorAll('.drag-handle');
-        dragHandles.forEach(handle => {
-            handle.draggable = true;
-        });
-    }
-    
     // 重新排序函数
     reorderFunctions(fromIndex, toIndex) {
         const storedFunctions = this.getStoredFunctions();
@@ -834,13 +879,16 @@ document.addEventListener('keydown', (e) => {
 
         if (isCtrlI) {
             e.preventDefault();
-            if (window.customFunctions) {
-                window.customFunctions.togglePanel();
-            }
+            ensureCustomFunctions().togglePanel();
         }
     }
 });
 
-// 创建自定义函数面板实例并导出到全局
-export const customFunctions = new CustomFunctions();
-window.customFunctions = customFunctions;
+let customFunctions = null;
+
+export function ensureCustomFunctions() {
+    if (customFunctions) return customFunctions;
+    customFunctions = new CustomFunctions();
+    window.customFunctions = customFunctions;
+    return customFunctions;
+}

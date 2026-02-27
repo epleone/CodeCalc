@@ -7,6 +7,9 @@
     --notification-error-bg: rgba(220, 53, 69, 0.9);
     --notification-error-color: #ffffff;
     --notification-shadow: rgba(0, 0, 0, 0.2);
+    /* tooltip 颜色（浅色主题，与原 tag-tooltip 一致） */
+    --tag-tooltip-bg: rgba(0, 0, 0, 0.8);
+    --tag-tooltip-color: #ffffff;
 }
 
 :root[data-theme="dark"] {
@@ -17,6 +20,9 @@
     --notification-error-bg: rgba(220, 53, 69, 0.9);
     --notification-error-color: #ffffff;
     --notification-shadow: rgba(0, 0, 0, 0.3);
+    /* tooltip 颜色（深色主题，反相且保持透明） */
+    --tag-tooltip-bg: rgba(255, 255, 255, 0.9);
+    --tag-tooltip-color: #0f172a;
 }
 
 /* 通知组件基础样式 */
@@ -53,6 +59,30 @@
 
 .notification.fade-out {
     animation: notification-fade-out 0.3s ease forwards;
+}
+
+/* 通用 notification tooltip（原 tag-tooltip，重命名为 notification-tips） */
+.notification-tips {
+    position: fixed;
+    background: var(--tag-tooltip-bg);
+    color: var(--tag-tooltip-color);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 1100;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s ease;
+    max-width: 200px;
+    white-space: nowrap;
+    /* 防止出现滚动条 */
+    overflow: hidden;
+}
+
+.notification-tips.active {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 @keyframes notification-fade-in {

@@ -119,7 +119,8 @@ body {
     outline: none;
     padding: 0.5rem 8px 0.5rem 2rem;
     min-width: 0;
-    color: var(--text-primary);
+    color: transparent; /* 文字颜色由下层高亮层负责，保留光标颜色 */
+    caret-color: var(--text-primary);
     position: relative;
     z-index: 1;
     box-sizing: border-box;
@@ -141,6 +142,40 @@ body {
     font-size: 1.2rem;
     line-height: 1.4;
     height: auto;
+}
+
+.expression-input {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.input-highlight {
+    position: absolute;
+    inset: 0;
+    padding: 0.5rem 8px 0.5rem 2rem;
+    font-size: 1.5rem;
+    font-family: "Consolas", "Menlo", "Andale Mono", "Monaco", monospace;
+    white-space: pre;
+    overflow: hidden;
+    color: var(--text-primary);
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.cc-syntax-func {
+    /* 与补全样式一致 */
+    color: var(--completion-function-selected);
+}
+
+.cc-syntax-const {
+    /* 与补全样式一致 */
+    color: var(--completion-constant-selected);
+}
+
+.cc-syntax-sci {
+    /* 科学计数法 e：用 property 色系更贴近“运算符/语法” */
+    color: var(--completion-property-selected);
 }
 
 
