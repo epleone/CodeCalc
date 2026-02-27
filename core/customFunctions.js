@@ -104,7 +104,6 @@ function addCustomFunction(calculator, FUNCTIONS, definition) {
     FUNCTIONS[customFunc.name] = {
         func: customFunc.func,
         args: customFunc.args,
-        // argTypes: 'any',
         description: `自定义函数: ${customFunc.name}(${customFunc.params.join(', ')}) = ${customFunc.expression}`,
         isCustom: true
     };
@@ -152,7 +151,7 @@ function clearCustomConstants(CONSTANTS) {
 }
 
 /** 解析常数定义 "name = number" 并加入 CONSTANTS */
-function addCustomConstant(calculator, CONSTANTS, definition) {
+function addCustomConstant(CONSTANTS, definition) {
     definition = removeLineNumber(definition);
     if (!isConstantDefinition(definition)) {
         throw new Error('常数定义格式错误，正确格式: name = number');
@@ -172,7 +171,6 @@ function addCustomConstant(calculator, CONSTANTS, definition) {
 // 检查是否为函数定义语句
 function isFunctionDefinition(expr) {
     expr = removeLineNumber(expr);
-    console.log("isFunctionDefinition:", expr);
     return /^[a-zA-Z_$][a-zA-Z0-9_]*\s*\([^)]*\)\s*=\s*.+/.test(expr);
 }
 
@@ -192,7 +190,6 @@ function isConstantDefinition(expr) {
 
 /** 从 Storage 加载自定义项，按 expType 更新函数字典或常数字典 */
 function updateCustomFromStorage(calculator, FUNCTIONS, CONSTANTS) {
-    console.log("Update custom from storage");
     clearCustomFunctions(FUNCTIONS);
     if (CONSTANTS) clearCustomConstants(CONSTANTS);
 
@@ -205,7 +202,7 @@ function updateCustomFromStorage(calculator, FUNCTIONS, CONSTANTS) {
             const expType = data.expType != null ? data.expType : (isFunctionDefinition(data.definition) ? 'function' : isConstantDefinition(data.definition) ? 'constant' : 'function');
             try {
                 if (expType === 'constant') {
-                    if (CONSTANTS) addCustomConstant(calculator, CONSTANTS, data.definition);
+                    if (CONSTANTS) addCustomConstant(CONSTANTS, data.definition);
                 } else {
                     addCustomFunction(calculator, FUNCTIONS, data.definition);
                 }

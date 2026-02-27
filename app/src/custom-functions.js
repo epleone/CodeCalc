@@ -1,12 +1,11 @@
 import { notification, showTooltip, hideTooltip } from './notification.js';
-import { AddCustomFunctions } from './ui.js';  // TODO?
+import { AddCustomFunctions } from './ui.js';
 
 const OPERATORS = window.CodeCalcCore.OPERATORS;
 const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
 const CONSTANTS = window.CodeCalcCore.CONSTANTS;
 const isFunctionDefinition = window.CodeCalcCore.isFunctionDefinition;
 const isConstantDefinition = window.CodeCalcCore.isConstantDefinition;
-const updateCustomFromStorage = window.CodeCalcCore.updateCustomFromStorage;
 
 /** 根据定义字符串判断表达式类型：'function' | 'constant' */
 function getExpType(definition) {
@@ -150,6 +149,12 @@ export class CustomFunctions {
             
             // 重置编辑状态
             this.editingIndex = null;
+            // 关闭面板时确保 tooltip 消失
+            if (this.tooltipTimer) {
+                clearTimeout(this.tooltipTimer);
+                this.tooltipTimer = null;
+            }
+            hideTooltip();
             
             // 退出函数页面时，自动调用AddCustomFunctions刷新自定义函数
             AddCustomFunctions();
@@ -177,12 +182,13 @@ export class CustomFunctions {
                                     <path d="M14 7l-4 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
                                 </svg>
                             </span>
-                            <span class="cf-empty-min-text">还没有定义函数</span>
+                            <span class="cf-empty-min-text">这里还是空的～</span>
                         </div>
                         <div class="cf-empty-min-row2">
                             <pre class="cf-empty-example-codeblock"><code><span class="cf-code-fence">\`\`\`</span> <span class="cf-code-meta">示例</span>
 <span class="cf-code-fn">func1</span>(<span class="cf-code-param">x</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span> <span class="cf-code-op">+</span> <span class="cf-code-num">1</span>
 <span class="cf-code-fn">func2</span>(<span class="cf-code-param">x</span>, <span class="cf-code-param">y</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span><span class="cf-code-op">**</span><span class="cf-code-num">2</span> <span class="cf-code-op">+</span> <span class="cf-code-param">y</span>
+<span class="cf-code-fn">mypi</span> <span class="cf-code-op">=</span> <span class="cf-code-num">3.14159</span>
 <span class="cf-code-fence">\`\`\`</span></code></pre>
                         </div>
                     </div>
@@ -274,7 +280,7 @@ export class CustomFunctions {
                                data-index="${index}"
                                value="${definition}"
                                data-original="${definition}"
-                               placeholder="函数: func(x,y) = x * y + 1  或  常数: mypi = 3.14159"
+                               placeholder="f(x,y) = x * y + 1  或  p = 3.14159"
                                readonly>
                         <button class="function-save-btn cf-icon-button" data-index="${index}" data-tooltip="保存编辑" aria-label="保存">
                             <svg class="cf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
@@ -347,6 +353,13 @@ export class CustomFunctions {
     
     handleListClick(e) {
         const target = e.target;
+
+        // 任意点击时先清除 tooltip，避免残留
+        if (this.tooltipTimer) {
+            clearTimeout(this.tooltipTimer);
+            this.tooltipTimer = null;
+        }
+        hideTooltip();
         
         const editBtn = target.closest('.function-edit-btn');
         const deleteBtn = target.closest('.function-delete-btn');
@@ -385,7 +398,18 @@ export class CustomFunctions {
             this.toggleEditMode(index);
         } else if (deleteBtn) {
             e.preventDefault();
+            const item = deleteBtn.closest('.custom-function-item');
+            const index = item ? parseInt(item.dataset.index) : NaN;
             const funcName = deleteBtn.dataset.functionName;
+
+            // 对于新建但尚未保存（没有名称）的行，直接视为“取消添加”
+            if (!funcName) {
+                if (!Number.isNaN(index)) {
+                    this.deleteEmptyFunction(index);
+                }
+                return;
+            }
+
             this.deleteFunction(funcName);
         } else if (saveBtn) {
             e.preventDefault();
@@ -666,7 +690,8 @@ export class CustomFunctions {
         }
         
         const newIndex = listContainer.children.length;
-        const newFunctionHTML = this.createFunctionItemHTML(newIndex, 'myFunc(x) = x * 2', '', 'function', '');
+        // 新增行应当是“空定义”，避免出现需要点两次才能取消/删除的竞态
+        const newFunctionHTML = this.createFunctionItemHTML(newIndex, '', '', 'function', '');
         
         listContainer.insertAdjacentHTML('beforeend', newFunctionHTML);
         
@@ -674,7 +699,7 @@ export class CustomFunctions {
         this.bindFunctionItemEvents();
         
         // 立即进入编辑模式
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             this.toggleEditMode(newIndex);
             
             // 清空输入框并设置占位符
@@ -683,16 +708,14 @@ export class CustomFunctions {
                 const bodyInput = functionItem.querySelector('.function-body-input');
                 const descInput = functionItem.querySelector('.function-desc-input');
                 if (bodyInput) {
-                    bodyInput.value = '';
-                    bodyInput.dataset.original = '';
-                    bodyInput.placeholder = '函数: func(x,y) = 表达式  或  常数: mypi = 3.14159';
+                    bodyInput.placeholder = 'f(x,y) = x + y  或  p = 3.14159';
                     bodyInput.focus();
                 }
                 if (descInput) {
                     descInput.value = '';
                 }
             }
-        }, 50);
+        });
     }
     
     deleteFunction(funcName) {
@@ -782,34 +805,6 @@ export class CustomFunctions {
         }
     }
     
-    
-    // 应用自定义函数到计算器（当计算器可用时调用）
-    applyFunctionsToCalculator() {
-        const calculator = window.calculator;
-        const FUNCTIONS = window.FUNCTIONS;
-        
-        if (!calculator || !FUNCTIONS) {
-            console.log('计算器尚未初始化，稍后将自动应用自定义函数');
-            return false;
-        }
-        
-        try {
-            const storedFunctions = this.getStoredFunctions();
-            Object.values(storedFunctions).forEach(func => {
-                try {
-                    const definition = func.definition;
-                    addCustomFunction(definition, calculator, FUNCTIONS);
-                    console.log(`已应用函数到计算器: ${func.name}`);
-                } catch (error) {
-                    console.warn(`应用函数 ${func.name} 到计算器失败:`, error);
-                }
-            });
-            return true;
-        } catch (error) {
-            console.warn('应用自定义函数到计算器失败:', error);
-            return false;
-        }
-    }
     
     showError(message) {
         notification.error(message, 2000);
