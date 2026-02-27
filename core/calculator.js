@@ -19,11 +19,13 @@ import {
 
 import {
     isFunctionDefinition,
+    isConstantDefinition,
     getCustomFunctions,
     addCustomFunction,
     removeCustomFunction,
-    addCustomFunctionFromStorage,
-    clearCustomFunctions
+    updateCustomFromStorage,
+    clearCustomFunctions,
+    clearCustomConstants
 } from './customFunctions.js';
 
 import { Utils } from './utils.js';
@@ -967,9 +969,9 @@ const Calculator = (function() {
 
 // 导出
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
-export { isFunctionDefinition, getCustomFunctions,
+export { isFunctionDefinition, isConstantDefinition, getCustomFunctions,
     addCustomFunction, removeCustomFunction,
-    addCustomFunctionFromStorage, clearCustomFunctions};
+    updateCustomFromStorage, clearCustomFunctions, clearCustomConstants };
 
 // 测试
 

@@ -266,14 +266,70 @@
 .function-browse-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 3px;
     min-height: 36px;
 }
 
-/* 左侧置顶按钮（替代拖拽手柄） */
+/* 左侧：行号 / 置顶箭头 共用一个视口，悬停时行号上移、箭头自下而上进入 */
+.cf-line-handle-wrap {
+    width: 20px;
+    height: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: block;
+    position: relative;
+}
+
+.cf-line-handle-track {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 20px;
+    height: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0;
+    transition: transform 0.2s ease;
+}
+
+.custom-function-item:hover .cf-line-handle-track,
+.custom-function-item.editing .cf-line-handle-track {
+    transform: translateY(-20px);
+}
+
+.cf-line-number {
+    width: 20px;
+    height: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--cf-text-muted);
+    flex-shrink: 0;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+:root[data-theme="dark"] .cf-line-number {
+    color: rgba(148, 163, 184, 0.75);
+}
+
+/* 置顶按钮（箭头） */
+.cf-line-handle-track .drag-handle {
+    width: 20px;
+    height: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    box-sizing: border-box;
+}
 .drag-handle {
-    width: 26px;
-    height: 26px;
     border-radius: 999px;
     border: none;
     padding: 0;
@@ -288,15 +344,8 @@
     user-select: none;
     background-color: transparent;
     box-shadow: none;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition:
-        opacity 0.12s ease,
-        color 0.18s ease,
-        background-color 0.18s ease,
-        box-shadow 0.18s ease,
-        transform 0.12s ease;
+    flex-shrink: 0;
+    transition: color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
 }
 
 :root[data-theme="dark"] .drag-handle {
@@ -310,15 +359,8 @@
 .drag-handle::before {
     content: "↑";
     display: block;
-    font-size: 13px;
+    font-size: 11px;
     line-height: 1;
-}
-
-.custom-function-item:hover .drag-handle,
-.custom-function-item.editing .drag-handle {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
 }
 
 .drag-handle:hover {
@@ -403,6 +445,42 @@
     border: 1px solid var(--cf-badge-number-border);
 }
 
+/* 表达式类型徽章：仅圆形轮廓 + 字母着色，f 紫色 / c 绿色 */
+.param-type-badge[data-type="function"],
+.exp-type-badge[data-type="function"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #7c4dff;
+    border: 1px solid #7c4dff;
+    justify-content: center;
+    font-size: 10px;
+    font-style: italic;
+    font-family: Georgia, "Times New Roman", "Songti SC", serif;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.param-type-badge[data-type="constant"],
+.exp-type-badge[data-type="constant"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #388e3c;
+    border: 1px solid #388e3c;
+    justify-content: center;
+    font-size: 10px;
+    font-style: italic;
+    font-family: Georgia, "Times New Roman", "Songti SC", serif;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
 /* 悬浮按钮容器 - 水平排列右对齐 */
 .function-actions-overlay {
     display: flex;
@@ -430,7 +508,7 @@
     gap: 8px;
 }
 
-/* 编辑模式第一行：类型选择器和输入框 */
+/* 编辑模式第一行：输入框 + 按钮 */
 .function-edit-first-row {
     display: flex;
     align-items: center;
@@ -545,98 +623,31 @@
     border-color: var(--cf-input-edit-border) !important;
 }
 
-/* 保存编辑按钮 */
-.function-save-btn {
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 5px;
-    background: rgba(76, 175, 80, 0.1);
-    color: #4caf50;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border: 0.5px solid rgba(76, 175, 80, 0.2);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+/* 编辑行：确定/取消与浏览模式右侧四按钮风格一致（圆形图标按钮） */
+.function-edit-first-row .function-save-btn {
+    color: #4f46e5;
 }
-
-.function-save-btn:hover {
-    background: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-    border-color: rgba(76, 175, 80, 0.4);
+.function-edit-first-row .function-save-btn:hover {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
 }
-
-.function-save-btn:active {
+.function-edit-first-row .function-save-btn:active {
     transform: scale(0.95);
 }
 
-/* 退出编辑按钮 */
-.function-exit-btn {
-    width: 28px;
-    height: 28px;
-    border: none;
-    border-radius: 5px;
-    background: rgba(255, 45, 45, 0.1);
-    color: #ff2d2d;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    border: 0.5px solid rgba(255, 45, 45, 0.2);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+.function-edit-first-row .function-exit-btn {
+    color: #e11d48;
 }
-
-.function-exit-btn:hover {
-    background: rgba(255, 45, 45, 0.2);
-    color: #ff0000;
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(255, 45, 45, 0.3);
-    border-color: rgba(255, 45, 45, 0.4);
+.function-edit-first-row .function-exit-btn:hover {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    transform: scale(1.12);
+    box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.8), 0 6px 16px rgba(225, 29, 72, 0.35);
 }
-
-.function-exit-btn:active {
+.function-edit-first-row .function-exit-btn:active {
     transform: scale(0.95);
-}
-
-/* 暗色主题下的保存按钮样式 */
-:root[data-theme="dark"] .function-save-btn {
-    background: var(--cf-save-btn-bg);
-    color: var(--cf-save-btn-color);
-    border-color: var(--cf-save-btn-border);
-}
-
-:root[data-theme="dark"] .function-save-btn:hover {
-    background: var(--cf-save-btn-hover-bg);
-    color: var(--cf-save-btn-hover-color);
-    border-color: var(--cf-save-btn-hover-border);
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
-}
-
-/* 暗色主题下的退出按钮样式 */
-:root[data-theme="dark"] .function-exit-btn {
-    background: var(--cf-exit-btn-bg);
-    color: var(--cf-exit-btn-color);
-    border-color: var(--cf-exit-btn-border);
-}
-
-:root[data-theme="dark"] .function-exit-btn:hover {
-    background: var(--cf-exit-btn-hover-bg);
-    color: var(--cf-exit-btn-hover-color);
-    border-color: var(--cf-exit-btn-hover-border);
-    box-shadow: 0 2px 8px rgba(255, 45, 45, 0.4);
 }
 
 .param-type-selector:focus {

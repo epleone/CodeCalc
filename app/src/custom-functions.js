@@ -5,7 +5,17 @@ const OPERATORS = window.CodeCalcCore.OPERATORS;
 const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
 const CONSTANTS = window.CodeCalcCore.CONSTANTS;
 const isFunctionDefinition = window.CodeCalcCore.isFunctionDefinition;
-const addCustomFunctionFromStorage = window.CodeCalcCore.addCustomFunctionFromStorage;
+const isConstantDefinition = window.CodeCalcCore.isConstantDefinition;
+const updateCustomFromStorage = window.CodeCalcCore.updateCustomFromStorage;
+
+/** 根据定义字符串判断表达式类型：'function' | 'constant' */
+function getExpType(definition) {
+    if (!definition || typeof definition !== 'string') return 'function';
+    const expr = definition.trim();
+    if (isFunctionDefinition(expr)) return 'function';
+    if (isConstantDefinition(expr)) return 'constant';
+    return 'function';
+}
 
 
 export class CustomFunctions {
@@ -188,12 +198,11 @@ export class CustomFunctions {
         
         const functionsHTML = functionNames.map((name, index) => {
             const func = storedFunctions[name];
-            // 使用保存的definition
             const definition = func.definition;
             const description = func.description || '';
-            const paramType = func.paramType || 'any';
+            const expType = func.expType != null ? func.expType : getExpType(definition);
             
-            return this.createFunctionItemHTML(index, definition, description, paramType, name);
+            return this.createFunctionItemHTML(index, definition, description, expType, name);
         }).join('');
         
         // 避免不必要的重新渲染
@@ -211,15 +220,21 @@ export class CustomFunctions {
         }
     }
     
-    createFunctionItemHTML(index, definition, description, paramType, funcName) {
+    createFunctionItemHTML(index, definition, description, expType, funcName) {
+        const expTypeSymbol = expType === 'constant' ? 'c' : 'f';
         return `
             <div class="custom-function-item" data-index="${index}" data-function-name="${funcName}">
                 <!-- 浏览模式：Modern Clean SaaS 风格 -->
                 <div class="function-browse-row">
-                    <button class="drag-handle" type="button" data-tooltip="置顶此函数"></button>
+                    <div class="cf-line-handle-wrap">
+                        <div class="cf-line-handle-track">
+                            <span class="cf-line-number">${index + 1}</span>
+                            <button class="drag-handle" type="button" data-tooltip="置顶此函数" aria-label="置顶"></button>
+                        </div>
+                    </div>
                     <div class="function-content-area">
                         <div class="function-definition-row">
-                            <span class="param-type-badge" data-type="${paramType}">${paramType}</span>
+                            <span class="param-type-badge exp-type-badge" data-type="${expType}" title="${expType === 'constant' ? '常数' : '函数'}">${expTypeSymbol}</span>
                             <div class="function-definition">${definition}</div>
                         </div>
                         <div class="function-actions-overlay">
@@ -251,28 +266,26 @@ export class CustomFunctions {
                     </div>
                 </div>
                 
-                <!-- 编辑模式：第一行输入，第二行按钮 -->
+                <!-- 编辑模式：仅输入框 + 按钮，不显示类型 -->
                 <div class="function-edit-mode" style="display: none;">
                     <div class="function-edit-first-row">
-                        <select class="param-type-selector" data-index="${index}" disabled>
-                            <option value="any" ${paramType === 'any' ? 'selected' : ''}>any</option>
-                            <option value="string" ${paramType === 'string' ? 'selected' : ''}>string</option>
-                            <option value="number" ${paramType === 'number' ? 'selected' : ''}>number</option>
-                        </select>
-                        
                         <input type="text" 
                                class="function-body-input" 
                                data-index="${index}"
                                value="${definition}"
                                data-original="${definition}"
-                               placeholder="输入函数定义，如: myFunc(x,y) = x^2 + y"
+                               placeholder="函数: func(x,y) = x * y + 1  或  常数: mypi = 3.14159"
                                readonly>
-                        
-                        <button class="function-save-btn" data-index="${index}" data-tooltip="保存编辑">
-                            ✓
+                        <button class="function-save-btn cf-icon-button" data-index="${index}" data-tooltip="保存编辑" aria-label="保存">
+                            <svg class="cf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                <polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                            </svg>
                         </button>
-                        <button class="function-exit-btn" data-index="${index}" data-tooltip="退出编辑">
-                            ✕
+                        <button class="function-exit-btn cf-icon-button" data-index="${index}" data-tooltip="退出编辑" aria-label="退出">
+                            <svg class="cf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                <line x1="18" y1="6" x2="6" y2="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+                                <line x1="6" y1="6" x2="18" y2="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -402,13 +415,7 @@ export class CustomFunctions {
     }
     
     handleListChange(e) {
-        const target = e.target;
-        
-        if (target.classList.contains('param-type-selector')) {
-            console.log('参数类型选择器变更:', target.value, '索引:', target.dataset.index);
-            const index = parseInt(target.dataset.index);
-            this.updateParamType(index, target.value);
-        }
+        // 已移除参数类型选择框，保留事件委托占位
     }
     
     // 检测函数是否为空（新添加但未保存的函数）
@@ -478,7 +485,6 @@ export class CustomFunctions {
         const browseRow = functionItem.querySelector('.function-browse-row');
         const editMode = functionItem.querySelector('.function-edit-mode');
         const bodyInput = functionItem.querySelector('.function-body-input');
-        const paramSelect = functionItem.querySelector('.param-type-selector');
         
         // 检查当前是否在编辑模式
         const isEditing = editMode.style.display !== 'none';
@@ -493,7 +499,6 @@ export class CustomFunctions {
             
             // 启用编辑
             bodyInput.readOnly = false;
-            paramSelect.disabled = false;
             bodyInput.focus();
             bodyInput.select();
             
@@ -516,37 +521,33 @@ export class CustomFunctions {
         
         const bodyInput = functionItem.querySelector('.function-body-input');
         const descInput = functionItem.querySelector('.function-desc-input');
-        const paramTypeSelect = functionItem.querySelector('.param-type-selector');
         const oldFuncName = functionItem.dataset.functionName;
         
         const newDefinition = bodyInput.value.trim();
         const newDescription = descInput ? descInput.value.trim() : '';
-        const newParamType = paramTypeSelect ? paramTypeSelect.value : 'any';
         const originalDefinition = bodyInput.dataset.original || '';
         
-        // 验证函数定义
         if (!newDefinition) {
-            this.showError('函数定义不能为空');
+            this.showError('定义不能为空');
             bodyInput.focus();
             return;
         }
         
-        // 验证函数定义格式
-        const functionDefRegex = /^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\([^)]*\)\s*=\s*.+$/;
-        if (!functionDefRegex.test(newDefinition)) {
-            this.showError('函数定义格式错误，正确格式: funcname(param1,param2,...) = expression');
+        const expType = getExpType(newDefinition);
+        if (expType !== 'function' && expType !== 'constant') {
+            this.showError('格式错误。函数: func(x,y) = 表达式；常数: name = 数值');
             bodyInput.focus();
             return;
         }
         
         try {
-            // 解析函数定义获取函数名
-            const match = newDefinition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)/);
-            if (!match) {
-                this.showError('无法解析函数名');
+            const newFuncName = expType === 'function'
+                ? (newDefinition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(/)?.[1] ?? '')
+                : (newDefinition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*=/)?.[1] ?? '');
+            if (!newFuncName) {
+                this.showError('无法解析名称');
                 return;
             }
-            const newFuncName = match[1];
             
             // 检查函数名是否与已有自定义函数重复
             const storedFunctions = this.getStoredFunctions();
@@ -572,17 +573,14 @@ export class CustomFunctions {
                 return;
             }
             
-            // 纯数据操作：保存函数定义到存储
-            this.saveCustomFunctionData(oldFuncName, newFuncName, newDefinition, newDescription, newParamType);
+            this.saveCustomFunctionData(oldFuncName, newFuncName, newDefinition, newDescription, expType);
             
-            // 更新UI数据
             functionItem.dataset.functionName = newFuncName;
             bodyInput.dataset.original = newDefinition;
             
-            // 退出编辑模式
             this.exitEditMode(index);
             
-            this.showSuccess(`函数 "${newFuncName}" 保存成功`);
+            this.showSuccess(expType === 'constant' ? `常数 "${newFuncName}" 保存成功` : `函数 "${newFuncName}" 保存成功`);
             
         } catch (error) {
             this.showError(`保存失败: ${error.message}`);
@@ -612,7 +610,6 @@ export class CustomFunctions {
         const browseRow = functionItem.querySelector('.function-browse-row');
         const editMode = functionItem.querySelector('.function-edit-mode');
         const bodyInput = functionItem.querySelector('.function-body-input');
-        const paramSelect = functionItem.querySelector('.param-type-selector');
         
         // 切换回浏览模式
         browseRow.style.display = 'flex';
@@ -620,7 +617,6 @@ export class CustomFunctions {
         
         // 禁用编辑
         bodyInput.readOnly = true;
-        paramSelect.disabled = true;
         
         functionItem.classList.remove('editing');
         
@@ -640,13 +636,11 @@ export class CustomFunctions {
         const functionItem = listContainer.querySelector(`[data-index="${index}"]`);
         const browseRow = functionItem.querySelector('.function-browse-row');
         const bodyInput = functionItem.querySelector('.function-body-input');
-        const paramSelect = functionItem.querySelector('.param-type-selector');
         
-        // 获取当前值
         const definition = bodyInput.value;
-        const paramType = paramSelect.value;
+        const expType = getExpType(definition);
+        const expTypeSymbol = expType === 'constant' ? 'c' : 'f';
         
-        // 更新浏览模式的显示
         const definitionSpan = browseRow.querySelector('.function-definition');
         const typeBadge = browseRow.querySelector('.param-type-badge');
         
@@ -655,8 +649,9 @@ export class CustomFunctions {
         }
         
         if (typeBadge) {
-            typeBadge.textContent = paramType;
-            typeBadge.setAttribute('data-type', paramType);
+            typeBadge.textContent = expTypeSymbol;
+            typeBadge.setAttribute('data-type', expType);
+            typeBadge.setAttribute('title', expType === 'constant' ? '常数' : '函数');
         }
     }
     
@@ -670,9 +665,8 @@ export class CustomFunctions {
             listContainer.classList.remove('cf-list-empty');
         }
         
-        // 添加一个新的空函数项用于编辑
         const newIndex = listContainer.children.length;
-        const newFunctionHTML = this.createFunctionItemHTML(newIndex, 'myFunc(x) = x * 2', '', 'any', '');
+        const newFunctionHTML = this.createFunctionItemHTML(newIndex, 'myFunc(x) = x * 2', '', 'function', '');
         
         listContainer.insertAdjacentHTML('beforeend', newFunctionHTML);
         
@@ -691,7 +685,7 @@ export class CustomFunctions {
                 if (bodyInput) {
                     bodyInput.value = '';
                     bodyInput.dataset.original = '';
-                    bodyInput.placeholder = '输入函数定义，如: myFunc(x,y) = x^2 + y';
+                    bodyInput.placeholder = '函数: func(x,y) = 表达式  或  常数: mypi = 3.14159';
                     bodyInput.focus();
                 }
                 if (descInput) {
@@ -714,67 +708,50 @@ export class CustomFunctions {
         this.showSuccess(`函数 "${funcName}" 删除成功`);
     }
     
-    updateParamType(index, paramType) {
-        const listContainer = this.panel?.querySelector('#custom-functions-list');
-        if (!listContainer) return;
-        
-        const functionItem = listContainer.querySelector(`[data-index="${index}"]`);
-        const funcName = functionItem.dataset.functionName;
-        if (funcName) {
-            // 直接更新主存储中的参数类型
-            try {
-                const savedFunctions = JSON.parse(this.storage.getItem('customFunctions') || '{}');
-                if (savedFunctions[funcName]) {
-                    savedFunctions[funcName].paramType = paramType;
-                    this.storage.setItem('customFunctions', JSON.stringify(savedFunctions));
-                    console.log(`函数 "${funcName}" 的参数类型已更新为: ${paramType}`);
-                }
-            } catch (error) {
-                console.warn('更新参数类型失败:', error);
-            }
-        }
-    }
-    
-    
-    // 纯数据管理方法 - 保存自定义函数数据
-    saveCustomFunctionData(oldFuncName, funcName, definition, description, paramType) {
+    // 纯数据管理方法 - 保存自定义函数/常数数据
+    saveCustomFunctionData(oldFuncName, funcName, definition, description, expType) {
         try {
-            // 获取现有的函数数据
             const savedFunctions = JSON.parse(this.storage.getItem('customFunctions') || '{}');
             
-            // 如果是编辑现有函数且函数名改变了，删除旧的
             if (oldFuncName && oldFuncName !== funcName && savedFunctions[oldFuncName]) {
                 delete savedFunctions[oldFuncName];
             }
             
-            // 解析函数定义
-            const match = definition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/);
-            if (!match) {
-                throw new Error('函数定义格式错误');
-            }
-
-            // todo: test
-            if(!isFunctionDefinition(definition)){
-                throw new Error('isFunctionDefinition: 函数定义格式错误');
-            }
+            const type = expType != null ? expType : getExpType(definition);
             
-            const [, name, paramStr] = match;
-            const params = paramStr.trim() ? paramStr.split(',').map(p => p.trim()) : [];
-            
-            // 保存函数数据
-            savedFunctions[funcName] = {
-                name: funcName,
-                params: params,
-                definition: definition,
-                description: description || '',
-                paramType: paramType || 'any'
-            };
+            if (type === 'function') {
+                if (!isFunctionDefinition(definition)) {
+                    throw new Error('函数定义格式错误');
+                }
+                const match = definition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/);
+                if (!match) throw new Error('函数定义格式错误');
+                const [, , paramStr] = match;
+                const params = paramStr.trim() ? paramStr.split(',').map(p => p.trim()) : [];
+                savedFunctions[funcName] = {
+                    name: funcName,
+                    params,
+                    definition,
+                    description: description || '',
+                    expType: 'function'
+                };
+            } else {
+                if (!isConstantDefinition(definition)) {
+                    throw new Error('常数定义格式错误');
+                }
+                savedFunctions[funcName] = {
+                    name: funcName,
+                    params: [],
+                    definition,
+                    description: description || '',
+                    expType: 'constant'
+                };
+            }
             
             this.storage.setItem('customFunctions', JSON.stringify(savedFunctions));
-            console.log(`函数 "${funcName}" 已保存到存储`);
+            console.log(`${type === 'constant' ? '常数' : '函数'} "${funcName}" 已保存到存储`);
             
         } catch (error) {
-            console.warn('保存自定义函数失败:', error);
+            console.warn('保存自定义函数/常数失败:', error);
             throw error;
         }
     }

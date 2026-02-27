@@ -18,7 +18,7 @@ import { notification } from './notification.js';
 const Calculator = window.CodeCalcCore.Calculator;
 const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
 const CONSTANTS = window.CodeCalcCore.CONSTANTS;
-const addCustomFunctionFromStorage = window.CodeCalcCore.addCustomFunctionFromStorage;
+const updateCustomFromStorage = window.CodeCalcCore.updateCustomFromStorage;
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 function AddCustomFunctions() {
-    addCustomFunctionFromStorage(Calculator, FUNCTIONS);
-    // 刷新补全列表以包含从存储加载的自定义函数
+    updateCustomFromStorage(Calculator, FUNCTIONS, CONSTANTS);
+    // 刷新补全列表以包含从存储加载的自定义函数与常数
     refreshCompletions();
 }
 
