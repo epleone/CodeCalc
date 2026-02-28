@@ -867,7 +867,7 @@ const Calculator = (function() {
 
     // 6. 返回公共API
     return {
-        calculate(expr) {
+        calculate(expr, options = {}) {
             // TODO: 添加超时处理
             clearMessages(); // 清除之前的消息
 
@@ -900,9 +900,16 @@ const Calculator = (function() {
             const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
             const result = evaluate(ast, operators, functions, constants);
+            // raw 模式：返回未格式化的原始值（用于自定义函数 lambda 内层求值，保证类型一致）
+            if (options && options.raw) {
+                return {
+                    value: result,
+                    info: infos.length > 0 ? infos : null,
+                    warning: warnings.length > 0 ? warnings : null
+                };
+            }
             // 添加格式化处理，传入完整的上下文
             const exprResult = formatOutput(result, ast, operators, functions);
-            
             return exprResult;
         },
 

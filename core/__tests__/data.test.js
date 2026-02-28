@@ -34,8 +34,8 @@ describe('日期时间数据类型测试', () => {
         });
 
         test('月日时间格式', () => {
-            expect(Calculator.calculate('@03-15 14:30:00').value).toBe(1742020200000);
-            expect(Calculator.calculate('@03-15 14:30').value).toBe(1742020200000);
+            expect(Calculator.calculate('@03-15 14:30:00').value).toBe(1773556200000);
+            expect(Calculator.calculate('@03-15 14:30').value).toBe(1773556200000);
         });
 
         test('年月格式', () => {
@@ -43,7 +43,7 @@ describe('日期时间数据类型测试', () => {
         });
 
         test('月日和年份格式', () => {
-            expect(Calculator.calculate('@03-15').value).toBe(1741968000000);
+            expect(Calculator.calculate('@03-15').value).toBe(1773504000000);
             expect(Calculator.calculate('@2020').value).toBe(1577808000000);
         });
 

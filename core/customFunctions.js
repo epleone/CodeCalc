@@ -20,8 +20,8 @@ function removeLineNumber(expr) {
 
 
 function createCustomFunction(definition, calculator) {
-    // 1. 解析函数定义
-    const functionDefRegex = /^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/;
+    // 1. 解析函数定义（= 必须是单个等号，不能是 == 或 = =）
+    const functionDefRegex = /^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=(?!\s*=)\s*(.+)$/;
     const match = definition.match(functionDefRegex);
     
     if (!match) {
@@ -70,9 +70,8 @@ function createLambdaFunction(params, expression, calculator) {
             evaluationExpr = evaluationExpr.replace(paramRegex, `(${argValue})`);
         }
         
-        // 使用计算器计算表达式
-        const result = calculator.calculate(evaluationExpr);
-        // rslt是对象，包含value, info, warning等, TODO: define ccobj? 
+        // 使用计算器计算表达式（raw: true 保持原始类型，不转成显示用字符串）
+        const result = calculator.calculate(evaluationExpr, { raw: true });
         return result.value;
     };
 }
@@ -104,6 +103,8 @@ function addCustomFunction(calculator, FUNCTIONS, definition) {
     FUNCTIONS[customFunc.name] = {
         func: customFunc.func,
         args: customFunc.args,
+        // argTypes: customFunc.argTypes,
+        argTypes: 'any',
         description: `自定义函数: ${customFunc.name}(${customFunc.params.join(', ')}) = ${customFunc.expression}`,
         isCustom: true
     };
@@ -160,10 +161,10 @@ function addCustomConstant(CONSTANTS, definition) {
     return constantName;
 }
 
-// 函数定义，返回函数名
+// 函数定义，返回函数名（= 必须是单个等号，不能是 == 或 = =）
 function getCustomFunctionName(expr) {
     expr = removeLineNumber(expr);
-    const functionDefRegex = /^([a-zA-Z][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/;
+    const functionDefRegex = /^([a-zA-Z][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=(?!\s*=)\s*(.+)$/;
     const match = expr.trim().match(functionDefRegex);
     return match ? match[1] : null;
 }
