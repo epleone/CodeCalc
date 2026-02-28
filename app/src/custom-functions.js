@@ -1,5 +1,4 @@
 import { notification, showTooltip, hideTooltip } from './notification.js';
-import { AddCustomFunctions } from './ui.js';
 
 const OPERATORS = window.CodeCalcCore.OPERATORS;
 const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
@@ -65,44 +64,17 @@ export class CustomFunctions {
             }
         });
         
-        // 添加按钮（添加/保存）
-        const addBtn = this.panel?.querySelector('#add-function-btn');
-        if (addBtn) {
-            addBtn.addEventListener('click', () => {
-                this.handleBottomButtonClick();
+        // 点击页面空白部分（非按钮、非输入框、非函数卡片、非空状态卡片）退出面板
+        if (this.panel) {
+            this.panel.addEventListener('click', (e) => {
+                if (!this.isPanelVisible) return;
+                const noClose = e.target.closest('button, input, textarea, .custom-function-item, .cf-empty-min-card');
+                if (noClose) return;
+                this.togglePanel();
             });
         }
         
         // 目前不启用拖拽排序
-    }
-    
-    handleBottomButtonClick() {
-        // 如果按钮被禁用（编辑状态），不执行任何操作
-        if (this.editingIndex !== null) {
-            return;
-        }
-        // 非编辑状态：添加新函数
-        this.addNewFunction();
-    }
-    
-    updateBottomButton() {
-        const bottomBtn = this.panel?.querySelector('#add-function-btn');
-        if (!bottomBtn) return;
-        
-        // 底部按钮始终显示"添加函数"，但在编辑状态下禁用
-        bottomBtn.textContent = '添加函数';
-        
-        if (this.editingIndex !== null) {
-            // 编辑状态：禁用按钮
-            bottomBtn.disabled = true;
-            bottomBtn.style.background = '#cccccc';
-            bottomBtn.style.opacity = '0.6';
-        } else {
-            // 非编辑状态：启用按钮
-            bottomBtn.disabled = false;
-            bottomBtn.style.background = 'linear-gradient(135deg, #9a6dff 0%, #7c4dff 100%)';
-            bottomBtn.style.opacity = '1';
-        }
     }
     
     togglePanel() {
@@ -134,30 +106,27 @@ export class CustomFunctions {
             
             // 只在面板打开时渲染一次
             this.renderFunctionsList();
-            
-            // 更新底部按钮状态
-            this.updateBottomButton();
         } else {
-            this.panel.classList.remove('show');
-            document.body.style.overflow = '';
-            
-            // 退出面板，聚焦输入框
-            const inputs = document.querySelectorAll('.input');
-            if (inputs.length > 0) {
-                inputs[inputs.length - 1].focus();
-            }
-            
-            // 重置编辑状态
-            this.editingIndex = null;
-            // 关闭面板时确保 tooltip 消失
-            if (this.tooltipTimer) {
-                clearTimeout(this.tooltipTimer);
-                this.tooltipTimer = null;
-            }
-            hideTooltip();
-            
-            // 退出函数页面时，自动调用AddCustomFunctions刷新自定义函数
-            AddCustomFunctions();
+            // 先播放从上到下的消失动画，动画结束后再真正关闭
+            this.panel.classList.add('closing');
+            const onClosed = (e) => {
+                if (e.target !== this.panel) return;
+                this.panel.removeEventListener('animationend', onClosed);
+                this.panel.classList.remove('show', 'closing');
+                document.body.style.overflow = '';
+                const inputs = document.querySelectorAll('.input');
+                if (inputs.length > 0) {
+                    inputs[inputs.length - 1].focus();
+                }
+                this.editingIndex = null;
+                if (this.tooltipTimer) {
+                    clearTimeout(this.tooltipTimer);
+                    this.tooltipTimer = null;
+                }
+                hideTooltip();
+                document.dispatchEvent(new CustomEvent('codecalc:customFunctionsPanelClosed'));
+            };
+            this.panel.addEventListener('animationend', onClosed);
         }
     }
     
@@ -188,7 +157,7 @@ export class CustomFunctions {
                             <pre class="cf-empty-example-codeblock"><code><span class="cf-code-fence">\`\`\`</span> <span class="cf-code-meta">示例</span>
 <span class="cf-code-fn">func1</span>(<span class="cf-code-param">x</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span> <span class="cf-code-op">+</span> <span class="cf-code-num">1</span>
 <span class="cf-code-fn">func2</span>(<span class="cf-code-param">x</span>, <span class="cf-code-param">y</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span><span class="cf-code-op">**</span><span class="cf-code-num">2</span> <span class="cf-code-op">+</span> <span class="cf-code-param">y</span>
-<span class="cf-code-fn">mypi</span> <span class="cf-code-op">=</span> <span class="cf-code-num">3.14159</span>
+<span class="cf-code-fn">mypi</span> <span class="cf-code-op">:=</span> <span class="cf-code-num">3.14159</span>
 <span class="cf-code-fence">\`\`\`</span></code></pre>
                         </div>
                     </div>
@@ -280,7 +249,7 @@ export class CustomFunctions {
                                data-index="${index}"
                                value="${definition}"
                                data-original="${definition}"
-                               placeholder="f(x,y) = x * y + 1  或  p = 3.14159"
+                               placeholder="f(x,y) = x * y + 1  或  p := 3.14159"
                                readonly>
                         <button class="function-save-btn cf-icon-button" data-index="${index}" data-tooltip="保存编辑" aria-label="保存">
                             <svg class="cf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
@@ -470,10 +439,15 @@ export class CustomFunctions {
     // 处理退出按钮点击
     handleExitClick(index) {
         if (this.isFunctionEmpty(index)) {
-            // 如果是空函数，删除这一行
-            this.deleteEmptyFunction(index);
+            const listContainer = this.panel?.querySelector('#custom-functions-list');
+            const functionItem = listContainer?.querySelector(`[data-index="${index}"]`);
+            const funcName = functionItem?.dataset?.functionName;
+            if (funcName) {
+                this.deleteFunction(funcName);
+            } else {
+                this.deleteEmptyFunction(index);
+            }
         } else {
-            // 如果是已存在的函数，取消编辑
             this.cancelEdit(index);
         }
     }
@@ -491,9 +465,6 @@ export class CustomFunctions {
         
         // 重置编辑状态
         this.editingIndex = null;
-        
-        // 更新底部按钮
-        this.updateBottomButton();
         
         // 重新渲染（自动回到空状态 UI）
         this.renderFunctionsList();
@@ -527,9 +498,6 @@ export class CustomFunctions {
             bodyInput.select();
             
             functionItem.classList.add('editing');
-            
-            // 更新底部按钮
-            this.updateBottomButton();
         } else {
             // 保存编辑
             this.handleSaveClick(index);
@@ -559,7 +527,7 @@ export class CustomFunctions {
         
         const expType = getExpType(newDefinition);
         if (expType !== 'function' && expType !== 'constant') {
-            this.showError('格式错误。函数: func(x,y) = 表达式；常数: name = 数值');
+            this.showError('格式错误。函数: func(x,y) = 表达式；常数: name := 数值');
             bodyInput.focus();
             return;
         }
@@ -567,7 +535,7 @@ export class CustomFunctions {
         try {
             const newFuncName = expType === 'function'
                 ? (newDefinition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(/)?.[1] ?? '')
-                : (newDefinition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*=/)?.[1] ?? '');
+                : (newDefinition.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*:\s*=\s*/)?.[1] ?? '');
             if (!newFuncName) {
                 this.showError('无法解析名称');
                 return;
@@ -648,9 +616,6 @@ export class CustomFunctions {
         
         // 更新浏览模式的显示内容
         this.updateBrowseMode(index);
-        
-        // 更新底部按钮
-        this.updateBottomButton();
     }
     
     updateBrowseMode(index) {
@@ -677,45 +642,6 @@ export class CustomFunctions {
             typeBadge.setAttribute('data-type', expType);
             typeBadge.setAttribute('title', expType === 'constant' ? '常数' : '函数');
         }
-    }
-    
-    addNewFunction() {
-        const listContainer = this.panel?.querySelector('#custom-functions-list');
-        if (!listContainer) return;
-        
-        // 如果当前是空状态，清空容器
-        if (listContainer.querySelector('.cf-empty-state')) {
-            listContainer.innerHTML = '';
-            listContainer.classList.remove('cf-list-empty');
-        }
-        
-        const newIndex = listContainer.children.length;
-        // 新增行应当是“空定义”，避免出现需要点两次才能取消/删除的竞态
-        const newFunctionHTML = this.createFunctionItemHTML(newIndex, '', '', 'function', '');
-        
-        listContainer.insertAdjacentHTML('beforeend', newFunctionHTML);
-        
-        // 绑定新项的事件
-        this.bindFunctionItemEvents();
-        
-        // 立即进入编辑模式
-        requestAnimationFrame(() => {
-            this.toggleEditMode(newIndex);
-            
-            // 清空输入框并设置占位符
-            const functionItem = listContainer.querySelector(`[data-index="${newIndex}"]`);
-            if (functionItem) {
-                const bodyInput = functionItem.querySelector('.function-body-input');
-                const descInput = functionItem.querySelector('.function-desc-input');
-                if (bodyInput) {
-                    bodyInput.placeholder = 'f(x,y) = x + y  或  p = 3.14159';
-                    bodyInput.focus();
-                }
-                if (descInput) {
-                    descInput.value = '';
-                }
-            }
-        });
     }
     
     deleteFunction(funcName) {
@@ -759,7 +685,7 @@ export class CustomFunctions {
                 };
             } else {
                 if (!isConstantDefinition(definition)) {
-                    throw new Error('常数定义格式错误');
+                    throw new Error('常数定义格式错误，正确格式: name := number');
                 }
                 savedFunctions[funcName] = {
                     name: funcName,

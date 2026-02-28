@@ -19,6 +19,18 @@ const Calculator = window.CodeCalcCore.Calculator;
 const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
 const CONSTANTS = window.CodeCalcCore.CONSTANTS;
 const updateCustomFromStorage = window.CodeCalcCore.updateCustomFromStorage;
+const isFunctionDefinition = window.CodeCalcCore.isFunctionDefinition;
+const isConstantDefinition = window.CodeCalcCore.isConstantDefinition;
+
+const customFunctionsStorage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
+
+function getStoredCustomFunctions() {
+    try {
+        return JSON.parse(customFunctionsStorage.getItem('customFunctions') || '{}');
+    } catch (e) {
+        return {};
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeUI();
@@ -27,8 +39,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function AddCustomFunctions() {
     updateCustomFromStorage(Calculator, FUNCTIONS, CONSTANTS);
-    // 刷新补全列表以包含从存储加载的自定义函数与常数
     refreshCompletions();
+    refreshHighlightRegexes();
+    refreshAllInputHighlights();
+}
+
+/**
+ * 将单条满足函数/常数定义的表达式写入 storage（与 custom-functions 面板共用同一 storage，等同原 add 按钮的写入逻辑）
+ * @param {string} expression - 单行表达式
+ * @returns {boolean} 是否满足定义并已写入
+ */
+function addNewFunction(expression) {
+    const e = (expression || '').trim();
+    if (!e) return false;
+    if (!isFunctionDefinition(e) && !isConstantDefinition(e)) return false;
+    const isFunc = isFunctionDefinition(e);
+    const expType = isFunc ? 'function' : 'constant';
+    let name, params = [];
+    if (isFunc) {
+        const match = e.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/);
+        if (!match) return false;
+        name = match[1];
+        const paramStr = match[2].trim();
+        params = paramStr ? paramStr.split(',').map(p => p.trim()) : [];
+    } else {
+        const match = e.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*:\s*=\s*/);
+        if (!match) return false;
+        name = match[1];
+    }
+    const stored = getStoredCustomFunctions();
+    const existing = stored[name];
+    stored[name] = {
+        name,
+        params,
+        definition: e,
+        description: (existing && existing.description) ? existing.description : '',
+        expType
+    };
+    customFunctionsStorage.setItem('customFunctions', JSON.stringify(stored));
+    return true;
 }
 
 // 防抖函数
@@ -86,6 +135,7 @@ function handleBlur(event) {
     // 失去焦点时重置为单行
     textarea.classList.remove('multiline');
     textarea.style.height = '';  // 移除手动设置的高度，使用 CSS 默认值
+
 }
 
 // 使用防抖包装的 autoResize 函数
@@ -537,25 +587,11 @@ function updateShortcutsDisplay() {
     });
 }
 
-// ========= 表达式语法高亮（函数 / 常量） =========
+// ========= 表达式语法高亮（函数 / 常量，含自定义；更新 storage 后需刷新） =========
 
 function escapeRegExp(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
-const FUNCTION_NAMES = Object.keys(FUNCTIONS)
-    .filter(name => /^[a-zA-Z_]/.test(name))
-    .map(escapeRegExp)
-    .sort((a, b) => b.length - a.length);
-
-const CONSTANT_NAMES = Object.keys(CONSTANTS || {})
-    .filter(name => /^[a-zA-Z_]/.test(name))
-    .map(escapeRegExp)
-    .sort((a, b) => b.length - a.length);
-
-// 单字母常量（比如 e）容易与科学计数法等冲突，边界策略更严格
-const CONSTANT_NAMES_1 = CONSTANT_NAMES.filter(n => n.length === 1);
-const CONSTANT_NAMES_N = CONSTANT_NAMES.filter(n => n.length > 1);
 
 function escapeHTML(str) {
     return str
@@ -568,8 +604,6 @@ function escapeHTML(str) {
 
 function buildFuncRegex(names) {
     if (!names.length) return null;
-    // 允许：行首 / 非单词字符 / 2xsin( 这种写法（x 作为乘号） / 2sin( 隐式乘法
-    // 仅当后面跟 '(' 时认为是函数调用，避免高亮变量名
     const prefix = '(^|[^A-Za-z0-9_]|(?:\\d)x|\\d)';
     const name = '(' + names.join('|') + ')';
     const suffix = '(?=\\s*\\()';
@@ -586,16 +620,46 @@ function buildConstRegex(names, allowDigitPrefix) {
     return new RegExp(prefix + name + suffix, 'g');
 }
 
-const FUNCTION_REGEX = buildFuncRegex(FUNCTION_NAMES);
-// 单字母常量：不允许 1e2 这种数字前缀（避免与科学计数法冲突），但允许 1xe 这种把 x 当乘号的写法
-const CONST_REGEX_1 = (() => {
-    if (!CONSTANT_NAMES_1.length) return null;
-    const name = '(' + CONSTANT_NAMES_1.join('|') + ')';
-    const suffix = '(?=$|[^A-Za-z0-9_])';
-    const prefix = '(^|[^A-Za-z0-9_]|(?:\\d)x|(?:\\))x)';
-    return new RegExp(prefix + name + suffix, 'g');
-})();
-const CONST_REGEX_N = buildConstRegex(CONSTANT_NAMES_N, true);
+let _FUNCTION_REGEX = null;
+let _CONST_REGEX_1 = null;
+let _CONST_REGEX_N = null;
+
+function refreshHighlightRegexes() {
+    const functionNames = Object.keys(FUNCTIONS)
+        .filter(name => /^[a-zA-Z_]/.test(name))
+        .map(escapeRegExp)
+        .sort((a, b) => b.length - a.length);
+    const constantNames = Object.keys(CONSTANTS || {})
+        .filter(name => /^[a-zA-Z_]/.test(name))
+        .map(escapeRegExp)
+        .sort((a, b) => b.length - a.length);
+    const constantNames1 = constantNames.filter(n => n.length === 1);
+    const constantNamesN = constantNames.filter(n => n.length > 1);
+
+    _FUNCTION_REGEX = buildFuncRegex(functionNames);
+    _CONST_REGEX_N = buildConstRegex(constantNamesN, true);
+    if (!constantNames1.length) {
+        _CONST_REGEX_1 = null;
+    } else {
+        const name = '(' + constantNames1.join('|') + ')';
+        const suffix = '(?=$|[^A-Za-z0-9_])';
+        const prefix = '(^|[^A-Za-z0-9_]|(?:\\d)x|(?:\\))x)';
+        _CONST_REGEX_1 = new RegExp(prefix + name + suffix, 'g');
+    }
+}
+
+refreshHighlightRegexes();
+
+function refreshAllInputHighlights() {
+    document.querySelectorAll('.expression-line').forEach(line => {
+        const input = line.querySelector('.input');
+        const highlight = line.querySelector('.input-highlight');
+        if (input && highlight) {
+            highlight.innerHTML = highlightExpressionText(input.value);
+            highlight.scrollTop = input.scrollTop;
+        }
+    });
+}
 
 // 科学计数法：1e2 / 1e-2 / 1.23e+4（只高亮 e）
 const SCI_REGEX = /(^|[^A-Za-z0-9_])(\d+(?:\.\d+)?)(e)([+-]?\d+)(?=$|[^A-Za-z0-9_])/gi;
@@ -603,15 +667,14 @@ const SCI_REGEX = /(^|[^A-Za-z0-9_])(\d+(?:\.\d+)?)(e)([+-]?\d+)(?=$|[^A-Za-z0-9
 function highlightExpressionText(raw) {
     let text = escapeHTML(raw);
 
-    // 常量先替换，避免被函数替换干扰
-    if (CONST_REGEX_N) {
-        text = text.replace(CONST_REGEX_N, '$1<span class="cc-syntax-const">$2</span>');
+    if (_CONST_REGEX_N) {
+        text = text.replace(_CONST_REGEX_N, '$1<span class="cc-syntax-const">$2</span>');
     }
-    if (CONST_REGEX_1) {
-        text = text.replace(CONST_REGEX_1, '$1<span class="cc-syntax-const">$2</span>');
+    if (_CONST_REGEX_1) {
+        text = text.replace(_CONST_REGEX_1, '$1<span class="cc-syntax-const">$2</span>');
     }
-    if (FUNCTION_REGEX) {
-        text = text.replace(FUNCTION_REGEX, '$1<span class="cc-syntax-func">$2</span>');
+    if (_FUNCTION_REGEX) {
+        text = text.replace(_FUNCTION_REGEX, '$1<span class="cc-syntax-func">$2</span>');
     }
 
     // 科学计数法最后处理，避免与常量/函数高亮嵌套
@@ -676,6 +739,13 @@ function initializeUI() {
         handleLineDelete(input);
     });
 
+    // 点击“自定义函数/常数”消息时打开自定义函数面板
+    document.getElementById('expression-container').addEventListener('click', function(event) {
+        const msgContent = event.target.closest('.message-content.customFunc, .message-content.customCst');
+        if (!msgContent) return;
+        ensureCustomFunctions().togglePanel();
+    });
+
 
     
     // 添加清空快捷键
@@ -711,6 +781,9 @@ function initializeUI() {
             AddCustomFunctions();
         });
     });
+
+    // 自定义函数面板关闭时刷新自定义函数与补全（解耦，避免与 custom-functions.js 交叉引用）
+    document.addEventListener('codecalc:customFunctionsPanelClosed', AddCustomFunctions);
 }
 
 function handleAsteriskInput(event, input) {
@@ -787,6 +860,7 @@ function calculateLine(input, ignoreEmptyLine=false) {
     const messageIcon = resultContainer.querySelector('.message-icon');
     const messageText = messageIcon.querySelector('.message-text');
     let expression = input.value.trim();
+    const rawExpression = expression;  // 用于 message-icon 自定义类（函数/常数定义）
 
     const dollarNumberPattern = /^\s*\$\d+\s*=/;
     if (dollarNumberPattern.test(expression)) {
@@ -802,8 +876,12 @@ function calculateLine(input, ignoreEmptyLine=false) {
         messageIcon.className = 'message-icon';  // 重置消息图标的类
     }
 
-    // 设置状态
-    function setState(value, type, messages) {
+    // 设置状态：customFunc/customCst 的优先级在 error 之后、matrix/info 之前
+    function setState(value, type, messages, options = {}) {
+        const { customFunc = false, customConstant = false } = options;
+        const isCustomType = type === 'customFunc' || type === 'customCst';
+        const customClass = isCustomType ? ` ${type}` : (customFunc ? ' customFunc' : (customConstant ? ' customCst' : ''));
+
         result.innerHTML = `<span class="result-value">${value}</span>`;
         result.classList.remove('warning', 'error', 'info');
         result.classList.add('has-value');
@@ -812,23 +890,35 @@ function calculateLine(input, ignoreEmptyLine=false) {
         messageText.innerHTML = '';
         
         if (type === 'error') {
-            // 错误消息保持原样处理
             result.classList.add('error');
-            messageIcon.className = 'message-icon error';
+            messageIcon.className = 'message-icon error' + customClass;
             messageIcon.style.display = 'inline';
             messageText.textContent = messages;
             return;
         }
 
-        // 检查是否为矩阵
+        // 自定义函数 / 常数：不要与 info 混用，否则会叠加 info 的 ::before 背景图标
+        if (isCustomType) {
+            messageIcon.className = 'message-icon' + customClass;
+            messageIcon.style.display = 'inline';
+
+            if (Array.isArray(messages) && messages.length > 0) {
+                messages.forEach(msg => {
+                    const msgContent = document.createElement('div');
+                    msgContent.className = `message-content ${type}`;
+                    msgContent.textContent = msg.text;
+                    messageText.appendChild(msgContent);
+                });
+            }
+            return;
+        }
+
         const isMatrix = messages.some(msg => msg.text === 'isMatrix');
         if (isMatrix) {
-            // 使用 arrayToHtml 函数将矩阵转换为可视化HTML
-            messageIcon.className = 'message-icon matrix';
+            messageIcon.className = 'message-icon matrix' + customClass;
             messageIcon.style.display = 'inline';
-            messageText.innerHTML = arrayToHtml(value);  // 这里使用value而不是messages
+            messageText.innerHTML = arrayToHtml(value);
 
-            //判断是否在第一行，下移矩阵提示框
             const expressionLine = messageIcon.closest('.expression-line');
             if (expressionLine.previousElementSibling === null) {
                 messageIcon.classList.add('first-row');
@@ -836,13 +926,10 @@ function calculateLine(input, ignoreEmptyLine=false) {
             return;
         }
 
-        // 处理警告和提示消息
         if (Array.isArray(messages) && messages.length > 0) {
-            // 设置图标类型
-            messageIcon.className = `message-icon ${type}`;
+            messageIcon.className = `message-icon ${type}${customClass}`;
             messageIcon.style.display = 'inline';
-            
-            // 为每条消息创建提示框
+
             messages.forEach(msg => {
                 const msgContent = document.createElement('div');
                 msgContent.className = `message-content ${msg.type}`;
@@ -907,17 +994,16 @@ function calculateLine(input, ignoreEmptyLine=false) {
         if (value.info && value.info.length > 0) {
             messages.push(...value.info.map(msg => ({ text: msg, type: 'info' })));
             type = type || 'info';
-            
-            // 检查是否定义了自定义函数，如果是则刷新补全列表
-            const hasCustomFunctionInfo = value.info.some(msg => 
-                typeof msg === 'string' && msg.includes('自定义函数已定义')
-            );
-            if (hasCustomFunctionInfo) {
-                refreshCompletions();
-            }
         }
 
-        if (messages.length > 0) {
+        // 自定义函数/常数
+        if (value.customFunc || value.customConstant) {
+            const customType = value.customFunc ? 'customFunc' : 'customCst';
+            const customTypeText = value.customFunc ? '函数' : '常数';
+            const customMsg = [{ text: `已保存自定义${customTypeText}: ${value.customName}, 点击打开管理面板`, type: customType }];
+            setState(value.value, customType, customMsg);
+            if (addNewFunction(rawExpression)) AddCustomFunctions();
+        } else if (messages.length > 0) {
             setState(value.value, type, messages);
         } else {
             setNormalState(value.value);

@@ -79,7 +79,7 @@ function createLambdaFunction(params, expression, calculator) {
 
 
 function validateName(name) {
-    if (!/^[a-zA-Z_$][a-zA-Z0-9_]*$/.test(name)) {
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)) {
         throw new Error(`名称 "${name}" 格式不正确，只能包含字母、数字和下划线，且不以数字开头`);
     }
 }
@@ -150,41 +150,38 @@ function clearCustomConstants(CONSTANTS) {
     customConstants.clear();
 }
 
-/** 解析常数定义 "name = number" 并加入 CONSTANTS */
+/** 解析常数定义 "name := number" 并加入 CONSTANTS */
 function addCustomConstant(CONSTANTS, definition) {
     definition = removeLineNumber(definition);
-    if (!isConstantDefinition(definition)) {
-        throw new Error('常数定义格式错误，正确格式: name = number');
-    }
-    const match = definition.match(/^\s*([a-zA-Z_$][a-zA-Z0-9_]*)\s*=\s*(.+)$/);
-    if (!match) throw new Error('常数定义解析失败');
-    const [, name, rhs] = match;
-    const value = Number(rhs.trim());
-    if (!Number.isFinite(value)) {
-        throw new Error('常数右侧必须为可求值的数值');
-    }
-    customConstants.set(name, true);
-    CONSTANTS[name] = value;
-    return name;
+    const constantName = getCustomConstantName(definition);
+    if (!constantName) throw new Error('常数定义格式错误, 正确格式: name := number');
+    customConstants.set(constantName, true);
+    CONSTANTS[constantName] = Number(definition.split(/\s*:\s*=\s*/)[1].trim());
+    return constantName;
 }
 
-// 检查是否为函数定义语句
+// 函数定义，返回函数名
+function getCustomFunctionName(expr) {
+    expr = removeLineNumber(expr);
+    const functionDefRegex = /^([a-zA-Z][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/;
+    const match = expr.trim().match(functionDefRegex);
+    return match ? match[1] : null;
+}
+
 function isFunctionDefinition(expr) {
-    expr = removeLineNumber(expr);
-    return /^[a-zA-Z_$][a-zA-Z0-9_]*\s*\([^)]*\)\s*=\s*.+/.test(expr);
+    return getCustomFunctionName(expr) !== null;
 }
 
-/**
- * 判断表达式是否为常数定义，格式: identifier = number
- * 左边：标识符（字母、数字组合，首字符必须为字母，同 validateName）
- * 右边：数值，支持整数、小数、科学计数法（如 1, 1.5, .5, 1e10, -1.5e-3）
- * @param {string} expr - 待检查的表达式
- * @returns {boolean}
- */
-function isConstantDefinition(expr) {
+// 常数定义 "name := number"，返回常数名
+function getCustomConstantName(expr) {
     expr = removeLineNumber(expr);
-    const constantDefRegex = /^\s*[a-zA-Z_$][a-zA-Z0-9_]*\s*=\s*-?(\d+\.?\d*|\d*\.\d+)([eE][+-]?\d+)?\s*$/;
-    return constantDefRegex.test(expr.trim());
+    const constantDefRegex = /^\s*([a-zA-Z_$][a-zA-Z0-9_]*)\s*:\s*=\s*-?(\d+\.?\d*|\d*\.\d+)([eE][+-]?\d+)?\s*$/;
+    const match = expr.trim().match(constantDefRegex);
+    return match ? match[1] : null;
+}
+
+function isConstantDefinition(expr) {
+    return getCustomConstantName(expr) !== null;
 }
 
 
@@ -218,10 +215,7 @@ function updateCustomFromStorage(calculator, FUNCTIONS, CONSTANTS) {
 export {
     isFunctionDefinition,
     isConstantDefinition,
-    getCustomFunctions,
-    addCustomFunction,
-    removeCustomFunction,
+    getCustomFunctionName,
+    getCustomConstantName,
     updateCustomFromStorage,
-    clearCustomFunctions,
-    clearCustomConstants
 };

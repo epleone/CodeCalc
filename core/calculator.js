@@ -20,12 +20,9 @@ import {
 import {
     isFunctionDefinition,
     isConstantDefinition,
-    getCustomFunctions,
-    addCustomFunction,
-    removeCustomFunction,
+    getCustomFunctionName,
+    getCustomConstantName,
     updateCustomFromStorage,
-    clearCustomFunctions,
-    clearCustomConstants
 } from './customFunctions.js';
 
 import { Utils } from './utils.js';
@@ -704,7 +701,7 @@ const Calculator = (function() {
                 const [left, right] = node.args;
                 // 检查左侧是否为标识符类型的节点
                 if (left.type !== 'identifier' && left.type !== 'string') {
-                    throw new Error('赋值运算符左侧必须是变量名');
+                    throw new Error('不能赋值常量，赋值运算符左侧必须是变量名');
                 }
                 
                 // 检查变量名是否合法
@@ -874,22 +871,27 @@ const Calculator = (function() {
             // TODO: 添加超时处理
             clearMessages(); // 清除之前的消息
 
-            // 检查是否是函数定义
-            // if (isFunctionDefinition(expr)) {
-            //     try {
-            //         const funcName = addCustomFunction(expr, this, FUNCTIONS);
-            //         addInfo(`自定义函数已定义: ${funcName}`);
-            //         return {
-            //             value: `函数 ${funcName} 定义成功`,
-            //             info: infos.length > 0 ? infos : null,
-            //             warning: warnings.length > 0 ? warnings : null
-            //         };
-            //     } catch (error) {
-            //         throw new Error(`函数定义失败: ${error.message}`);
-            //     }
-            // }
+            // 检查是否自定义函数定义语句（getCustomFunctionName 非 null 即为定义）
+            const funcName = getCustomFunctionName(expr);
+            if (funcName) {
+                return {
+                    value: `𝒇: ${funcName} `,
+                    customFunc: true,
+                    customName: funcName,
+                };
+            }
 
-            // TODO: 这里是集合，而不是字典了
+            // 检查是否自定义常数定义语句（getCustomConstantName 非 null 即为定义）
+            const constantName = getCustomConstantName(expr);
+            if (constantName) {
+                return {
+                    value: `𝑪: ${constantName} `,
+                    customConstant: true,
+                    customName: constantName,
+                };
+            }
+
+            // 这里是集合，而不是字典了
             const operators = new Set(Object.keys(OPERATORS));
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));
@@ -969,9 +971,7 @@ const Calculator = (function() {
 
 // 导出
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
-export { isFunctionDefinition, isConstantDefinition, getCustomFunctions,
-    addCustomFunction, removeCustomFunction,
-    updateCustomFromStorage, clearCustomFunctions, clearCustomConstants };
+export { isFunctionDefinition, isConstantDefinition, updateCustomFromStorage };
 
 // 测试
 

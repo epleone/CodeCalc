@@ -507,6 +507,35 @@ body {
     top: 0;
 }
 
+/* 自定义函数/常数：与 value.customFunc / value.customConstant 绑定，仅在此状态写入 storage */
+.message-icon.customFunc {
+    color: var(--completion-function-selected);
+}
+
+.message-icon.customFunc::before {
+    content: "𝒇";  /* 粗斜体 f \boldsymbol{f} */
+    font-size: 1.1rem;
+    background: none;
+    background-image: none;
+    width: auto;
+    height: auto;
+    position: static;
+}
+
+.message-icon.customCst {
+    color: var(--completion-constant-selected);
+}
+
+.message-icon.customCst::before {
+    content: "𝓒";  /* 粗斜体 c \boldsymbol{c} */
+    font-size: 1.1rem;
+    background: none;
+    background-image: none;
+    width: auto;
+    height: auto;
+    position: static;
+}
+
 /* 消息文本容器基础样式 */
 .message-text {
     visibility: hidden;
@@ -568,6 +597,16 @@ body {
 
 .message-content.info {
     background-color: rgba(40, 167, 69, 0.95);
+}
+
+.message-content.customFunc {
+    background-color: rgba(77, 150, 218, 0.95);
+    color: var(--tooltip-text-color);
+}
+
+.message-content.customCst {
+    background-color: rgba(5, 148, 164, 0.95);
+    color: var(--tooltip-text-color);
 }
 
 /* 悬停展开效果 */
