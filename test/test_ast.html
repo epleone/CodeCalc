@@ -250,9 +250,7 @@
     <!-- 先加载基础依赖 -->
     <script src="ast-visualizer.js"></script>
     <script type="module">
-        import { Calculator } from '../app/src/calculator.min.js';
-        
-        // 添加到全局作用域
+        import { Calculator } from './calculator.min.mjs';
         window.Calculator = Calculator;
     </script>
     
