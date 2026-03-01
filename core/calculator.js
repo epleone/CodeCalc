@@ -25,7 +25,7 @@ import {
     updateCustomFromStorage,
 } from './customFunctions.js';
 
-import { Utils } from './utils.js';
+import { Utils, CCnode } from './utils.js';
 import { config } from './cfg.js';
 /**
  * 代码标准：
@@ -663,10 +663,9 @@ const Calculator = (function() {
             if (variables.has(node.value)) {
                 return variables.get(node.value);
             }
-            // 如果不是变量，则转换为数字
-            return Utils.convertTypes(node.value);
 
-            // return node.value;
+            // 如果不是变量，则转换为CCnode，用于表示表达式中定义的类型
+            return new CCnode(node.value);
         }
 
         // 处理标识符节点 - 赋值表达式左侧的变量名
@@ -740,7 +739,7 @@ const Calculator = (function() {
                     // 转换参数类型
                     const convertedArgs = convertArguments([oldValue, rightValue], op.argTypes);
                     const result = op.func(...convertedArgs);
-                    
+
                     // 更新变量的值
                     variables.set(left.value, result);
                     return result;
@@ -749,7 +748,7 @@ const Calculator = (function() {
 
             // 其他运算符的处理
             const convertedArgs = convertArguments(args, op.argTypes);
-            
+
             return op.func(...convertedArgs);
         }
 
@@ -997,7 +996,8 @@ function TEST(expr){
 
 // console.log(Calculator.calculate('{[1 3 5], [2 4 6]}.inv'));
 
-
+Calculator.calculate('1 + 2');
+// TEST('#0.5w');
 // TEST('{1 2 3}');
 // TEST('{1; 2; 3}');
 // TEST('{[1 2 3], [4 5 6]}');
