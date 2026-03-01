@@ -104,6 +104,15 @@ class ChineseNumber {
 
 }
 
+// 判断是否是CCObj
+function isCCObj(value) {
+    return value instanceof CCObj;
+}
+
+function isCCnode(value) {
+    return value instanceof CCnode;
+}
+
 function isNumber(value) {
     return typeof value === 'number';
 }
@@ -184,6 +193,14 @@ function checkMatrixArgs(args0, args1) {
 
 // 添加标量和矩阵运算支持，注意是否满足交换律
 function addOpSupport(opName, x, y, op_xy, op_yx) {
+    if(isChineseNumber(x)) {
+        x = x.value;
+    }
+
+    if(isChineseNumber(y)) {
+        y = y.value;
+    }
+
     // 使用这个函数时，x和y都强制转换为Decimal类型 或者是 DecMatrix类型
     if(isDigital(x) && isDigital(y)) {
         return op_xy(x, y);
@@ -224,12 +241,19 @@ const Utils = {
         }
     
         try {
-            if(type === 'default') {
-                // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
-                if(isMatrix(value)) {
-                    return value;
+            if(type === 'default' || type === 'any') {
+                // 如果是CCnode，则返回Decimal类型参与计算
+                if(isCCnode(value)) {
+                    return new Decimal(value.toString());
                 }
-                return new Decimal(value.toString());
+                if(type === 'default') {
+                    // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
+                    if(isMatrix(value)) {
+                        return value;
+                    }
+                    return new Decimal(value.toString());
+                }
+                return value;
             }
             if(type === 'decimal') {
                 return new Decimal(value.toString());
@@ -242,10 +266,6 @@ const Utils = {
             }
             if(type === 'string') {
                 return value.toString();
-            }
-
-            if(type === 'any') {
-                return value;
             }
 
             throw new Error(`不支持的类型: ${type}`);
