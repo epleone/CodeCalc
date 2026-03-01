@@ -10,6 +10,25 @@
 `> @8`  时区
 `> @-8`
 
+- [ ] 分离窗口后关闭没有历史记录
+- [ ] 语法高亮
+
+
+优化 addCustomFunctionFromStorage 函数
+数据读取在外部做好，然后传入分成添加的和删除的两部分。
+
+支持进制转换
+
+面板界面延迟加载
+// 在需要显示快捷键面板时加载
+document.getElementById('showShortcutPanel').addEventListener('click', async () => {
+  const { initShortcutPanel } = await import('./shortcutPanel.js');
+  initShortcutPanel(); // 初始化快捷键面板
+});
+
+加载页面，显示loading ...
+
+“大写人民币”这个插件的大部分使用场景应该会与财务工作有关，可参考财政部发布的《会计基础工作规范》中对大写金额的书写要求。
 
 
 
@@ -20,6 +39,7 @@
 - 设置持久化保存，支持设置输出格式，小数位数，科学计数法，十六进制
 - 对不同的输出格式，就是更改计算表达式，在最外层封装函数。
 - 例如： `a = 985` -> `hex(a = 985)`
+
 
 ### V3.1
 **数组和矩阵**

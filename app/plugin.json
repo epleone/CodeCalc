@@ -2,6 +2,7 @@
   "name": "CodeCalc",
   "pluginName": "Code Calculator",
   "main": "index.html",
+  "preload": "preload.js",
   "logo": "logo.png",
   "features": [
     {
@@ -29,7 +30,7 @@
         {
           "type": "regex",
           "label": "通用计算",
-          "match": "/^(?!.*(?:[a-zA-Z\uFF21-\uFF3A\uFF41-\uFF5A][0-9\uFF10-\uFF19]|[0-9\uFF10-\uFF19][a-zA-Z\uFF21-\uFF3A\uFF41-\uFF5A]))[ -~π°‰\uFF01-\uFF5E]{1,}\\s*=$/"
+          "match": "/^(?!.*[0-9\\uFF10-\\uFF19][a-zA-Z\\uFF21-\\uFF3A\\uFF41-\\uFF5A])[ -~π°‰\\uFF01-\\uFF5E]{1,}\\s*=$/"
         }
       ]
     },
@@ -70,6 +71,6 @@
       ]
     }
   ],
-  "version": "3.1.6",
+  "version": "3.2.0",
   "description": "一个优雅好用的智能计算器，支持变量赋值、函数运算、矩阵计算、时间戳转换、进制转换等。"
 } 

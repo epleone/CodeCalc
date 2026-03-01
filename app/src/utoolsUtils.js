@@ -1,7 +1,5 @@
-import { Calculator } from './calculator.min.js';
-
+const Calculator = window.CodeCalcCore.Calculator;
 const isUtoolsEnv = typeof utools !== 'undefined';
-
 
 function isBase64(str) {
     // 去除空格
@@ -36,19 +34,24 @@ function handleRegexInput(code, payload) {
 }
 
 
+function setTheme(isDark) {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+}
+
 // 在 utools 环境中，则执行
 if (isUtoolsEnv) {
+    // 在页面加载前就设置主题，避免闪烁
+    setTheme(utools.isDarkColors());
+
+    // 监听系统主题切换
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', (e) => {
+        setTheme(e.matches);
+    });
 
     // utools 相关代码保持不变
     utools.onPluginEnter(({ code, type, payload }) => {
-        //utools.isDarkColors
-        if(utools.isDarkColors()) {
-            // console.log("dark");
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            // console.log("light");
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
+        // 主题已经在页面加载前设置，这里不需要重复设置
 
         const inputs = document.querySelectorAll('.input');
         const lastInput = inputs[inputs.length - 1];  // 获取最后一个输入框

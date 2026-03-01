@@ -161,20 +161,11 @@ function processStringLiterals(expr) {
     // 将计数器移到函数内部
     let stringConstantCounter = 0;
 
-    // 先处理 str(xxx) 格式
-    const strFunctionRegex = /str\s*\(((?:[^)(]|\([^)(]*\))*)\)/g;
-    let processed = expr.replace(strFunctionRegex, (match, content) => {
-        const constName = `_cc_str_i${stringConstantCounter++}`;
-        // 注意：这里不需要处理转义字符，因为内容将被直接作为字符串
-        ccVariables.set(constName, content.trim());
-        return constName;
-    });
-
     // 匹配字符串字面量的正则表达式，添加对反引号的支持
     const stringLiteralRegex = /(['"`])((?:\\.|[^\\])*?)\1/g;
 
     // 再处理普通字符串字面量
-    processed = processed.replace(stringLiteralRegex, (match, quote, content) => {
+    let processed = expr.replace(stringLiteralRegex, (match, quote, content) => {
         const constName = `_cc_str_i${stringConstantCounter++}`;
         // 处理转义字符，添加对反引号的支持
         const processedContent = content.replace(/\\(['"\\`])/g, '$1');

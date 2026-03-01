@@ -6,3 +6,4 @@ math/
 package-lock.json
 .DS_Store
 app/src/calculator.min.js
+test/calculator.min.mjs

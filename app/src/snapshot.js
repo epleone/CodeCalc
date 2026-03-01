@@ -1,9 +1,9 @@
 import { setTag, restoreTag } from './tag.js';
-import { notification } from './notification.js';
+import { notification, showTooltip, hideTooltip } from './notification.js';
 
 export class Snapshot {
     // 定义最多保存的快照数量
-    static MAX_SNAPSHOTS = 10;
+    static MAX_SNAPSHOTS = 21;
 
     // 定义最多保存的历史记录数量
     static MAX_HISTORY = 10;
@@ -16,6 +16,7 @@ export class Snapshot {
         this.list = this.panel.querySelector('.snapshot-list');
         this.isPanelVisible = false;
         this.snapshots = []; // 存储所有快照
+        this.tooltipTimer = null;
         
         // 创建蒙版元素
         this.overlay = document.createElement('div');
@@ -62,6 +63,42 @@ export class Snapshot {
                 this.togglePanel();
             });
         }
+
+        // 快照列表内的按钮 tooltip（恢复 / 删除）
+        this.list.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('.apply-snapshot-btn, .delete-snapshot-btn');
+            if (!target) return;
+
+            const text = target.dataset.tooltip;
+            if (!text) return;
+
+            if (this.tooltipTimer) {
+                clearTimeout(this.tooltipTimer);
+            }
+
+            this.tooltipTimer = setTimeout(() => {
+                const rect = target.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.bottom + 8;
+                showTooltip(text, x, y);
+            }, 260);
+        });
+
+        this.list.addEventListener('mouseout', (e) => {
+            const from = e.target.closest('.apply-snapshot-btn, .delete-snapshot-btn');
+            if (!from) return;
+
+            const related = e.relatedTarget;
+            if (related && related.closest && related.closest('.apply-snapshot-btn, .delete-snapshot-btn') === from) {
+                return;
+            }
+
+            if (this.tooltipTimer) {
+                clearTimeout(this.tooltipTimer);
+                this.tooltipTimer = null;
+            }
+            hideTooltip();
+        });
     }
     
     // 保存当前页面所有表达式的状态
@@ -300,7 +337,7 @@ export class Snapshot {
                 <path d="M13 3c-4.97 0-9 4.03-9 9H1l4 3.99L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9" fill="currentColor"/>
             </svg>
         `;
-        applyButton.title = '恢复此快照';
+        applyButton.dataset.tooltip = '恢复此快照';
         applyButton.onclick = (e) => {
             e.stopPropagation();
             this.applySnapshot(snapshot.records);
@@ -314,7 +351,7 @@ export class Snapshot {
                 <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
             </svg>
         `;
-        deleteButton.title = '删除此快照';
+        deleteButton.dataset.tooltip = '删除此快照';
         deleteButton.onclick = (e) => {
             e.stopPropagation();
             
@@ -540,6 +577,10 @@ export class Snapshot {
             if (window.shortcuts && window.shortcuts.isPanelVisible) {
                 window.shortcuts.togglePanel();
             }
+            // 如果自定义函数面板打开，先关闭它
+            if (window.customFunctions && window.customFunctions.isPanelVisible) {
+                window.customFunctions.togglePanel();
+            }
             // 移除当前焦点
             if (document.activeElement instanceof HTMLElement) {
                 document.activeElement.blur();
@@ -608,9 +649,14 @@ export class Snapshot {
     }
 }
 
-// 创建实例并暴露到全局
-export const snapshot = new Snapshot();
-window.snapshot = snapshot;
+let snapshot = null;
+
+export function ensureSnapshot() {
+    if (snapshot) return snapshot;
+    snapshot = new Snapshot();
+    window.snapshot = snapshot;
+    return snapshot;
+}
 
 // 添加快捷键支持
 document.addEventListener('keydown', (e) => {
@@ -619,7 +665,7 @@ document.addEventListener('keydown', (e) => {
         const isCtrlH = (utools.isMacOS() ? e.metaKey : e.ctrlKey) && e.code === 'KeyH';
         if (isCtrlH) {
             e.preventDefault();
-            snapshot.togglePanel();
+            ensureSnapshot().togglePanel();
         }
     }
 }); 

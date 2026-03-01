@@ -6,6 +6,7 @@
 @import 'matrix.css';
 @import 'shortcuts.css';
 @import 'notification.css';
+@import 'custom-functions.css';
 
 
 :root {
@@ -118,7 +119,8 @@ body {
     outline: none;
     padding: 0.5rem 8px 0.5rem 2rem;
     min-width: 0;
-    color: var(--text-primary);
+    color: transparent; /* 文字颜色由下层高亮层负责，保留光标颜色 */
+    caret-color: var(--text-primary);
     position: relative;
     z-index: 1;
     box-sizing: border-box;
@@ -140,6 +142,40 @@ body {
     font-size: 1.2rem;
     line-height: 1.4;
     height: auto;
+}
+
+.expression-input {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.input-highlight {
+    position: absolute;
+    inset: 0;
+    padding: 0.5rem 8px 0.5rem 2rem;
+    font-size: 1.5rem;
+    font-family: "Consolas", "Menlo", "Andale Mono", "Monaco", monospace;
+    white-space: pre;
+    overflow: hidden;
+    color: var(--text-primary);
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.cc-syntax-func {
+    /* 与补全样式一致 */
+    color: var(--completion-function-selected);
+}
+
+.cc-syntax-const {
+    /* 与补全样式一致 */
+    color: var(--completion-constant-selected);
+}
+
+.cc-syntax-sci {
+    /* 科学计数法 e：用 property 色系更贴近“运算符/语法” */
+    color: var(--completion-property-selected);
 }
 
 
@@ -471,6 +507,35 @@ body {
     top: 0;
 }
 
+/* 自定义函数/常数：与 value.customFunc / value.customConstant 绑定，仅在此状态写入 storage */
+.message-icon.customFunc {
+    color: var(--completion-function-selected);
+}
+
+.message-icon.customFunc::before {
+    content: "𝒇";  /* 粗斜体 f \boldsymbol{f} */
+    font-size: 1.1rem;
+    background: none;
+    background-image: none;
+    width: auto;
+    height: auto;
+    position: static;
+}
+
+.message-icon.customCst {
+    color: var(--completion-constant-selected);
+}
+
+.message-icon.customCst::before {
+    content: "𝓒";  /* 粗斜体 c \boldsymbol{c} */
+    font-size: 1.1rem;
+    background: none;
+    background-image: none;
+    width: auto;
+    height: auto;
+    position: static;
+}
+
 /* 消息文本容器基础样式 */
 .message-text {
     visibility: hidden;
@@ -532,6 +597,16 @@ body {
 
 .message-content.info {
     background-color: rgba(40, 167, 69, 0.95);
+}
+
+.message-content.customFunc {
+    background-color: rgba(77, 150, 218, 0.95);
+    color: var(--tooltip-text-color);
+}
+
+.message-content.customCst {
+    background-color: rgba(5, 148, 164, 0.95);
+    color: var(--tooltip-text-color);
 }
 
 /* 悬停展开效果 */

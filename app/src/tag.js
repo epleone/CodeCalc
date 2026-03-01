@@ -1,33 +1,6 @@
-let tooltipTimer;
-let currentTooltip;
+import { showTooltip, hideTooltip } from './notification.js';
 
-function createTooltip(text, x, y) {
-    if (currentTooltip) {
-        currentTooltip.remove();
-    }
-    
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tag-tooltip';
-    tooltip.textContent = text;
-    document.body.appendChild(tooltip);
-    
-    const rect = tooltip.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    let finalX = Math.min(x, viewportWidth - rect.width - 20);
-    let finalY = Math.min(y, viewportHeight - rect.height - 20);
-    
-    tooltip.style.left = `${finalX}px`;
-    tooltip.style.top = `${finalY}px`;
-    
-    requestAnimationFrame(() => {
-        tooltip.classList.add('active');
-    });
-    
-    currentTooltip = tooltip;
-    return tooltip;
-}
+let tooltipTimer;
 
 // 标签相关函数
 export function initializeTagButton(line) {
@@ -45,7 +18,7 @@ export function initializeTagButton(line) {
             // 检查是否已经存在标签，显示相应的提示
             const existingTag = line.querySelector('.tag');
             const tooltipText = existingTag ? '修改标签' : '添加标签';
-            createTooltip(tooltipText, rect.right + 5, rect.bottom + 5);
+            showTooltip(tooltipText, rect.right + 5, rect.bottom + 5);
         }, 300);
     });
     
@@ -53,10 +26,7 @@ export function initializeTagButton(line) {
         if (tooltipTimer) {
             clearTimeout(tooltipTimer);
         }
-        if (currentTooltip) {
-            currentTooltip.remove();
-            currentTooltip = null;
-        }
+        hideTooltip();
     });
 }
 
@@ -210,10 +180,7 @@ export function setTag(line, tagText) {
         if (tooltipTimer) {
             clearTimeout(tooltipTimer);
         }
-        if (currentTooltip) {
-            currentTooltip.remove();
-            currentTooltip = null;
-        }
+        hideTooltip();
     });
     
     // 标签点击事件（只用于编辑）
@@ -232,7 +199,7 @@ export function setTag(line, tagText) {
         
         tooltipTimer = setTimeout(() => {
             const rect = tag.getBoundingClientRect();
-            createTooltip('点击编辑', rect.right + 5, rect.bottom + 5);
+            showTooltip('点击编辑', rect.right + 5, rect.bottom + 5);
         }, 300);
     });
     
@@ -240,10 +207,7 @@ export function setTag(line, tagText) {
         if (tooltipTimer) {
             clearTimeout(tooltipTimer);
         }
-        if (currentTooltip) {
-            currentTooltip.remove();
-            currentTooltip = null;
-        }
+        hideTooltip();
         
         // 延迟隐藏删除按钮，给用户时间移动到删除按钮上
         setTimeout(() => {

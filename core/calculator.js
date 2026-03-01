@@ -17,7 +17,15 @@ import {
     processMatrix
 } from './preprocessUtils.js';
 
-import { Utils } from './utils.js';
+import {
+    isFunctionDefinition,
+    isConstantDefinition,
+    getCustomFunctionName,
+    getCustomConstantName,
+    updateCustomFromStorage,
+} from './customFunctions.js';
+
+import { Utils, CCnode } from './utils.js';
 import { config } from './cfg.js';
 /**
  * 代码标准：
@@ -655,10 +663,9 @@ const Calculator = (function() {
             if (variables.has(node.value)) {
                 return variables.get(node.value);
             }
-            // 如果不是变量，则转换为数字
-            return Utils.convertTypes(node.value);
 
-            // return node.value;
+            // 如果不是变量，则转换为CCnode，用于表示表达式中定义的类型
+            return new CCnode(node.value);
         }
 
         // 处理标识符节点 - 赋值表达式左侧的变量名
@@ -693,7 +700,7 @@ const Calculator = (function() {
                 const [left, right] = node.args;
                 // 检查左侧是否为标识符类型的节点
                 if (left.type !== 'identifier' && left.type !== 'string') {
-                    throw new Error('赋值运算符左侧必须是变量名');
+                    throw new Error('不能赋值常量，赋值运算符左侧必须是变量名');
                 }
                 
                 // 检查变量名是否合法
@@ -732,7 +739,7 @@ const Calculator = (function() {
                     // 转换参数类型
                     const convertedArgs = convertArguments([oldValue, rightValue], op.argTypes);
                     const result = op.func(...convertedArgs);
-                    
+
                     // 更新变量的值
                     variables.set(left.value, result);
                     return result;
@@ -741,7 +748,7 @@ const Calculator = (function() {
 
             // 其他运算符的处理
             const convertedArgs = convertArguments(args, op.argTypes);
-            
+
             return op.func(...convertedArgs);
         }
 
@@ -859,11 +866,31 @@ const Calculator = (function() {
 
     // 6. 返回公共API
     return {
-        calculate(expr) {
+        calculate(expr, options = {}) {
             // TODO: 添加超时处理
             clearMessages(); // 清除之前的消息
 
-            // TODO: 这里是集合，而不是字典了
+            // 检查是否自定义函数定义语句（getCustomFunctionName 非 null 即为定义）
+            const funcName = getCustomFunctionName(expr);
+            if (funcName) {
+                return {
+                    value: `𝒇: ${funcName} `,
+                    customFunc: true,
+                    customName: funcName,
+                };
+            }
+
+            // 检查是否自定义常数定义语句（getCustomConstantName 非 null 即为定义）
+            const constantName = getCustomConstantName(expr);
+            if (constantName) {
+                return {
+                    value: `𝑪: ${constantName} `,
+                    customConstant: true,
+                    customName: constantName,
+                };
+            }
+
+            // 这里是集合，而不是字典了
             const operators = new Set(Object.keys(OPERATORS));
             const functions = new Set(Object.keys(FUNCTIONS));
             const constants = new Set(Object.keys(CONSTANTS));
@@ -872,9 +899,16 @@ const Calculator = (function() {
             const tokens = tokenize(processedExpr, sortedOperators, functions, constants);
             const ast = buildAst(tokens, operators, functions);
             const result = evaluate(ast, operators, functions, constants);
+            // raw 模式：返回未格式化的原始值（用于自定义函数 lambda 内层求值，保证类型一致）
+            if (options && options.raw) {
+                return {
+                    value: result,
+                    info: infos.length > 0 ? infos : null,
+                    warning: warnings.length > 0 ? warnings : null
+                };
+            }
             // 添加格式化处理，传入完整的上下文
             const exprResult = formatOutput(result, ast, operators, functions);
-            
             return exprResult;
         },
 
@@ -921,13 +955,29 @@ const Calculator = (function() {
         clearAllCache() {
             variables.clear();  // 清除所有变量
             clearMessages();    // 清除所有消息
+        },
+
+        // 获取自定义函数列表
+        getCustomFunctions() {
+            return getCustomFunctions();
+        },
+
+        // 删除自定义函数
+        removeCustomFunction(funcName) {
+            return removeCustomFunction(funcName, FUNCTIONS);
+        },
+
+        // 清除所有自定义函数
+        clearCustomFunctions() {
+            clearCustomFunctions(FUNCTIONS);
         }
     };
 })();
 
 
-// 修改导出方式
+// 导出
 export { Calculator, OPERATORS, FUNCTIONS, CONSTANTS };
+export { isFunctionDefinition, isConstantDefinition, updateCustomFromStorage };
 
 // 测试
 
@@ -946,7 +996,8 @@ function TEST(expr){
 
 // console.log(Calculator.calculate('{[1 3 5], [2 4 6]}.inv'));
 
-
+Calculator.calculate('1 + 2');
+// TEST('#0.5w');
 // TEST('{1 2 3}');
 // TEST('{1; 2; 3}');
 // TEST('{[1 2 3], [4 5 6]}');

@@ -154,6 +154,10 @@ export class Settings {
             if (window.shortcuts && window.shortcuts.isPanelVisible) {
                 window.shortcuts.togglePanel();
             }
+            // 如果自定义函数面板打开，先关闭它
+            if (window.customFunctions && window.customFunctions.isPanelVisible) {
+                window.customFunctions.togglePanel();
+            }
             // 移除当前焦点
             if (document.activeElement instanceof HTMLElement) {
                 document.activeElement.blur();
@@ -174,9 +178,14 @@ export class Settings {
     }
 }
 
-// 创建实例并暴露到全局
-export const settings = new Settings();
-window.settings = settings;
+let settings = null;
+
+export function ensureSettings() {
+    if (settings) return settings;
+    settings = new Settings();
+    window.settings = settings;
+    return settings;
+}
 
 // 添加快捷键支持，Ctrl + P 打开设置页面
 document.addEventListener('keydown', (e) => {
@@ -186,7 +195,7 @@ document.addEventListener('keydown', (e) => {
 
         if (isCtrlP) {
             e.preventDefault();
-            settings.togglePanel();
+            ensureSettings().togglePanel();
         }
     }
 });

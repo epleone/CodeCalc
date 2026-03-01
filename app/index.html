@@ -33,12 +33,15 @@
                         <span class="tag-icon">$1</span>
                     </button>
                 </div>
-                <textarea class="input" 
-                          placeholder="输入表达式，例如: a = 1 + 2 * 3" 
-                          rows="1"
-                          oninput="handleInput(event); autoResize(this)"
-                          onfocus="handleFocus(event)" onblur="handleBlur(event)"
-                          onkeydown="handleKeyDown(event, this)"></textarea>
+                <div class="expression-input">
+                    <div class="input-highlight"></div>
+                    <textarea class="input" 
+                              placeholder="输入表达式，例如: a = 1 + 2 * 3" 
+                              rows="1"
+                              oninput="handleInput(event); autoResize(this)"
+                              onfocus="handleFocus(event)" onblur="handleBlur(event)"
+                              onkeydown="handleKeyDown(event, this)"></textarea>
+                </div>
                 <div class="result-container">
                     <div class="result">
                         <span class="result-value"></span>
@@ -137,9 +140,41 @@
                     <span class="shortcut-desc">进入设置</span>
                 </div>
                 <div class="shortcut-item">
+                    <span class="shortcut-key">Ctrl + I</span>
+                    <span class="shortcut-desc">自定义函数/常数管理</span>
+                </div>
+                <div class="shortcut-item">
                     <span class="shortcut-key">Ctrl + K</span>
                     <span class="shortcut-desc">清空页面</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义函数面板 -->
+    <div id="custom-functions-panel" class="custom-functions-panel">
+        <div class="custom-functions-header">
+            <div class="header-left">
+                <div class="app-logo">
+                    <div class="logo-icon">⚡</div>
+                    <span class="app-title">自定义函数</span>
+                </div>
+                <div class="tab-container">
+                    <div class="tab active">
+                        <span>函数管理</span>
+                        <button class="tab-close">×</button>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="action-btn">⋯</button>
+                </div>
+            </div>
+        </div>
+        <div class="custom-functions-content">
+            <div id="custom-functions-list">
+                <!-- 函数列表将动态插入到这里 -->
             </div>
         </div>
     </div>

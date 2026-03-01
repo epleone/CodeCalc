@@ -21,27 +21,23 @@ const M_CONST = {
     'e': new Decimal('2.7182818284590452353602874713527'),
 };
 
-// 定义类 CCObj，用于保存计算结果
+// 定义类 CCnode，用于表示表达式中定义的类型
+class CCnode {
+    constructor(value) {
+        this.value = value;
+    }
+
+    toString() {
+        return this.value.toString();
+    }
+}
+
+// 定义类 CCObj，用于保存所有的计算结果，op + func调用结果
 class CCObj {
-    constructor(value, info=null, warning=null) {
-        this.value = value;     // 参与计算的值
+    constructor(value, info=undefined, warning=undefined) {
+        this.value = value;     // TODO: 定义用于计算的值，以及用于显示的值
         this.info = info;
         this.warning = warning;
-
-        // TODO: 后续统一显示的值
-        this.visValue = null;  // 外部显示的值
-    }
-
-    setVValue(visValue) {
-        this.visValue = visValue;
-    }
-
-    getVValue()
-    {
-        // 如果外部设置了，是使用设置的值
-        if(this.visValue) return this.visValue;
-        // todo 根据类型返回结果
-        // ChineseNumber 和 formatToDisplayString 都不需要了
     }
 
     toString() {
@@ -106,11 +102,6 @@ class ChineseNumber {
         return this.value.toString();
     }
 
-}
-
-// 判断是否是CCObj
-function isCCObj(value) {
-    return value instanceof CCObj;
 }
 
 function isNumber(value) {
@@ -240,9 +231,7 @@ const Utils = {
                 }
                 return new Decimal(value.toString());
             }
-
             if(type === 'decimal') {
-                // 不支持矩阵
                 return new Decimal(value.toString());
             }  
             if(type === 'number') {
@@ -252,11 +241,9 @@ const Utils = {
                 return BigInt(value.toString());
             }
             if(type === 'string') {
-                if (typeof value === 'object' && value.value) {
-                    return value.value.toString();
-                }
                 return value.toString();
             }
+
             if(type === 'any') {
                 return value;
             }
@@ -1300,4 +1287,4 @@ const Utils = {
 };
 
 
-export { Utils, Datestamp, M_CONST };
+export { Utils, Datestamp, M_CONST, CCObj, CCnode };
