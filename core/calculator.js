@@ -956,6 +956,22 @@ const Calculator = (function() {
             return Object.fromEntries(variables);
         },
 
+        hasVariable(name) {
+            return variables.has(name);
+        },
+
+        getVariable(name) {
+            return variables.get(name);
+        },
+
+        setVariable(name, value) {
+            variables.set(name, value);
+        },
+
+        deleteVariable(name) {
+            variables.delete(name);
+        },
+
         // 修改清除方法，同时清除变量和消息
         clearAllCache() {
             variables.clear();  // 清除所有变量

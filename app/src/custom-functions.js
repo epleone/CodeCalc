@@ -64,7 +64,24 @@ export class CustomFunctions {
         const title = document.createElement('div');
         title.className = 'custom-functions-page-title';
         title.innerHTML = `
-            <div class="custom-functions-page-title-sub">Functions & Constants</div>
+            <div class="custom-functions-page-title-inner">
+                <div class="custom-functions-page-title-sub">Functions & Constants</div>
+                <button class="cf-title-help-btn" type="button" aria-label="显示自定义函数示例">?</button>
+                <div class="cf-title-help-tooltip">
+                    <div class="cf-empty-example-codeblock">
+                        <div class="cf-empty-example-lines">
+                            <div class="cf-empty-example-line"><span class="cf-code-op">//</span> <span class="cf-code-meta">示例：自定义函数</span></div>
+                            <div class="cf-empty-example-line"><span class="cf-code-fn">fun1</span>(<span class="cf-code-param">x</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span> <span class="cf-code-op">+</span> <span class="cf-code-num">1</span></div>
+                            <div class="cf-empty-example-line cf-empty-example-gap" aria-hidden="true"></div>
+                            <div class="cf-empty-example-line"><span class="cf-code-op">//</span> <span class="cf-code-meta">示例：带注释的自定义函数</span></div>
+                            <div class="cf-empty-example-line"><span class="cf-code-fn">fun2</span>(<span class="cf-code-param">x</span>, <span class="cf-code-param">y</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span><span class="cf-code-op">**</span><span class="cf-code-num">2</span> <span class="cf-code-op">+</span> <span class="cf-code-param">y</span> <span class="cf-code-op">;</span> <span class="cf-code-op">//</span> <span class="cf-code-meta">这里是fun1的注释</span></div>
+                            <div class="cf-empty-example-line cf-empty-example-gap" aria-hidden="true"></div>
+                            <div class="cf-empty-example-line"><span class="cf-code-op">//</span> <span class="cf-code-meta">示例：自定义常数</span></div>
+                            <div class="cf-empty-example-line"><span class="cf-code-fn">mypi</span> <span class="cf-code-op">:=</span> <span class="cf-code-num">3.14159</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
         content.insertBefore(title, content.firstChild);
     }
@@ -170,11 +187,18 @@ export class CustomFunctions {
                             <span class="cf-empty-min-text">这里还是空的～</span>
                         </div>
                         <div class="cf-empty-min-row2">
-                            <pre class="cf-empty-example-codeblock"><code><span class="cf-code-fence">\`\`\`</span> <span class="cf-code-meta">示例</span>
-<span class="cf-code-fn">func1</span>(<span class="cf-code-param">x</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span> <span class="cf-code-op">+</span> <span class="cf-code-num">1</span>
-<span class="cf-code-fn">func2</span>(<span class="cf-code-param">x</span>, <span class="cf-code-param">y</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span><span class="cf-code-op">**</span><span class="cf-code-num">2</span> <span class="cf-code-op">+</span> <span class="cf-code-param">y</span>
-<span class="cf-code-fn">mypi</span> <span class="cf-code-op">:=</span> <span class="cf-code-num">3.14159</span>
-<span class="cf-code-fence">\`\`\`</span></code></pre>
+                            <div class="cf-empty-example-codeblock">
+                                <div class="cf-empty-example-lines">
+                                    <div class="cf-empty-example-line"><span class="cf-code-op">//</span> <span class="cf-code-meta">示例：自定义函数</span></div>
+                                    <div class="cf-empty-example-line"><span class="cf-code-fn">fun1</span>(<span class="cf-code-param">x</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span> <span class="cf-code-op">+</span> <span class="cf-code-num">1</span></div>
+                                    <div class="cf-empty-example-line cf-empty-example-gap" aria-hidden="true"></div>
+                                    <div class="cf-empty-example-line"><span class="cf-code-op">//</span> <span class="cf-code-meta">示例：带注释的自定义函数</span></div>
+                                    <div class="cf-empty-example-line"><span class="cf-code-fn">fun2</span>(<span class="cf-code-param">x</span>, <span class="cf-code-param">y</span>) <span class="cf-code-op">=</span> <span class="cf-code-param">x</span><span class="cf-code-op">**</span><span class="cf-code-num">2</span> <span class="cf-code-op">+</span> <span class="cf-code-param">y</span> <span class="cf-code-op">;</span> <span class="cf-code-op">//</span> <span class="cf-code-meta">这里是fun1的注释</span></div>
+                                    <div class="cf-empty-example-line cf-empty-example-gap" aria-hidden="true"></div>
+                                    <div class="cf-empty-example-line"><span class="cf-code-op">//</span> <span class="cf-code-meta">示例：自定义常数</span></div>
+                                    <div class="cf-empty-example-line"><span class="cf-code-fn">mypi</span> <span class="cf-code-op">:=</span> <span class="cf-code-num">3.14159</span></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

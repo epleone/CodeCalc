@@ -77,6 +77,10 @@ export class Snapshot {
             }
 
             this.tooltipTimer = setTimeout(() => {
+                // 若按钮已移除或鼠标已不在按钮上，不显示 tooltip，避免残留在左上角
+                if (!target.isConnected || !target.matches(':hover')) {
+                    return;
+                }
                 const rect = target.getBoundingClientRect();
                 const x = rect.left + rect.width / 2;
                 const y = rect.bottom + 8;
@@ -99,6 +103,14 @@ export class Snapshot {
             }
             hideTooltip();
         });
+    }
+
+    clearActionTooltip() {
+        if (this.tooltipTimer) {
+            clearTimeout(this.tooltipTimer);
+            this.tooltipTimer = null;
+        }
+        hideTooltip();
     }
     
     // 保存当前页面所有表达式的状态
@@ -340,6 +352,7 @@ export class Snapshot {
         applyButton.dataset.tooltip = '恢复此快照';
         applyButton.onclick = (e) => {
             e.stopPropagation();
+            this.clearActionTooltip();
             this.applySnapshot(snapshot.records);
         };
         
@@ -354,6 +367,7 @@ export class Snapshot {
         deleteButton.dataset.tooltip = '删除此快照';
         deleteButton.onclick = (e) => {
             e.stopPropagation();
+            this.clearActionTooltip();
             
             // 获取要删除的快照组元素
             const groupElement = snapshotElement;
@@ -589,6 +603,7 @@ export class Snapshot {
             this.overlay.classList.add('show');
             document.body.style.overflow = 'hidden';
         } else {
+            this.clearActionTooltip();
             this.panel.classList.remove('show');
             this.overlay.classList.remove('show');
             document.body.style.overflow = '';

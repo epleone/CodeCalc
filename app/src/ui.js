@@ -30,6 +30,8 @@ const COMPOUND_ASSIGNMENT_OPERATORS = ASSIGNMENT_OPERATORS
     .sort((a, b) => b.length - a.length);
 
 const customFunctionsStorage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
+const inlineCustomDefinitionDrafts = new Map();
+let expressionLineIdSeed = 1;
 
 function getStoredCustomFunctions() {
     try {
@@ -37,6 +39,69 @@ function getStoredCustomFunctions() {
     } catch (e) {
         return {};
     }
+}
+
+function createExpressionLineId() {
+    const lineId = `line-${expressionLineIdSeed}`;
+    expressionLineIdSeed += 1;
+    return lineId;
+}
+
+function ensureExpressionLineId(expressionLine) {
+    if (!expressionLine) return '';
+    if (!expressionLine.dataset.lineId) {
+        expressionLine.dataset.lineId = createExpressionLineId();
+    }
+    return expressionLine.dataset.lineId;
+}
+
+function getLineIdFromInput(input) {
+    const expressionLine = input?.closest('.expression-line');
+    return ensureExpressionLineId(expressionLine);
+}
+
+function clearInlineDraftByInput(input) {
+    const lineId = getLineIdFromInput(input);
+    if (!lineId) return;
+    inlineCustomDefinitionDrafts.delete(lineId);
+}
+
+function moveInlineDraft(fromInput, toInput) {
+    const fromLineId = getLineIdFromInput(fromInput);
+    const toLineId = getLineIdFromInput(toInput);
+    if (!fromLineId || !toLineId) return;
+
+    const fromDraft = inlineCustomDefinitionDrafts.get(fromLineId);
+    if (fromDraft) {
+        inlineCustomDefinitionDrafts.set(toLineId, fromDraft);
+    } else {
+        inlineCustomDefinitionDrafts.delete(toLineId);
+    }
+}
+
+function parseCustomDefinition(expression) {
+    const e = (expression || '').trim();
+    if (!e) return null;
+    if (!isFunctionDefinition(e) && !isConstantDefinition(e)) return null;
+
+    const isFunc = isFunctionDefinition(e);
+    const expType = isFunc ? 'function' : 'constant';
+    let name;
+    let params = [];
+
+    if (isFunc) {
+        const match = e.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/);
+        if (!match) return null;
+        name = match[1];
+        const paramStr = match[2].trim();
+        params = paramStr ? paramStr.split(',').map(p => p.trim()) : [];
+    } else {
+        const match = e.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*:\s*=\s*/);
+        if (!match) return null;
+        name = match[1];
+    }
+
+    return { name, params, expType, definition: e };
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -53,38 +118,60 @@ function AddCustomFunctions() {
 
 /**
  * 将单条满足函数/常数定义的表达式写入 storage（与 custom-functions 面板共用同一 storage，等同原 add 按钮的写入逻辑）
+ * 已存在的定义在计算页会被拦截，提示去管理页编辑
+ * 同一行首次从计算页创建的定义，允许后续继续修改
+ * @param {HTMLTextAreaElement} input - 当前行输入框
  * @param {string} expression - 单行表达式
- * @returns {boolean} 是否满足定义并已写入
+ * @returns {{handled: boolean, saved: boolean, blocked?: boolean, name?: string, expType?: string, message?: string}}
  */
-function addNewFunction(expression) {
-    const e = (expression || '').trim();
-    if (!e) return false;
-    if (!isFunctionDefinition(e) && !isConstantDefinition(e)) return false;
-    const isFunc = isFunctionDefinition(e);
-    const expType = isFunc ? 'function' : 'constant';
-    let name, params = [];
-    if (isFunc) {
-        const match = e.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=\s*(.+)$/);
-        if (!match) return false;
-        name = match[1];
-        const paramStr = match[2].trim();
-        params = paramStr ? paramStr.split(',').map(p => p.trim()) : [];
-    } else {
-        const match = e.match(/^([a-zA-Z_$][a-zA-Z0-9_]*)\s*:\s*=\s*/);
-        if (!match) return false;
-        name = match[1];
+function addNewFunction(input, expression) {
+    const parsed = parseCustomDefinition(expression);
+    if (!parsed) {
+        return { handled: false, saved: false };
     }
+
+    const { name, params, expType, definition } = parsed;
+    const lineId = getLineIdFromInput(input);
     const stored = getStoredCustomFunctions();
     const existing = stored[name];
+    const draft = lineId ? inlineCustomDefinitionDrafts.get(lineId) : null;
+    const isLineOwnedDraft = Boolean(
+        draft &&
+        draft.name === name &&
+        draft.expType === expType &&
+        draft.createdFromInline &&
+        draft.wasExistingAtCreate === false
+    );
+
+    if (existing && !isLineOwnedDraft) {
+        const customTypeText = expType === 'function' ? '函数' : '常数';
+        return {
+            handled: true,
+            saved: false,
+            blocked: true,
+            name,
+            expType,
+            message: `自定义${customTypeText} "${name}" 已存在，计算页不允许直接覆盖，请到管理页面修改`
+        };
+    }
+
     stored[name] = {
         name,
         params,
-        definition: e,
+        definition,
         description: (existing && existing.description) ? existing.description : '',
         expType
     };
     customFunctionsStorage.setItem('customFunctions', JSON.stringify(stored));
-    return true;
+    if (lineId) {
+        inlineCustomDefinitionDrafts.set(lineId, {
+            name,
+            expType,
+            createdFromInline: true,
+            wasExistingAtCreate: Boolean(existing)
+        });
+    }
+    return { handled: true, saved: true, blocked: false, name, expType };
 }
 
 // 防抖函数
@@ -169,6 +256,7 @@ function CreateNewLine(lineNumber = null) {
     // 创建新行
     const newLine = document.createElement('div');
     newLine.className = 'expression-line';
+    ensureExpressionLineId(newLine);
     newLine.innerHTML = `
         ${Tag.createTagContainerHTML(lineNumber)}
         <div class="expression-input">
@@ -300,10 +388,13 @@ function handleLineDelete(input) {
         const currentInput = lines[i].querySelector('.input');
         const nextInput = lines[i + 1].querySelector('.input');
         currentInput.value = nextInput.value;
+        moveInlineDraft(nextInput, currentInput);
         currentInput.dispatchEvent(new Event('input'));
     }
     
     // 删除最后一行
+    const lastInput = lines[lines.length - 1].querySelector('.input');
+    clearInlineDraftByInput(lastInput);
     lines[lines.length - 1].remove();
     
     // 设置焦点
@@ -752,6 +843,7 @@ function initializeUI() {
 
     // 初始化所有行的标签功能与语法高亮
     document.querySelectorAll('.expression-line').forEach(line => {
+        ensureExpressionLineId(line);
         Tag.initializeTagButton(line);
         attachInputHighlight(line);
     });
@@ -989,6 +1081,7 @@ function calculateLine(input, ignoreEmptyLine=false) {
 
     // TODO:空输入处理
     if (expression === '') {
+        clearInlineDraftByInput(input);
         // 不设置 ignoreEmptyLine 时，recalculateAllLines 会递归调用 calculateLine 导致栈溢出
         // TODO:清除当前行的变量，是否还有更好的做法？
         if(!ignoreEmptyLine ){
@@ -1037,12 +1130,19 @@ function calculateLine(input, ignoreEmptyLine=false) {
         if (value.customFunc || value.customConstant) {
             const customType = value.customFunc ? 'customFunc' : 'customCst';
             const customTypeText = value.customFunc ? '函数' : '常数';
-            const customMsg = [{ text: `已保存自定义${customTypeText}: ${value.customName}, 点击打开管理面板`, type: customType }];
-            setState(value.value, customType, customMsg);
-            if (addNewFunction(rawExpression)) AddCustomFunctions();
+            const saveResult = addNewFunction(input, rawExpression);
+            if (saveResult.blocked) {
+                setState(`${value.value}定义失败`, 'error', saveResult.message);
+            } else {
+                const customMsg = [{ text: `已保存自定义${customTypeText}: ${value.customName}, 点击打开管理面板`, type: customType }];
+                setState(value.value, customType, customMsg);
+                if (saveResult.saved) AddCustomFunctions();
+            }
         } else if (messages.length > 0) {
+            clearInlineDraftByInput(input);
             setState(value.value, type, messages);
         } else {
+            clearInlineDraftByInput(input);
             setNormalState(value.value);
         }
     } catch (error) {
@@ -1052,6 +1152,7 @@ function calculateLine(input, ignoreEmptyLine=false) {
 
 function clearAll() {
     const container = document.getElementById('expression-container');
+    inlineCustomDefinitionDrafts.clear();
     
     // 在清空之前保存历史记录
     ensureSnapshot().takeSnapshot(false);

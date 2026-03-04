@@ -21,14 +21,17 @@ function removeLineNumber(expr) {
 
 function createCustomFunction(definition, calculator) {
     // 1. 解析函数定义（= 必须是单个等号，不能是 == 或 = =）
-    const functionDefRegex = /^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=(?!\s*=)\s*(.+)$/;
+    // 支持可选注释尾巴：; // 注释内容（注释可为空）
+    const functionDefRegex = /^([a-zA-Z_$][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=(?!\s*=)\s*(.+?)(?:\s*;\s*\/\/(.*))?$/;
     const match = definition.match(functionDefRegex);
     
     if (!match) {
         throw new Error('函数定义格式错误，正确格式: funcname(param1,param2,...) = expression');
     }
     
-    const [, funcName, paramStr, expression] = match;
+    const [, funcName, paramStr, rawExpression, rawComment] = match;
+    const expression = rawExpression.trim();
+    const comment = rawComment === undefined ? null : rawComment.trim();
     
     // 2. 解析参数列表
     const params = paramStr.trim() ? 
@@ -45,34 +48,49 @@ function createCustomFunction(definition, calculator) {
         name: funcName,
         params: params,
         expression: expression,
+        comment: comment,
         func: lambdaFunc,
         args: params.length
     };
 }
 
 function createLambdaFunction(params, expression, calculator) {
+    // 临时变量绑定，避免参数做字符串替换而需要搞序列化
+    function withTemporaryBindings(paramNames, values, run) {
+        const snapshots = paramNames.map((name, index) => {
+            const existed = calculator.hasVariable(name);
+            const snapshot = {
+                name,
+                existed,
+                value: existed ? calculator.getVariable(name) : undefined
+            };
+            calculator.setVariable(name, values[index]);
+            return snapshot;
+        });
+
+        try {
+            return run();
+        } finally {
+            snapshots.reverse().forEach(item => {
+                if (item.existed) {
+                    calculator.setVariable(item.name, item.value);
+                } else {
+                    calculator.deleteVariable(item.name);
+                }
+            });
+        }
+    }
+
     return function(...args) {
         // 检查参数数量
         if (args.length !== params.length) {
             throw new Error(`函数需要 ${params.length} 个参数，但得到了 ${args.length} 个`);
         }
-        
-        // 创建参数替换的表达式
-        let evaluationExpr = expression;
-        
-        // 替换参数
-        for (let i = 0; i < params.length; i++) {
-            const paramName = params[i];
-            const argValue = args[i];
-            
-            // 使用正则表达式替换参数名，确保只替换完整的标识符
-            const paramRegex = new RegExp(`\\b${paramName}\\b`, 'g');
-            evaluationExpr = evaluationExpr.replace(paramRegex, `(${argValue})`);
-        }
-        
-        // 使用计算器计算表达式（raw: true 保持原始类型，不转成显示用字符串）
-        const result = calculator.calculate(evaluationExpr, { raw: true });
-        return result.value;
+
+        return withTemporaryBindings(params, args, () => {
+            const result = calculator.calculate(expression, { raw: true });
+            return result.value;
+        });
     };
 }
 
@@ -100,12 +118,17 @@ function addCustomFunction(calculator, FUNCTIONS, definition) {
     customFunctions.set(customFunc.name, customFunc);
     
     // 添加到FUNCTIONS对象
+    const baseDescription = `𝒇:${customFunc.name}(${customFunc.params.join(', ')}) = ${customFunc.expression}`;
+    const description = customFunc.comment !== null
+        ? `𝒇:${customFunc.comment}`
+        : baseDescription;
+
     FUNCTIONS[customFunc.name] = {
         func: customFunc.func,
         args: customFunc.args,
         // argTypes: customFunc.argTypes,
         argTypes: 'any',
-        description: `自定义函数: ${customFunc.name}(${customFunc.params.join(', ')}) = ${customFunc.expression}`,
+        description,
         isCustom: true
     };
     
@@ -164,7 +187,7 @@ function addCustomConstant(CONSTANTS, definition) {
 // 函数定义，返回函数名（= 必须是单个等号，不能是 == 或 = =）
 function getCustomFunctionName(expr) {
     expr = removeLineNumber(expr);
-    const functionDefRegex = /^([a-zA-Z][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=(?!\s*=)\s*(.+)$/;
+    const functionDefRegex = /^([a-zA-Z][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*=(?!\s*=)\s*(.+?)(?:\s*;\s*\/\/(.*))?$/;
     const match = expr.trim().match(functionDefRegex);
     return match ? match[1] : null;
 }
@@ -213,10 +236,48 @@ function updateCustomFromStorage(calculator, FUNCTIONS, CONSTANTS) {
     }
 }
 
+/**
+ * 测试辅助：不依赖 Storage，直接将自定义定义注入系统。
+ * expType: 'function' | 'constant' | 'auto'
+ */
+function addCustomFromDefinitionForTest(calculator, FUNCTIONS, CONSTANTS, definition, expType = 'auto') {
+    if (!definition || typeof definition !== 'string') {
+        throw new Error('definition 必须是非空字符串');
+    }
+
+    if (expType === 'constant') {
+        if (!CONSTANTS) throw new Error('添加自定义常数需要传入 CONSTANTS');
+        return addCustomConstant(CONSTANTS, definition);
+    }
+
+    if (expType === 'function') {
+        return addCustomFunction(calculator, FUNCTIONS, definition);
+    }
+
+    // auto 模式：优先按定义语法自动判定
+    if (isConstantDefinition(definition)) {
+        if (!CONSTANTS) throw new Error('添加自定义常数需要传入 CONSTANTS');
+        return addCustomConstant(CONSTANTS, definition);
+    }
+    if (isFunctionDefinition(definition)) {
+        return addCustomFunction(calculator, FUNCTIONS, definition);
+    }
+
+    throw new Error('无法识别定义类型，请使用函数定义 "f(x)=..." 或常数定义 "a:=..."');
+}
+
+/** 测试辅助：清理测试中注入的自定义函数与常数 */
+function clearCustomForTest(FUNCTIONS, CONSTANTS) {
+    clearCustomFunctions(FUNCTIONS);
+    if (CONSTANTS) clearCustomConstants(CONSTANTS);
+}
+
 export {
     isFunctionDefinition,
     isConstantDefinition,
     getCustomFunctionName,
     getCustomConstantName,
     updateCustomFromStorage,
+    addCustomFromDefinitionForTest,
+    clearCustomForTest,
 };

@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node calculator.js",
     "build": "rollup -c",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose",
+    "test:b": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/basic.test.js",
+    "test:m": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/matrix.test.js",
+    "test:d": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/data.test.js",
+    "test:c": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/custom.test.js"
   },
   "keywords": [],
   "author": "",
