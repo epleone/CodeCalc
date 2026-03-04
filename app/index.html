@@ -198,11 +198,12 @@
                     • 常量：PI: 3.14159... e: 2.71828...<br>
                     • 常用：ln, lg, log, exp, pow, sqrt, abs, max, min<br>
                     • 三角函数：sin, cos, tan, atan, tanh, ...<br>
-                    • 角度转换: 45° 或 45.rad, PI.deg  <br>
                     • 字符串：str, length, upper, lower, base64, unbase64<br>
                     • 进制转换：0b123, 0o567, 0xffd, bin, oct, hex<br>
                     • 时间戳：@now, @today, @2000-06-01 11:30:01<br>
                     • 时间计算:  @now + #1w2d3h,   #1y2m3d5h7s<br>
+                    • 自定义常数: mypi := 3.14159 <br>
+                    • 自定义函数: f(x, y) = x + y <br>
                     <br>
                     矩阵：<br>
                     • 矩阵创建：[1,2,3], {1,2,3;4,5,6}, eye, zeros, ones, random, diag<br>
@@ -213,17 +214,20 @@
                     <br>
                     <span style="font-weight: bold;" class="shortcut-text">Ctrl + / : 显示全部快捷键</span> <br>
                     <br>
-                    <div class="docs-link">
-                        <img src="./logo.png" width="16" height="16" style="vertical-align: text-bottom; margin-right: 4px;">
-                        <a href="https://epleone.github.io/codecalc-doc/" target="_blank" 
-                           onclick="window.utools ? utools.shellOpenExternal('https://epleone.github.io/codecalc-doc/') : window.open('https://epleone.github.io/codecalc-doc/', '_blank'); return false;" 
-                           style="color: #BA55D3; text-decoration: none; font-size: 14px; transition: color 0.2s;"> 详细文档</a>
+                    <div style="display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                        <div class="github-link">
+                            <svg height="16" viewBox="0 0 16 16" width="16" style="vertical-align: text-bottom; margin-right: 4px;"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                            <a href="https://github.com/epleone/CodeCalc" target="_blank"
+                               onclick="window.utools ? utools.shellOpenExternal('https://github.com/epleone/CodeCalc') : window.open('https://github.com/epleone/CodeCalc', '_blank'); return false;"
+                               style="color: inherit; text-decoration: none; font-size: 14px; font-weight: 600; letter-spacing: 0.2px;">CodeCalc</a>
+                        </div>
+                        <div class="docs-link">
+                            <img src="./logo.png" width="16" height="16" style="vertical-align: text-bottom; margin-right: 4px;">
+                            <a href="https://epleone.github.io/codecalc-doc/" target="_blank" 
+                               onclick="window.utools ? utools.shellOpenExternal('https://epleone.github.io/codecalc-doc/') : window.open('https://epleone.github.io/codecalc-doc/', '_blank'); return false;" 
+                               style="color: #BA55D3; text-decoration: none; font-size: 14px; transition: color 0.2s;">详细文档</a>
+                        </div>
                     </div>
-                    <!-- <br>
-                    <div class="github-link">
-                        <svg height="16" viewBox="0 0 16 16" width="16" style="vertical-align: text-bottom; margin-right: 4px;"><path fill="#fff" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-                        <a href="https://github.com/epleone/CodeCalc" target="_blank" style="color: #fff; text-decoration: none; font-size: 14px;">CodeCalc</a>
-                    </div> -->
                 </div>
             </div>
         </div>

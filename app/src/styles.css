@@ -31,6 +31,8 @@
     --switch-active: #28a745;
     --link-color: #BA55D3;
     --link-hover-color: #9932CC;
+    --github-link-color: #24292f;
+    --github-link-hover-color: #57606a;
 }
 
 :root[data-theme="dark"] {
@@ -54,6 +56,8 @@
     --switch-active: #00bf63;
     --link-color: #DA70D6;
     --link-hover-color: #DDA0DD;
+    --github-link-color: #f0f6fc;
+    --github-link-hover-color: #c9d1d9;
 }
 
 body {
@@ -875,6 +879,20 @@ input:checked + .slider:before {
 
 .tooltip-text .docs-link a:hover {
     color: var(--link-color);
+    opacity: 1;
+}
+
+.tooltip-text .github-link {
+    color: var(--github-link-color);
+}
+
+.tooltip-text .github-link a {
+    color: inherit;
+    opacity: 0.9;
+}
+
+.tooltip-text .github-link a:hover {
+    color: var(--github-link-hover-color);
     opacity: 1;
 }
 
