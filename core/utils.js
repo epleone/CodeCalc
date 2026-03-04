@@ -35,10 +35,16 @@ class CCnode {
 // 定义类 CCObj，用于保存所有的计算结果，op + func调用结果
 class CCObj {
     constructor(value, info=undefined, warning=undefined) {
-        this.value = value;     // TODO: 定义用于计算的值，以及用于显示的值
+        this.value = value;     // 参与计算的值
         this.info = info;
         this.warning = warning;
+
+        // TODO: 后续统一显示的值
+        this._fmtValue = undefined;       // 外部显示值
     }
+
+    set fmtValue(val) { this._fmtValue = val; }
+    get fmtValue() { return this._fmtValue ?? this.value.toString(); }
 
     toString() {
         return this.value.toString();
@@ -241,6 +247,8 @@ const Utils = {
         }
     
         try {
+        
+            // TODO: 合并 default 和 any
             if(type === 'default' || type === 'any') {
                 // 如果是CCnode，则返回Decimal类型参与计算
                 if(isCCnode(value)) {

@@ -45,12 +45,28 @@ export class CustomFunctions {
             console.error('自定义函数面板元素未找到');
             return;
         }
+
+        this.ensurePanelTitle();
         
         // 绑定事件
         this.bindEvents();
         
         // 渲染函数列表（直接从存储读取，不需要等待计算器）
         this.renderFunctionsList();
+    }
+
+    ensurePanelTitle() {
+        const content = this.panel?.querySelector('.custom-functions-content');
+        if (!content) return;
+
+        if (content.querySelector('.custom-functions-page-title')) return;
+
+        const title = document.createElement('div');
+        title.className = 'custom-functions-page-title';
+        title.innerHTML = `
+            <div class="custom-functions-page-title-sub">Functions & Constants</div>
+        `;
+        content.insertBefore(title, content.firstChild);
     }
     
     bindEvents() {

@@ -298,6 +298,45 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('a').value).toBe('8');
     });
 
+    test('复合赋值作为赋值右侧表达式时不应重复执行', () => {
+      expect(Calculator.calculate('a = 1').value).toBe('1');
+      expect(Calculator.calculate('$2 = a += 1').value).toBe('2');
+      expect(Calculator.calculate('a').value).toBe('2');
+      expect(Calculator.calculate('$2').value).toBe('2');
+    });
+
+    test('包裹场景下各复合赋值都只执行一次', () => {
+      const cases = [
+        { op: '+=', init: '1', rhs: '1', expected: '2' },
+        { op: '-=', init: '3', rhs: '1', expected: '2' },
+        { op: '*=', init: '3', rhs: '2', expected: '6' },
+        { op: '/=', init: '8', rhs: '2', expected: '4' },
+        { op: '&=', init: '5', rhs: '3', expected: '1' },
+        { op: '|=', init: '5', rhs: '3', expected: '7' },
+        { op: '^=', init: '5', rhs: '3', expected: '6' },
+        { op: '<<=', init: '5', rhs: '2', expected: '20' },
+        { op: '>>=', init: '20', rhs: '2', expected: '5' },
+        { op: '>>>=', init: '20', rhs: '2', expected: '5' },
+      ];
+
+      for (const { op, init, rhs, expected } of cases) {
+        Calculator.clearAllCache();
+        expect(Calculator.calculate('a = ' + init).value).toBe(init);
+        expect(Calculator.calculate('$2 = a ' + op + ' ' + rhs).value).toBe(expected);
+        expect(Calculator.calculate('a').value).toBe(expected);
+        expect(Calculator.calculate('$2').value).toBe(expected);
+      }
+    });
+
+    test('链式复合赋值在包裹场景下不重复求值', () => {
+      expect(Calculator.calculate('a = 1').value).toBe('1');
+      expect(Calculator.calculate('b = 1').value).toBe('1');
+      expect(Calculator.calculate('$3 = a += (b += 2)').value).toBe('4');
+      expect(Calculator.calculate('a').value).toBe('4');
+      expect(Calculator.calculate('b').value).toBe('3');
+      expect(Calculator.calculate('$3').value).toBe('4');
+    });
+
     test('减法赋值 -=', () => {
       expect(Calculator.calculate('a = 10').value).toBe('10');
       expect(Calculator.calculate('a -= 3').value).toBe('7');

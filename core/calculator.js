@@ -683,21 +683,17 @@ const Calculator = (function() {
             return CONSTANTS[node.value];
         }
 
-        // 递归计算参数
-        const args = node.args.map(arg => evaluate(arg, operators, functions, constants, depth + 1));
-
         // 处理运算符
         if (node.type === 'operator') {
             const op = OPERATORS[node.value];
-
-            // 检查参数数量
-            if (op.args !== undefined && args.length !== op.args) {
-                throw new Error(`运算符 "${node.value}" 需要 ${op.args} 个参数，但得到了 ${args.length} 个`);
-            }
             
             // 处理赋值运算符
             if (op.isCompoundAssignment) {
                 const [left, right] = node.args;
+                // 检查参数数量
+                if (op.args !== undefined && node.args.length !== op.args) {
+                    throw new Error(`运算符 "${node.value}" 需要 ${op.args} 个参数，但得到了 ${node.args.length} 个`);
+                }
                 // 检查左侧是否为标识符类型的节点
                 if (left.type !== 'identifier' && left.type !== 'string') {
                     throw new Error('不能赋值常量，赋值运算符左侧必须是变量名');
@@ -746,6 +742,14 @@ const Calculator = (function() {
                 }
             }
 
+            // 非赋值运算符：递归计算参数
+            const args = node.args.map(arg => evaluate(arg, operators, functions, constants, depth + 1));
+
+            // 检查参数数量
+            if (op.args !== undefined && args.length !== op.args) {
+                throw new Error(`运算符 "${node.value}" 需要 ${op.args} 个参数，但得到了 ${args.length} 个`);
+            }
+
             // 其他运算符的处理
             const convertedArgs = convertArguments(args, op.argTypes);
 
@@ -755,6 +759,7 @@ const Calculator = (function() {
         // 处理函数
         if (node.type === 'function') {
             const func = FUNCTIONS[node.value];
+            const args = node.args.map(arg => evaluate(arg, operators, functions, constants, depth + 1));
 
             // 检查参数数量
             if (func.args !== undefined) {

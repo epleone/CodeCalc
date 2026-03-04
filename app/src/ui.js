@@ -16,11 +16,18 @@ import { notification } from './notification.js';
 
 
 const Calculator = window.CodeCalcCore.Calculator;
+const OPERATORS = window.CodeCalcCore.OPERATORS;
 const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
 const CONSTANTS = window.CodeCalcCore.CONSTANTS;
 const updateCustomFromStorage = window.CodeCalcCore.updateCustomFromStorage;
 const isFunctionDefinition = window.CodeCalcCore.isFunctionDefinition;
 const isConstantDefinition = window.CodeCalcCore.isConstantDefinition;
+
+const ASSIGNMENT_OPERATORS = Object.keys(OPERATORS || {})
+    .filter(op => OPERATORS[op] && OPERATORS[op].isCompoundAssignment === true);
+const COMPOUND_ASSIGNMENT_OPERATORS = ASSIGNMENT_OPERATORS
+    .filter(op => op !== '=')
+    .sort((a, b) => b.length - a.length);
 
 const customFunctionsStorage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
 
@@ -392,21 +399,49 @@ function handleInput(event) {
     removeCompletionHint(input);
     
     // 自动添加下一行的逻辑
-    autoAddNextLineIfNeeded(input);
+    const addedNewLine = autoAddNextLineIfNeeded(input);
+    // 自动新增行时，addNewLine() 内部已经触发了整表重算，避免副作用表达式重复执行
+    if (addedNewLine) return;
     
     // 计算表达式
     if (isLastExpression()) {
-        calculateLine(input);
+        const expression = input.value.trim();
+        // 赋值表达式在输入过程中会有中间态（如 a+=1 -> a+=11）
+        if (hasAssignmentSideEffect(expression)) {
+            recalculateAllLines();
+        } else {
+            calculateLine(input);
+        }
     } else {
         recalculateAllLines();
     }
+}
+
+function hasAssignmentSideEffect(expression) {
+    if (!expression) return false;
+
+    // 允许输入中存在空格，如: a + = 1
+    const compactExpr = expression.replace(/\s+/g, '');
+    if (!compactExpr) return false;
+
+    // 复合赋值从 OPERATORS 元数据中读取
+    if (COMPOUND_ASSIGNMENT_OPERATORS.some(op => compactExpr.includes(op))) {
+        return true;
+    }
+
+    // '=' 需要排除比较运算符：==, !=, <=, >=
+    if (ASSIGNMENT_OPERATORS.includes('=')) {
+        return /(?<![<>=!])=(?!=)/.test(compactExpr);
+    }
+
+    return false;
 }
 
 // 自动添加下一行的函数
 function autoAddNextLineIfNeeded(input) {
     // 是否开启自动下一行
     const AutoNextLine = document.getElementById('AutoNextLine');
-    if (!AutoNextLine.checked) return;
+    if (!AutoNextLine.checked) return false;
 
     // 只在最后一行且有内容时自动添加新行
     if (isLastLine(input) && input.value.trim() !== '') {
@@ -416,8 +451,10 @@ function autoAddNextLineIfNeeded(input) {
         if (!nextLine) {
             // 自动添加新行，但不移动焦点
             addNewLine(false);
+            return true;
         }
     }
+    return false;
 }
 
 // 将当前行的结果值填入下一行
@@ -980,7 +1017,7 @@ function calculateLine(input, ignoreEmptyLine=false) {
         const currentIndex = Array.from(lines).indexOf(currentLine);
         expression = `$${currentIndex + 1} = ${expression}`;
 
-        console.log("expression: ", expression);
+        // console.log("expression: ", expression);
 
         const value = Calculator.calculate(expression);
         const messages = [];
