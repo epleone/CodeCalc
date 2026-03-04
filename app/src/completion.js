@@ -6,24 +6,27 @@ const CONSTANTS = window.CodeCalcCore.CONSTANTS;
 function generateCompletions() {
     const completions = [];
     
-    // 添加函数名（带括号）
-    for (const funcName of Object.keys(FUNCTIONS)) {
-        const func = FUNCTIONS[funcName];
+    // 添加函数名（按函数名排序）
+    const sortedFunctionNames = Object.keys(FUNCTIONS)
         // 排除以数字开头的函数名（如 0b, 0o, 0x）
-        if (!/^\d/.test(funcName)) {
+        .filter(funcName => !/^\d/.test(funcName))
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
-            // 如果是属性函数，额外添加 .funcName 形式
-            if (func.asProperty) {
-                completions.push(`.${funcName}`);
-            } 
-            
-             // 如果不是隐藏函数，添加到补全列表
-            if (func.hidden) {
-                // console.log(`隐藏函数: ${funcName}`);
-                continue;
-            }else{
-                completions.push(`${funcName}(`);
-            }
+    // 添加函数名（带括号）
+    for (const funcName of sortedFunctionNames) {
+        const func = FUNCTIONS[funcName];
+
+        // 如果是属性函数，额外添加 .funcName 形式
+        if (func.asProperty) {
+            completions.push(`.${funcName}`);
+        } 
+        
+         // 如果不是隐藏函数，添加到补全列表
+        if (func.hidden) {
+            // console.log(`隐藏函数: ${funcName}`);
+            continue;
+        }else{
+            completions.push(`${funcName}(`);
         }
     }
     

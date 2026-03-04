@@ -30,7 +30,7 @@ const COMPOUND_ASSIGNMENT_OPERATORS = ASSIGNMENT_OPERATORS
     .sort((a, b) => b.length - a.length);
 
 const customFunctionsStorage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
-const inlineCustomDefinitionDrafts = new Map();
+const inlineEditableCustomKeys = new Set();
 let expressionLineIdSeed = 1;
 
 function getStoredCustomFunctions() {
@@ -58,25 +58,6 @@ function ensureExpressionLineId(expressionLine) {
 function getLineIdFromInput(input) {
     const expressionLine = input?.closest('.expression-line');
     return ensureExpressionLineId(expressionLine);
-}
-
-function clearInlineDraftByInput(input) {
-    const lineId = getLineIdFromInput(input);
-    if (!lineId) return;
-    inlineCustomDefinitionDrafts.delete(lineId);
-}
-
-function moveInlineDraft(fromInput, toInput) {
-    const fromLineId = getLineIdFromInput(fromInput);
-    const toLineId = getLineIdFromInput(toInput);
-    if (!fromLineId || !toLineId) return;
-
-    const fromDraft = inlineCustomDefinitionDrafts.get(fromLineId);
-    if (fromDraft) {
-        inlineCustomDefinitionDrafts.set(toLineId, fromDraft);
-    } else {
-        inlineCustomDefinitionDrafts.delete(toLineId);
-    }
 }
 
 function parseCustomDefinition(expression) {
@@ -131,19 +112,12 @@ function addNewFunction(input, expression) {
     }
 
     const { name, params, expType, definition } = parsed;
-    const lineId = getLineIdFromInput(input);
+    const customKey = `${expType}:${name}`;
     const stored = getStoredCustomFunctions();
     const existing = stored[name];
-    const draft = lineId ? inlineCustomDefinitionDrafts.get(lineId) : null;
-    const isLineOwnedDraft = Boolean(
-        draft &&
-        draft.name === name &&
-        draft.expType === expType &&
-        draft.createdFromInline &&
-        draft.wasExistingAtCreate === false
-    );
+    const canEditInCurrentPage = inlineEditableCustomKeys.has(customKey);
 
-    if (existing && !isLineOwnedDraft) {
+    if (existing && !canEditInCurrentPage) {
         const customTypeText = expType === 'function' ? '函数' : '常数';
         return {
             handled: true,
@@ -163,13 +137,8 @@ function addNewFunction(input, expression) {
         expType
     };
     customFunctionsStorage.setItem('customFunctions', JSON.stringify(stored));
-    if (lineId) {
-        inlineCustomDefinitionDrafts.set(lineId, {
-            name,
-            expType,
-            createdFromInline: true,
-            wasExistingAtCreate: Boolean(existing)
-        });
+    if (!existing) {
+        inlineEditableCustomKeys.add(customKey);
     }
     return { handled: true, saved: true, blocked: false, name, expType };
 }
@@ -388,13 +357,10 @@ function handleLineDelete(input) {
         const currentInput = lines[i].querySelector('.input');
         const nextInput = lines[i + 1].querySelector('.input');
         currentInput.value = nextInput.value;
-        moveInlineDraft(nextInput, currentInput);
         currentInput.dispatchEvent(new Event('input'));
     }
     
     // 删除最后一行
-    const lastInput = lines[lines.length - 1].querySelector('.input');
-    clearInlineDraftByInput(lastInput);
     lines[lines.length - 1].remove();
     
     // 设置焦点
@@ -1081,7 +1047,6 @@ function calculateLine(input, ignoreEmptyLine=false) {
 
     // TODO:空输入处理
     if (expression === '') {
-        clearInlineDraftByInput(input);
         // 不设置 ignoreEmptyLine 时，recalculateAllLines 会递归调用 calculateLine 导致栈溢出
         // TODO:清除当前行的变量，是否还有更好的做法？
         if(!ignoreEmptyLine ){
@@ -1139,10 +1104,8 @@ function calculateLine(input, ignoreEmptyLine=false) {
                 if (saveResult.saved) AddCustomFunctions();
             }
         } else if (messages.length > 0) {
-            clearInlineDraftByInput(input);
             setState(value.value, type, messages);
         } else {
-            clearInlineDraftByInput(input);
             setNormalState(value.value);
         }
     } catch (error) {
@@ -1152,7 +1115,7 @@ function calculateLine(input, ignoreEmptyLine=false) {
 
 function clearAll() {
     const container = document.getElementById('expression-container');
-    inlineCustomDefinitionDrafts.clear();
+    inlineEditableCustomKeys.clear();
     
     // 在清空之前保存历史记录
     ensureSnapshot().takeSnapshot(false);
