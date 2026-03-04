@@ -1,5 +1,6 @@
 const Calculator = window.CodeCalcCore.Calculator;
 const isUtoolsEnv = typeof utools !== 'undefined';
+let hasHandledPluginOut = false;
 
 function isBase64(str) {
     // 去除空格
@@ -36,6 +37,32 @@ function handleRegexInput(code, payload) {
 
 function setTheme(isDark) {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+}
+
+function shouldPersistOnPluginOut(processExited) {
+    // 使用 utools 生命周期参数做明确分支：
+    // processExited=true 通常表示分离窗口关闭/插件进程退出
+    return processExited === true;
+}
+
+function handlePluginOut(processExited) {
+    if (hasHandledPluginOut) return;
+
+    const historyToggle = document.getElementById('historyToggle');
+    const keepHistory = historyToggle ? historyToggle.checked : true;
+
+    // 兼容原有语义：关闭“退出保留页面记录”时，任何退出都清空
+    if (!keepHistory) {
+        hasHandledPluginOut = true;
+        clearAll();
+        return;
+    }
+
+    // 新增语义：开启历史保留时，仅分离窗口关闭（processExited=true）触发一次 clearAll -> takeSnapshot(false)
+    if (shouldPersistOnPluginOut(processExited)) {
+        hasHandledPluginOut = true;
+        clearAll();
+    }
 }
 
 // 在 utools 环境中，则执行
@@ -83,9 +110,7 @@ if (isUtoolsEnv) {
 
 
     utools.onPluginOut((processExited) => {
-        if (!document.getElementById('historyToggle').checked) {
-            clearAll();
-        }
+        handlePluginOut(processExited);
     });
 
 
