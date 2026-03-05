@@ -215,6 +215,54 @@ function updateLineNumbers() {
     });
 }
 
+function remapLineReferencesAfterDelete(deletedLineNumber) {
+    const lines = document.querySelectorAll('.expression-line');
+    lines.forEach(line => {
+        const lineInput = line.querySelector('.input');
+        if (!lineInput || !lineInput.value) return;
+
+        const updatedValue = lineInput.value.replace(/\$(\d+)\b/g, (match, numStr) => {
+            const num = Number(numStr);
+            // 删除第 n 行后，引用该行的变量标记为 $del
+            if (num === deletedLineNumber) {
+                return `$del-${deletedLineNumber}`;
+            }
+            // 删除第 n 行后，后续行号前移一位
+            if (num > deletedLineNumber) {
+                return `$${num - 1}`;
+            }
+            return match;
+        });
+
+        if (updatedValue !== lineInput.value) {
+            lineInput.value = updatedValue;
+            lineInput.dispatchEvent(new Event('input'));
+        }
+    });
+}
+
+function remapLineReferencesAfterInsert(insertedLineNumber) {
+    const lines = document.querySelectorAll('.expression-line');
+    lines.forEach(line => {
+        const lineInput = line.querySelector('.input');
+        if (!lineInput || !lineInput.value) return;
+
+        const updatedValue = lineInput.value.replace(/\$(\d+)\b/g, (match, numStr) => {
+            const num = Number(numStr);
+            // 在第 n 行插入新行后，原 n 及后续行号都后移一位
+            if (num >= insertedLineNumber) {
+                return `$${num + 1}`;
+            }
+            return match;
+        });
+
+        if (updatedValue !== lineInput.value) {
+            lineInput.value = updatedValue;
+            lineInput.dispatchEvent(new Event('input'));
+        }
+    });
+}
+
 function CreateNewLine(lineNumber = null) {
     // 如果没有提供行号，计算当前行数
     if (lineNumber === null) {
@@ -265,9 +313,6 @@ function addNewLine(moveCursor=true) {
 
     // 初始化语法高亮
     attachInputHighlight(newLine);
-
-    // 初始化语法高亮
-    attachInputHighlight(newLine);
     
     // 为新行的结果添加点击处理
     const result = newLine.querySelector('.result');
@@ -283,6 +328,7 @@ function insertNewLine(currentLine) {
     const container = document.getElementById('expression-container');
     const lines = document.querySelectorAll('.expression-line');
     const currentIndex = Array.from(lines).indexOf(currentLine);
+    const insertedLineNumber = currentIndex + 2;
     
     // 检查下一行是否存在且为空， 直接聚焦到下一行
     if (currentIndex < lines.length - 1) {
@@ -325,6 +371,12 @@ function insertNewLine(currentLine) {
     
     // 初始化标签功能
     Tag.initializeTagButton(newLine);
+
+    // 初始化语法高亮（插入行同样需要）
+    attachInputHighlight(newLine);
+
+    // 插入第 n 行后，将所有 $m (m >= n) 调整为 $(m+1)
+    remapLineReferencesAfterInsert(insertedLineNumber);
     
     // 为新行的结果添加点击处理
     const result = newLine.querySelector('.result');
@@ -343,6 +395,7 @@ function handleLineDelete(input) {
     const lines = document.querySelectorAll('.expression-line');
     const currentLine = input.closest('.expression-line');
     const currentIndex = Array.from(lines).indexOf(currentLine);
+    const deletedLineNumber = currentIndex + 1;
     
     // 如果只有一行，则清空内容
     if (lines.length === 1) {
@@ -362,6 +415,9 @@ function handleLineDelete(input) {
     
     // 删除最后一行
     lines[lines.length - 1].remove();
+
+    // 删除第 n 行后，将所有 $m (m > n) 调整为 $(m-1)
+    remapLineReferencesAfterDelete(deletedLineNumber);
     
     // 设置焦点
     if (currentIndex === 0) {
@@ -963,6 +1019,12 @@ function calculateLine(input, ignoreEmptyLine=false) {
         return;
     }
 
+    const deletedLineRefMatch = rawExpression.match(/\$del-(\d+)\b/);
+    if (deletedLineRefMatch) {
+        setState('', 'error', `使用了已删除的行变量 $${deletedLineRefMatch[1]}`);
+        return;
+    }
+
     // 清除所有状态
     function clearState() {
         result.innerHTML = '<span class="result-value"></span>';
@@ -1109,7 +1171,12 @@ function calculateLine(input, ignoreEmptyLine=false) {
             setNormalState(value.value);
         }
     } catch (error) {
-        setState('', 'error', error.message);
+        const deletedFromError = (error?.message || '').match(/\$del-(\d+)\b/);
+        if (deletedFromError) {
+            setState('', 'error', `使用了已删除的行变量 $${deletedFromError[1]}`);
+        }else{
+            setState('', 'error', error.message);
+        }
     }
 }
 
