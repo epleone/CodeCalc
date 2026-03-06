@@ -55,10 +55,6 @@ function ensureExpressionLineId(expressionLine) {
     return expressionLine.dataset.lineId;
 }
 
-function getLineIdFromInput(input) {
-    const expressionLine = input?.closest('.expression-line');
-    return ensureExpressionLineId(expressionLine);
-}
 
 function parseCustomDefinition(expression) {
     const e = (expression || '').trim();
@@ -97,14 +93,7 @@ function AddCustomFunctions() {
     refreshAllInputHighlights();
 }
 
-/**
- * 将单条满足函数/常数定义的表达式写入 storage（与 custom-functions 面板共用同一 storage，等同原 add 按钮的写入逻辑）
- * 已存在的定义在计算页会被拦截，提示去管理页编辑
- * 同一行首次从计算页创建的定义，允许后续继续修改
- * @param {HTMLTextAreaElement} input - 当前行输入框
- * @param {string} expression - 单行表达式
- * @returns {{handled: boolean, saved: boolean, blocked?: boolean, name?: string, expType?: string, message?: string}}
- */
+// 将单条满足函数/常数定义的表达式写入 storage
 function addNewFunction(input, expression) {
     const parsed = parseCustomDefinition(expression);
     if (!parsed) {
@@ -737,8 +726,7 @@ function updateShortcutsDisplay() {
     });
 }
 
-// ========= 表达式语法高亮（函数 / 常量，含自定义；更新 storage 后需刷新） =========
-
+// 表达式语法高亮
 function escapeRegExp(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
