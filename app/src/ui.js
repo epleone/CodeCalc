@@ -169,6 +169,9 @@ function handleResize(textarea) {
         textarea.classList.remove('multiline');
         textarea.style.height = '';  // 移除手动设置的高度，使用 CSS 默认值
     }
+
+    // 粘贴长文本触发 multiline 时，立即同步高亮层，避免光标与文本错位
+    syncInputHighlightForTextarea(textarea);
 }
 
 // 添加焦点处理函数
@@ -793,10 +796,20 @@ function refreshAllInputHighlights() {
         const input = line.querySelector('.input');
         const highlight = line.querySelector('.input-highlight');
         if (input && highlight) {
-            highlight.innerHTML = highlightExpressionText(input.value);
-            highlight.scrollTop = input.scrollTop;
+            syncInputHighlightForTextarea(input, highlight);
         }
     });
+}
+
+function syncInputHighlightForTextarea(textarea, highlightEl = null) {
+    if (!textarea) return;
+    const highlight = highlightEl || textarea.closest('.expression-input')?.querySelector('.input-highlight');
+    if (!highlight) return;
+
+    highlight.classList.toggle('multiline', textarea.classList.contains('multiline'));
+    highlight.innerHTML = highlightExpressionText(textarea.value);
+    highlight.scrollTop = textarea.scrollTop;
+    highlight.scrollLeft = textarea.scrollLeft;
 }
 
 // 科学计数法：1e2 / 1e-2 / 1.23e+4（只高亮 e）
@@ -831,15 +844,17 @@ function attachInputHighlight(expressionLine) {
     const highlight = wrapper?.querySelector('.input-highlight');
     if (!wrapper || !textarea || !highlight) return;
 
-    const sync = () => {
-        highlight.innerHTML = highlightExpressionText(textarea.value);
-        highlight.scrollTop = textarea.scrollTop;
-    };
+    const sync = () => syncInputHighlightForTextarea(textarea, highlight);
 
-    textarea.addEventListener('input', sync);
+    const scheduleSync = () => requestAnimationFrame(sync);
+
+    textarea.addEventListener('input', scheduleSync);
     textarea.addEventListener('scroll', () => {
         highlight.scrollTop = textarea.scrollTop;
+        highlight.scrollLeft = textarea.scrollLeft;
     });
+    textarea.addEventListener('focus', scheduleSync);
+    textarea.addEventListener('blur', scheduleSync);
 
     // 初始同步一次
     sync();
@@ -878,10 +893,12 @@ function initializeUI() {
         handleLineDelete(input);
     });
 
-    // 点击“自定义函数/常数”消息时打开自定义函数面板
+    // 点击“自定义函数/常数”图标或消息时打开自定义函数面板
     document.getElementById('expression-container').addEventListener('click', function(event) {
-        const msgContent = event.target.closest('.message-content.customFunc, .message-content.customCst');
-        if (!msgContent) return;
+        const customTarget = event.target.closest(
+            '.message-icon.customFunc, .message-icon.customCst, .message-content.customFunc, .message-content.customCst'
+        );
+        if (!customTarget) return;
         ensureCustomFunctions().togglePanel();
     });
 
@@ -1149,7 +1166,7 @@ function calculateLine(input, ignoreEmptyLine=false) {
             if (saveResult.blocked) {
                 setState(`${value.value}定义失败`, 'error', saveResult.message);
             } else {
-                const customMsg = [{ text: `已保存自定义${customTypeText}: ${value.customName}, 点击打开管理面板`, type: customType }];
+                const customMsg = [{ text: `已保存自定义${customTypeText}: ${value.customName}, 点击管理`, type: customType }];
                 setState(value.value, customType, customMsg);
                 if (saveResult.saved) AddCustomFunctions();
             }

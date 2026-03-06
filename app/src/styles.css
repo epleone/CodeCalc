@@ -167,6 +167,14 @@ body {
     box-sizing: border-box;
 }
 
+.input-highlight.multiline {
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    font-size: 1.2rem;
+    line-height: 1.4;
+}
+
 .cc-syntax-func {
     /* 与补全样式一致 */
     color: var(--completion-function-selected);
