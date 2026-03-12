@@ -778,6 +778,26 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('(255).hex').value).toBe('0xff');
       expect(Calculator.calculate('(0).hex').value).toBe('0x0');
     });
+
+    test('二进制转十进制', () => {
+      expect(Calculator.calculate('0b101 + 0').value).toBe('5');
+      expect(Calculator.calculate('0b1101 * 1').value).toBe('13');
+      expect(Calculator.calculate('0b101').value).toBe('5');
+    });
+
+    test('八进制转十进制', () => {
+      expect(Calculator.calculate('0o12 + 0').value).toBe('10');
+      expect(Calculator.calculate('0o377').value).toBe('255');
+      expect(Calculator.calculate('0o5').value).toBe('5');
+    });
+
+    test('十六进制转十进制', () => {
+      expect(Calculator.calculate('0xF').value).toBe('15');
+      expect(Calculator.calculate('0xf').value).toBe('15');
+      expect(Calculator.calculate('0xff + 1').value).toBe('256');
+      expect(Calculator.calculate('0x0 * 1').value).toBe('0');
+      expect(Calculator.calculate('0xAA').value).toBe('170');
+    });
   });
 
   describe('Base64编码函数', () => {

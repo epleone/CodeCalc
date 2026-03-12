@@ -233,7 +233,7 @@ function addOpSupport(opName, x, y, op_xy, op_yx) {
 const Utils = {
     // 字符串转数字，用于输入时处理
     // type: 目标类型 {decimal, number, bigint, string, any}
-    convertTypes(value, type='default') {
+    convertTypes(value, type='decimal') {
         // console.log("convertTypes: ", value.toString(), type);
 
         // 如果是CCObj，先获取value参与计算
@@ -247,25 +247,21 @@ const Utils = {
         }
     
         try {
-        
-            // TODO: 合并 default 和 any
-            if(type === 'default' || type === 'any') {
+            // 默认都转成Decimal类型参与计算
+            if(type === 'decimal') {
+                // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
+                if(isMatrix(value)) {
+                    return value;
+                }
+                return new Decimal(value.toString());
+            }
+            if (type === 'any') {
                 // 如果是CCnode，则返回Decimal类型参与计算
                 if(isCCnode(value)) {
                     return new Decimal(value.toString());
                 }
-                if(type === 'default') {
-                    // 如果value是矩阵，矩阵内部元素已经是Decimal类型，返回矩阵
-                    if(isMatrix(value)) {
-                        return value;
-                    }
-                    return new Decimal(value.toString());
-                }
                 return value;
             }
-            if(type === 'decimal') {
-                return new Decimal(value.toString());
-            }  
             if(type === 'number') {
                 return Number(value.toString());
             }
@@ -293,6 +289,11 @@ const Utils = {
         // console.log('utils@cfg precision:', config.get('precision'));
         // console.log('result的类型: ', typeof result);
         // console.log('result: ', result);
+
+        if (isCCnode(result)) {
+            const converted = Utils.convertTypes(result);
+            return Utils.formatToDisplayString(converted);
+        }
 
         // 如果是CCObj，则返回value
         if(isCCObj(result)) {

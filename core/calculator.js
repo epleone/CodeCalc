@@ -1017,7 +1017,10 @@ function TEST(expr){
 
 // console.log(Calculator.calculate('{[1 3 5], [2 4 6]}.inv'));
 
-Calculator.calculate('1 + 2');
+// node .\calculator.js
+TEST('0xff');
+// Calculator.calculate('1 + 2');
+
 // TEST('#0.5w');
 // TEST('{1 2 3}');
 // TEST('{1; 2; 3}');

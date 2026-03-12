@@ -105,7 +105,6 @@ export const OPERATORS = {
         precedence: 5,
         args: 1,
         func: x => x.times(0.01),
-        argTypes: 'decimal',
         position: 'postfix',
         preventSelfReference: true,
         description: '百分号'
@@ -114,7 +113,6 @@ export const OPERATORS = {
         precedence: 5,
         args: 1,
         func: x => x.times(0.001),
-        argTypes: 'decimal',
         position: 'postfix',
         preventSelfReference: true,
         description: '千分号'
@@ -138,7 +136,6 @@ export const OPERATORS = {
             }
             return result;
         },
-        argTypes: 'decimal',
         position: 'postfix',
         description: '阶乘'
     },
@@ -926,7 +923,7 @@ export const FUNCTIONS = {
     // 版本号
     'version': {
         args: 0,
-        func: () => 'CodeCalcCore 3.2.2',
+        func: () => 'CodeCalcCore 3.2.3',
         description: 'CodeCalcCore 版本号'
     }
 }; 
