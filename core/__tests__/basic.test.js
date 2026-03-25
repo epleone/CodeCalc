@@ -37,10 +37,61 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('1.5 * 2').value).toBe('3');
       expect(Calculator.calculate('-2 * 3').value).toBe('-6');
       expect(Calculator.calculate('0 * 100').value).toBe('0');
-      
+
+      expect(Calculator.calculate('0 * 100').value).toBe('0');
+      expect(Calculator.calculate('3 * (1 + 2)').value).toBe('9');
+      expect(Calculator.calculate('(1 + 2) * 3').value).toBe('9');
+      expect(Calculator.calculate('(1 + 2) * (3 + 4)').value).toBe('21');
+
       // 矩阵乘法(点乘)
       expect(Calculator.calculate('[2,3] * [4,5]').value).toBe('[8,15]');
       expect(Calculator.calculate('{2,3} * {4,5}').value).toBe('{8,15}');
+    });
+
+    test('乘法运算符 x', () => {
+      // 所有用例统一以小写 x 写模板，这里自动生成 x / X 两个变体
+      const cases = [
+        // 基本数字乘法
+        { expr: '3 x 4', expected: '12' },
+        { expr: '1.5 x 2', expected: '3' },
+        { expr: '-2 x 3', expected: '-6' },
+
+        // 基本数字乘法（紧凑写法，无空格）
+        { expr: '3x4', expected: '12' },
+        { expr: '1.5x2', expected: '3' },
+        { expr: '-2x3', expected: '-6' },
+
+        // 括号与 x 组合（左侧为数字）
+        { expr: '3x(1 + 2)', expected: '9' },
+        { expr: '3 x (1 + 2)', expected: '9' },
+
+        // 括号与 x 组合（左侧为括号）
+        { expr: '(1 + 2)x3', expected: '9' },
+        { expr: '(1 + 2) x 3', expected: '9' },
+        { expr: '(1 + 2)x(3 + 4)', expected: '21' },
+        { expr: '(1 + 2) x (3 + 4)', expected: '21' },
+
+        // 与 0 / 0x 相关的场景
+        { expr: '0 x 100', expected: '0' },
+        { expr: '0x 100', expected: '0' },
+        // 16进制数（无空格）
+        { expr: '0x100', expected: '256' },
+
+        // 紧凑与带空格混合场景
+        { expr: '100x100', expected: '10000' },
+        { expr: '100 x100', expected: '10000' },
+        { expr: '100x 100', expected: '10000' },
+        { expr: '100 x 100', expected: '10000' },
+      ];
+
+      for (const { expr, expected } of cases) {
+        expect(Calculator.calculate(expr).value).toBe(expected);
+        const upper = expr.replace(/x/g, 'X');
+        expect(Calculator.calculate(upper).value).toBe(expected);
+      }
+
+      expect(() => Calculator.calculate('x=1')).toThrow();
+      expect(() => Calculator.calculate('X = 1')).toThrow();
     });
 
     test('除法运算符 /', () => {

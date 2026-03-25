@@ -10,6 +10,7 @@ import {
     ccVariables,
     normalizeSymbols,
     checkParentheses,
+    normalizeXInPreprocess,
     checkVariableName,
     processStringLiterals,
     processDate,
@@ -95,6 +96,9 @@ const Calculator = (function() {
 
         // 处理矩阵
         expr = processMatrix(expr);
+        
+        // 预处理阶段中，规范化与 x/X 乘法相关且在 token 阶段难以区分的场景
+        expr = normalizeXInPreprocess(expr);
         
         // 在空格不影响语义之后，清除空格
         expr = expr.replace(/\s/g, '');
@@ -218,53 +222,41 @@ const Calculator = (function() {
             return str;
         }
 
-        // 在返回tokens之前添加后处理
+        // 在返回tokens之前添加后处理：统一把数字之间的 x/X 视为乘号 *
         function postProcessTokens(tokens) {
-            // 检查是否存在变量x
-            const hasXVariable = tokens.some(token => 
-                (token[0] === 'identifier' || token[0] === 'string') && 
-                token[1] === 'x'
-            );
+            const numPattern = /^[+\-]?(?:\d+\.?\d*|\.\d+)$/;
 
-            if (!hasXVariable && !variables.has('x')) {
-                // 如果没有x变量，处理所有的字符串token
-                for (let i = 0; i < tokens.length; i++) {
-                    if (tokens[i][0] === 'string') {
-                        // 跳过16进制数的处理
-                        if (tokens[i][1].startsWith('0x')) {
-                            continue;
-                        }
+            for (let i = 0; i < tokens.length; i++) {
+                const token = tokens[i];
+                if (token[0] !== 'string') continue;
 
-                        // 检查是否是变量名,如果是则跳过处理
-                        if (variables.has(tokens[i][1])) {
-                            continue;
-                        }
-                        
-                        const parts = tokens[i][1].split('x');
-                        if (parts.length > 1) {
-                            // 重构tokens数组
-                            const newTokens = [];
-                            for (let j = 0; j < parts.length; j++) {
-                                if (parts[j]) {
-                                    // 保持原始token类型
-                                    if (constants.has(parts[j])) {
-                                        newTokens.push(['constant', parts[j]]);
-                                    } else {
-                                        newTokens.push(['string', parts[j]]);
-                                    }
-                                }
-                                if (j < parts.length - 1) {
-                                    newTokens.push(['operator', '*']);
-                                    addWarning('使用x作为乘法符号');
-                                }
-                            }
-                            // 替换原来的token
-                            tokens.splice(i, 1, ...newTokens);
-                            i += newTokens.length - 1; // 调整索引
-                        }
+                const text = token[1];
+                // 跳过 16 进制数（如 0xFF / 0XFF）
+                if (/^0[xX][0-9a-fA-F]+$/.test(text)) continue;
+
+                const parts = text.split(/[xX]/);
+                if (parts.length <= 1) continue;
+
+                // 所有非空片段都必须是纯数字（避免 ax2、x2 等被误拆）
+                if (!parts.every(p => p === '' || numPattern.test(p))) continue;
+                // 至少有一个真正的数字片段（避免把单独的 "x"/"X" 当成乘法）
+                if (!parts.some(p => numPattern.test(p))) continue;
+
+                const newTokens = [];
+                for (let j = 0; j < parts.length; j++) {
+                    const part = parts[j];
+                    if (part) {
+                        newTokens.push(['string', part]);
+                    }
+                    if (j < parts.length - 1) {
+                        newTokens.push(['operator', '*']);
                     }
                 }
+
+                tokens.splice(i, 1, ...newTokens);
+                i += newTokens.length - 1;
             }
+
             return tokens;
         }
 
@@ -718,11 +710,6 @@ const Calculator = (function() {
                         addInfo(`自定义变量: ${left.value} = ${strRightValue}`)
                     }
                     
-
-                    // 检查是否是x变量，提示无法使用x做为乘法
-                    if (left.value === 'x') {
-                        addWarning(`将无法使用x做为乘法符号`)
-                    }
                     return rightValue;
                 }
                 else {

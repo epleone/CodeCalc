@@ -119,6 +119,18 @@ function checkParentheses(expr, MAX_DEPTH = 1000) {
     }
 }
 
+// 规范化与 x/X 乘法相关，但在 token 阶段难以区分的场景
+function normalizeXInPreprocess(expr) {
+    // 1) 0 x 100 / 0 X 100（有空格）一律视为 0 * 100
+    expr = expr.replace(/\b0\s+[xX]\s+([+\-]?(?:\d+\.?\d*|\.\d+))/g, '0*$1');
+    // 2) 0x 100 / 0X 100（有空格）视为 0 * 100，避免被当作 16 进制
+    expr = expr.replace(/\b0x\s+([+\-]?(?:\d+\.?\d*|\.\d+))/gi, '0*$1');
+    // 3) (1+2)x3 / (1+2) x 3 / (1+2)x(3+4) / (1+2) x (3+4) 等，
+    //    在括号检查前把 `)` 后紧跟的 x/X 视为乘号 `*`
+    expr = expr.replace(/\)\s*[xX]\s*/g, ')*');
+    return expr;
+}
+
 // 检查变量名是否合法
 function checkVariableName(varName, operators, functions, constants) {
     // 检查是否是合法的变量名格式
@@ -127,6 +139,11 @@ function checkVariableName(varName, operators, functions, constants) {
             throw new Error(`变量名 "${varName}" 不能包含空格`);
         }
         throw new Error(`变量名 "${varName}" 格式不正确，只能包含字母、数字和下划线，且不以数字开头`);
+    }
+    
+    // 禁止使用内部运算符名 x/X 作为变量名
+    if (varName === 'x' || varName === 'X') {
+        throw new Error(`"${varName}"是乘法运算，不能用作变量名`);
     }
     
     // 检查是否以系统保留前缀开头
@@ -817,6 +834,7 @@ export {
     ccVariables,
     normalizeSymbols,
     checkParentheses,
+    normalizeXInPreprocess,
     checkVariableName,
     processStringLiterals,
     processDate,
