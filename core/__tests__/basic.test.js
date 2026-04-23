@@ -338,7 +338,18 @@ describe('Basic Functions and Operators Tests', () => {
     test('基本赋值 =', () => {
       expect(Calculator.calculate('a = 5').value).toBe('5');
       expect(Calculator.calculate('a').value).toBe('5');
-      
+
+      // 字母型 op: and, or, not 在变量名中
+      expect(Calculator.calculate('short = 1').value).toBe('1');
+      expect(Calculator.calculate('sand2 = 1').value).toBe('1');
+      expect(Calculator.calculate('snotk = 1').value).toBe('1');
+
+      expect(Calculator.calculate('a = true').value).toBe('true');
+      expect(Calculator.calculate('a').value).toBe('true');
+
+      expect(Calculator.calculate('a = false').value).toBe('false');
+      expect(Calculator.calculate('a').value).toBe('false');
+
       expect(Calculator.calculate('b = [1,2,3]').value).toBe('[1,2,3]');
       expect(Calculator.calculate('b').value).toBe('[1,2,3]');
     });

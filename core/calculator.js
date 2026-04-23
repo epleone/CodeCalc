@@ -169,6 +169,14 @@ const Calculator = (function() {
 
         function collectString() {
             let str = '';
+
+            const letterOpRegex = /^[a-zA-Z_]+$/;
+            const isLetterOperator = op => letterOpRegex.test(op);
+            const identifierTokenRegex = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+            const isIdentifierChar = c => /[a-zA-Z0-9_$]/.test(c || '');
+            const isInsideIdentifierToken = (currentToken, nextChar) =>
+                identifierTokenRegex.test(currentToken) && isIdentifierChar(nextChar);
+
             while (i < expr.length) {
                 const char = expr[i];
                 const potentialStr = str + char;
@@ -207,7 +215,10 @@ const Calculator = (function() {
                 }
 
                 // 检查是否是操作符
-                const isOperator = sortedOperators.some(op => expr.startsWith(op, i));
+                const isOperator = sortedOperators.some(op =>
+                    expr.startsWith(op, i) &&
+                    !(isLetterOperator(op) && isInsideIdentifierToken(str, expr[i + op.length]))
+                );
 
                 // 只有当当前字符串不是任何函数或常量的前缀时，才考虑运算符
                 const isPrefix = [...functions, ...constants].some(name => name.startsWith(potentialStr));
