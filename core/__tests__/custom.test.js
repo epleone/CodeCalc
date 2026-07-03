@@ -31,6 +31,16 @@ describe('Custom Functions Direct Injection Tests', () => {
     expectSameValue('fnum(a)', 'a%10');
   });
 
+  
+
+  test('数字类型：组合函数', () => {
+    addCustomFromDefinitionForTest(Calculator, FUNCTIONS, CONSTANTS, 'c(n,m)= n!/((n-m)!*m!)');
+    expectSameValue('c(100,2)', '100!/((100-2)!*2!)');
+    Calculator.calculate('a = 100');
+    expectSameValue('c(a, 2)', 'a!/((a-2)!*2!)');
+  });
+
+
   test('字符串类型：使用字符串函数定义自定义函数', () => {
     addCustomFromDefinitionForTest(Calculator, FUNCTIONS, CONSTANTS, 'fstr(x)=upper(x)');
 

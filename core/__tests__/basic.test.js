@@ -130,6 +130,73 @@ describe('Basic Functions and Operators Tests', () => {
     });
   });
 
+  describe('数字分隔符', () => {
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+
+    test('基本运算', () => {
+      expect(Calculator.calculate('1,000.00+1,000.00').value).toBe('2000');
+      expect(Calculator.calculate('2,000.00-1,000.00').value).toBe('1000');
+      expect(Calculator.calculate('1,000.00*1,000.00').value).toBe('1000000');
+      expect(Calculator.calculate('1,000.00x1,000.00').value).toBe('1000000');
+      expect(Calculator.calculate('1,000.00X1,000.00').value).toBe('1000000');
+      expect(Calculator.calculate('1,000.00/1,000.00').value).toBe('1');
+      expect(Calculator.calculate('55,451,244.00+43,574,121.00').value).toBe('99025365');
+    });
+
+    test('括号运算', () => {
+      expect(Calculator.calculate('(1,000.00+1,000.00)').value).toBe('2000');
+      expect(Calculator.calculate('(2,000.00-1,000.00)').value).toBe('1000');
+      expect(Calculator.calculate('(1,000.00*1,000.00)').value).toBe('1000000');
+      expect(Calculator.calculate('(1,000.00x1,000.00)').value).toBe('1000000');
+      expect(Calculator.calculate('(1,000.00X1,000.00)').value).toBe('1000000');
+      expect(Calculator.calculate('(1,000.00/1,000.00)').value).toBe('1');
+      expect(Calculator.calculate('(55,451,244.00+43,574,121.00)').value).toBe('99025365');
+    });
+
+    test('括号复合运算', () => {
+      expect(Calculator.calculate('(1,000.00+1,000.00)+0').value).toBe('2000');
+      expect(Calculator.calculate('(2,000.00-1,000.00)*1').value).toBe('1000');
+      expect(Calculator.calculate('(1,000.00*1,000.00)/1').value).toBe('1000000');
+      expect(Calculator.calculate('(1,000.00x1,000.00)x1').value).toBe('1000000');
+      expect(Calculator.calculate('(1,000.00X1,000.00)X1').value).toBe('1000000');
+      expect(Calculator.calculate('(1,000.00/1,000.00)/1').value).toBe('1');
+      expect(Calculator.calculate('(55,451,244.00+43,574,121.00)+0').value).toBe('99025365');
+    });
+ 
+    test('函数参数与矩阵副作用测试', () => {
+      // 函数参数（逗号作为参数分隔符，不会被识别为千分位）
+      expect(Calculator.calculate('max(1,000, 2,000)').value).toBe('2');  // 相当于 max(1, 0, 2, 0)
+      expect(Calculator.calculate('max(1,234)').value).toBe('234'); 
+      expect(Calculator.calculate('max(1,23)').value).toBe('23'); 
+      expect(Calculator.calculate('max(1,2345)').value).toBe('2345'); 
+      
+      // 矩阵/数组（逗号作为元素分隔符，不会被识别为千分位）
+      expect(Calculator.calculate('[1,000, 2,000]').value).toBe('[1,0,2,0]');
+      expect(Calculator.calculate('{1,000, 2,000; 3,000, 4,000}').value).toBe('{1,0,2,0;3,0,4,0}');
+      expect(Calculator.calculate('[1, 234]').value).toBe('[1,234]');
+      expect(Calculator.calculate('[1,23]').value).toBe('[1,23]');
+      
+      // 字符串字面量（保留原样）
+      expect(Calculator.calculate('length("1,000")').value).toBe('5');
+      expect(Calculator.calculate('"1,000"').value).toBe('1,000');
+      expect(Calculator.calculate('max(length(")]}"), 2,000)').value).toBe('3');
+      expect(Calculator.calculate('(1,000 + length(")"))').value).toBe('1001');
+      
+      // 负数和小数（正常识别千分位）
+      expect(Calculator.calculate('-1,234.56 * 2').value).toBe('-2469.12');
+      
+      // 嵌套情况：函数外的千分位正常解析，函数内的逗号作为分隔符
+      expect(Calculator.calculate('1,000 + max(1,000)').value).toBe('1001'); // 1000 + max(1, 0)
+      expect(Calculator.calculate('[1,000, 2,000] + 1').value).toBe('[2,1,3,1]');
+      expect(Calculator.calculate('1 + [1,000, 2,000] + 0').value).toBe('[2,1,3,1]');
+      expect(Calculator.calculate('1,000 + [1,000,2,000] + 2,000').value).toBe('[3001,3000,3002,3000]');
+      expect(Calculator.calculate('1,000 + {1,000,2,000} + 2,000').value).toBe('{3001,3000,3002,3000}');
+      expect(Calculator.calculate('1,000 + {1,000,2,000} + max(1,000)').value).toBe('{1002,1001,1003,1001}');
+    });
+  });
+
   describe('比较运算符', () => {
     beforeEach(() => {
       Calculator.clearAllCache();

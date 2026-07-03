@@ -57,6 +57,127 @@ function normalizeSymbols(expr) {
     return normalized;
 }
 
+// 移除数字中的千位分隔符（逗号），如 1,000.00 -> 1000.00
+// 在函数参数、数组、矩阵上下文中不移除逗号，避免破坏参数/元素分隔
+const THOUSAND_SEP_PATTERN = /^\d{1,3}(?:,\d{3})+(?![\d,])/;
+
+function isIdentifierChar(char) {
+    return /[a-zA-Z0-9_$]/.test(char);
+}
+
+function isFunctionCallStart(expr, openParenIndex) {
+    let i = openParenIndex - 1;
+    while (i >= 0 && /\s/.test(expr[i])) i--;
+    if (i < 0 || !isIdentifierChar(expr[i])) return false;
+
+    const end = i;
+    while (i >= 0 && isIdentifierChar(expr[i])) i--;
+
+    const identifier = expr.slice(i + 1, end + 1);
+    return /^[a-zA-Z_$][\w$]*$/.test(identifier);
+}
+
+function isBlockedByContext(contextStack) {
+    return contextStack.includes('func') || contextStack.includes('array') || contextStack.includes('matrix');
+}
+
+function stripNumberThousandSeparators(expr) {
+    let result = '';
+    let i = 0;
+    let quote = null;
+    const contextStack = [];
+
+    while (i < expr.length) {
+        const char = expr[i];
+
+        if (quote) {
+            result += char;
+            if (char === '\\' && i + 1 < expr.length) {
+                result += expr[i + 1];
+                i += 2;
+                continue;
+            }
+            if (char === quote) {
+                quote = null;
+            }
+            i++;
+            continue;
+        }
+
+        if (char === '"' || char === "'" || char === '`') {
+            quote = char;
+            result += char;
+            i++;
+            continue;
+        }
+
+        if (char === '[') {
+            contextStack.push('array');
+            result += char;
+            i++;
+            continue;
+        }
+
+        if (char === '{') {
+            contextStack.push('matrix');
+            result += char;
+            i++;
+            continue;
+        }
+
+        if (char === '(') {
+            if (isFunctionCallStart(expr, i)) {
+                contextStack.push('func');
+            } else {
+                contextStack.push('group');
+            }
+            result += char;
+            i++;
+            continue;
+        }
+
+        if (char === ']') {
+            if (contextStack[contextStack.length - 1] === 'array') {
+                contextStack.pop();
+            }
+            result += char;
+            i++;
+            continue;
+        }
+
+        if (char === '}') {
+            if (contextStack[contextStack.length - 1] === 'matrix') {
+                contextStack.pop();
+            }
+            result += char;
+            i++;
+            continue;
+        }
+
+        if (char === ')') {
+            const top = contextStack[contextStack.length - 1];
+            if (top === 'func' || top === 'group') {
+                contextStack.pop();
+            }
+            result += char;
+            i++;
+            continue;
+        }
+
+        const match = !isBlockedByContext(contextStack) ? expr.slice(i).match(THOUSAND_SEP_PATTERN) : null;
+        if (match) {
+            result += match[0].replace(/,/g, '');
+            i += match[0].length;
+            continue;
+        }
+
+        result += char;
+        i++;
+    }
+
+    return result;
+}
+
 // 检查括号匹配
 function checkParentheses(expr, MAX_DEPTH = 1000) {
     // 移除字符串字面量，避免干扰括号匹配检查
@@ -833,6 +954,7 @@ function processMatrix(expr) {
 export {
     ccVariables,
     normalizeSymbols,
+    stripNumberThousandSeparators,
     checkParentheses,
     normalizeXInPreprocess,
     checkVariableName,

@@ -9,6 +9,7 @@ import {
 import { 
     ccVariables,
     normalizeSymbols,
+    stripNumberThousandSeparators,
     checkParentheses,
     normalizeXInPreprocess,
     checkVariableName,
@@ -77,6 +78,9 @@ const Calculator = (function() {
         }
         
         expr = normalized;
+
+        // 移除数字千位分隔符（需在日期/时间戳/矩阵处理之前，避免误改函数参数逗号）
+        expr = stripNumberThousandSeparators(expr);
 
         // 清除cc 临时系统变量
         ccVariables.clear();
