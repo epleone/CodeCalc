@@ -7,16 +7,12 @@ import {
 } from './operators.js';
 
 import { 
-    ccVariables,
+    DURATION_UNIT_DEFINITIONS,
     normalizeSymbols,
-    stripNumberThousandSeparators,
     checkParentheses,
-    normalizeXInPreprocess,
     checkVariableName,
-    processStringLiterals,
-    processDate,
-    processTimestamp,
-    processMatrix
+    processMatrix,
+    rewriteLegacyHashTimestamp
 } from './preprocessUtils.js';
 
 import {
@@ -27,7 +23,7 @@ import {
     updateCustomFromStorage,
 } from './customFunctions.js';
 
-import { Utils, CCnode } from './utils.js';
+import { Utils, CCnode, Datestamp } from './utils.js';
 import { config } from './cfg.js';
 /**
  * 代码标准：
@@ -79,59 +75,39 @@ const Calculator = (function() {
         
         expr = normalized;
 
-        // 移除数字千位分隔符（需在日期/时间戳/矩阵处理之前，避免误改函数参数逗号）
-        expr = stripNumberThousandSeparators(expr);
-
-        // 清除cc 临时系统变量
-        ccVariables.clear();
-
-        // 处理日期
-        // console.log('processDate 1: ', expr);
-        expr = processDate(expr);
-        // console.log('processDate 2: ', expr);
-
-        // 处理时间间隔
-        // console.log('processTimestamp 1: ', expr);
-        expr = processTimestamp(expr);
-        // console.log('processTimestamp 2: ', expr);
-
-        // 处理字符串字面量
-        expr = processStringLiterals(expr);
+        // 当出现 #整数且不是合法 duration literal时，改成时间戳毫秒格式，并自动可视化为日期。
+        // 例如：#1693827361289 -> #1693827361289ms >#@
+        expr = rewriteLegacyHashTimestamp(expr);
 
         // 处理矩阵
         expr = processMatrix(expr);
         
-        // 预处理阶段中，规范化与 x/X 乘法相关且在 token 阶段难以区分的场景
-        expr = normalizeXInPreprocess(expr);
-        
-        // 在空格不影响语义之后，清除空格
-        expr = expr.replace(/\s/g, '');
-
-        // TODO: 打印ccVariables
-        // console.log('ccVariables: ', ccVariables);
-
-        // ccVariables添加到variables
-        for (const [key, value] of ccVariables) {
-            variables.set(key, value);
-        }
-
         // 检查括号匹配
         checkParentheses(expr, MAX_DEPTH);
 
-        // TODO: 如果有新属性，需要手动动态添加
-        for (const [name, func] of Object.entries(FUNCTIONS)) {
-            if (func.asProperty) {
-                operators.add('.' + name);
-                OPERATORS['.' + name] = {
-                    precedence: func.precedence !== undefined ? func.precedence : 5,  // 和后置运算符 %, ‰, ! 的优先级相同
-                    args: 1,
-                    func: func.func,
-                    position: 'postfix',
-                    ...(func.argTypes && { argTypes: func.argTypes }),
-                    ...(func.repr && { repr: func.repr }),
-                    ...(func.preventSelfReference && { preventSelfReference: func.preventSelfReference })
-                };
+        // 单变量函数默认支持后缀调用 .f
+        for (const func of Object.values(FUNCTIONS)) {
+            if (func.args === 1) {
+                func.asProperty = true;
             }
+        }
+
+        for (const [name, func] of Object.entries(FUNCTIONS)) {
+            let resolved = func;
+            while (resolved.alias) {
+                resolved = FUNCTIONS[resolved.alias];
+            }
+            if (!resolved?.asProperty) continue;
+
+            operators.add('.' + name);
+            OPERATORS['.' + name] = {
+                precedence: resolved.precedence !== undefined ? resolved.precedence : 5,  // 和后置运算符 %, ‰, ! 的优先级相同
+                args: 1,
+                func: resolved.func,
+                position: 'postfix',
+                ...(resolved.argTypes && { argTypes: resolved.argTypes }),
+                ...(resolved.preventSelfReference && { preventSelfReference: resolved.preventSelfReference })
+            };
         }
 
         // 按长度降序排列运算符，确保先匹配较长的运算符
@@ -142,161 +118,626 @@ const Calculator = (function() {
 
     // 2. 词法分析模块
     function tokenize(expr, operators, functions, constants) {
+        function isIdentifierStart(char) {
+            return /[a-zA-Z_$]/.test(char || '');
+        }
 
-        // 检查区分正号+和加号+，负号-和减号-
+        function isIdentifierChar(char) {
+            return /[a-zA-Z0-9_$]/.test(char || '');
+        }
+
+        function isOperandToken(token) {
+            if (!token) return false;
+            const [type, value] = token;
+            if (type === 'number' || type === 'identifier' || type === 'constant' || type === 'string_literal' || type === 'date_literal' || type === 'duration_literal') {
+                return true;
+            }
+            // 管道 token（>func）视为操作数，避免 1>sin+1 中的 + 被收成 unary+
+            if (type === 'pipe') {
+                return true;
+            }
+            // 裸函数名（少数残留路径）也视为操作数
+            if (type === 'function') {
+                return true;
+            }
+            if (type === 'delimiter' && value === ')') {
+                return true;
+            }
+            if (type === 'operator' && OPERATORS[value]?.position === 'postfix') {
+                return true;
+            }
+            return false;
+        }
+
         function shouldBeUnaryOperator() {
             if (tokens.length === 0) return true;
-            
-            const [type, value] = tokens[tokens.length - 1];
-
-            // 如果是在后缀操作符中后面(% ‰ !)，必须是加减法
-            // console.log('type: ', type);
-            // console.log('value: ', value);
-            // console.log('OPERATORS[value]: ', OPERATORS[value]);
-            if (type === 'operator' && OPERATORS[value]?.position === 'postfix')
+            const [prevType, prevValue] = tokens[tokens.length - 1];
+            if (prevType === 'operator' && prevValue === '%') {
                 return false;
+            }
+            return !isOperandToken(tokens[tokens.length - 1]);
+        }
 
-            // 单独处理 %， 会匹配到模运算符
-            if(value === '%')
-                return false;
-            
-            // 只有在这些情况下是二元运算符，其他都是一元运算符
-            return !(
-                type === 'string' ||           // 数字/变量后
-                type === 'constant' ||         // 常量后
-                (type === 'delimiter' && value === ')') ||  // 右括号后
-                type === 'function' ||         // 函数名后
-                type === 'identifier' ||       // 标识符后
-                (type === 'operator' && value.startsWith('.'))  // 属性访问运算符后
-            );
-        }  
+        function canStartModuloRightOperand() {
+            let j = i + 1;
+            while (j < expr.length && /\s/.test(expr[j])) j++;
+            const nextChar = expr[j];
+            if (!nextChar) return false;
+            return /\d/.test(nextChar) || nextChar === '.' || nextChar === '(' || nextChar === '@' || nextChar === '#' || nextChar === '"' || nextChar === "'" || nextChar === '`' || isIdentifierStart(nextChar);
+        }
 
-        function collectString() {
-            let str = '';
+        function isInFunctionArgs() {
+            return parenContextStack.includes('func');
+        }
 
-            const letterOpRegex = /^[a-zA-Z_]+$/;
-            const isLetterOperator = op => letterOpRegex.test(op);
-            const identifierTokenRegex = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
-            const isIdentifierChar = c => /[a-zA-Z0-9_$]/.test(c || '');
-            const isInsideIdentifierToken = (currentToken, nextChar) =>
-                identifierTokenRegex.test(currentToken) && isIdentifierChar(nextChar);
+        function readQuotedString() {
+            const quote = expr[i];
+            i++;
+            let content = '';
 
             while (i < expr.length) {
                 const char = expr[i];
-                const potentialStr = str + char;
-
-                // 如果当前积累的字符串可能是特殊形式的开始（如 0x），继续收集
-                if (str === '0' && (char === 'x' || char === 'b' || char === 'o')) {
-                    str += char;
-                    i++;
+                if (char === '\\' && i + 1 < expr.length) {
+                    const escaped = expr[i + 1];
+                    if (escaped === quote || escaped === '\\' || escaped === "'" || escaped === '"' || escaped === '`') {
+                        content += escaped;
+                    } else {
+                        content += '\\' + escaped;
+                    }
+                    i += 2;
                     continue;
                 }
-
-                // 处理科学计数法
-                // 1. 检查是否是有效的数字部分
-                if (/^\d+\.?\d*$/.test(str)) {
-                    // 2. 检查是否遇到科学计数法标记 e/E
-                    if (char === 'e' || char === 'E') {
-                        str += char;
-                        i++;
-                        // 3. 检查指数部分的符号
-                        if (i < expr.length && (expr[i] === '+' || expr[i] === '-')) {
-                            str += expr[i];
-                            i++;
-                        }
-                        // 4. 收集指数部分的数字
-                        while (i < expr.length && /\d/.test(expr[i])) {
-                            str += expr[i];
-                            i++;
-                        }
-                        continue;
-                    }
+                if (char === quote) {
+                    i++;
+                    return content;
                 }
-
-                // 检查是否是分隔符或定界符
-                if (delimiters.has(char) || separators.has(char)) {
-                    break;
-                }
-
-                // 检查是否是操作符
-                const isOperator = sortedOperators.some(op =>
-                    expr.startsWith(op, i) &&
-                    !(isLetterOperator(op) && isInsideIdentifierToken(str, expr[i + op.length]))
-                );
-
-                // 只有当当前字符串不是任何函数或常量的前缀时，才考虑运算符
-                const isPrefix = [...functions, ...constants].some(name => name.startsWith(potentialStr));
-
-                if (isOperator && !isPrefix) {
-                    break;
-                }
-
-                str += char;
+                content += char;
                 i++;
             }
-            return str;
+
+            throw new Error('未闭合的字符串字面量');
         }
 
-        // 在返回tokens之前添加后处理：统一把数字之间的 x/X 视为乘号 *
-        function postProcessTokens(tokens) {
-            const numPattern = /^[+\-]?(?:\d+\.?\d*|\.\d+)$/;
+        function readIdentifier() {
+            const start = i;
+            i++;
+            // $12 这类行号变量只吃 $ + 数字，便于 $1x2 → $1 * 2
+            if (expr[start] === '$' && i < expr.length && /\d/.test(expr[i])) {
+                while (i < expr.length && /\d/.test(expr[i])) i++;
+                return expr.slice(start, i);
+            }
+            while (i < expr.length && isIdentifierChar(expr[i])) {
+                i++;
+            }
+            return expr.slice(start, i);
+        }
 
-            for (let i = 0; i < tokens.length; i++) {
-                const token = tokens[i];
-                if (token[0] !== 'string') continue;
+        function readNumber() {
+            const start = i;
+            const allowThousands = !isInFunctionArgs();
 
-                const text = token[1];
-                // 跳过 16 进制数（如 0xFF / 0XFF）
-                if (/^0[xX][0-9a-fA-F]+$/.test(text)) continue;
+            if ((expr.startsWith('0x', i) || expr.startsWith('0X', i)) && /[0-9a-fA-F]/.test(expr[i + 2] || '')) {
+                i += 2;
+                while (i < expr.length && /[0-9a-fA-F]/.test(expr[i])) i++;
+                return expr.slice(start, i);
+            }
 
-                const parts = text.split(/[xX]/);
-                if (parts.length <= 1) continue;
+            if ((expr.startsWith('0b', i) || expr.startsWith('0B', i)) && /[01]/.test(expr[i + 2] || '')) {
+                i += 2;
+                while (i < expr.length && /[01]/.test(expr[i])) i++;
+                return expr.slice(start, i);
+            }
 
-                // 所有非空片段都必须是纯数字（避免 ax2、x2 等被误拆）
-                if (!parts.every(p => p === '' || numPattern.test(p))) continue;
-                // 至少有一个真正的数字片段（避免把单独的 "x"/"X" 当成乘法）
-                if (!parts.some(p => numPattern.test(p))) continue;
+            if ((expr.startsWith('0o', i) || expr.startsWith('0O', i)) && /[0-7]/.test(expr[i + 2] || '')) {
+                i += 2;
+                while (i < expr.length && /[0-7]/.test(expr[i])) i++;
+                return expr.slice(start, i);
+            }
 
-                const newTokens = [];
-                for (let j = 0; j < parts.length; j++) {
-                    const part = parts[j];
-                    if (part) {
-                        newTokens.push(['string', part]);
+            let j = i;
+            if (expr[j] !== '.') {
+                while (j < expr.length && /[\d,]/.test(expr[j])) {
+                    if (expr[j] === ',' && !allowThousands) break;
+                    j++;
+                }
+            }
+
+            let intPart = expr.slice(i, j);
+            if (intPart.includes(',')) {
+                if (/^\d{1,3}(?:,\d{3})+$/.test(intPart)) {
+                    intPart = intPart.replace(/,/g, '');
+                } else {
+                    const firstComma = intPart.indexOf(',');
+                    intPart = intPart.slice(0, firstComma);
+                    j = i + intPart.length;
+                }
+            }
+
+            if (!intPart && expr[j] === '.') {
+                intPart = '0';
+            }
+
+            let fracPart = '';
+            if (expr[j] === '.' && /\d/.test(expr[j + 1] || '')) {
+                const fracStart = j;
+                j++;
+                while (j < expr.length && /\d/.test(expr[j])) j++;
+                fracPart = expr.slice(fracStart, j);
+            }
+
+            let expPart = '';
+            if (j < expr.length && /[eE]/.test(expr[j])) {
+                let k = j + 1;
+                if (k < expr.length && /[+-]/.test(expr[k])) k++;
+                const expDigitsStart = k;
+                while (k < expr.length && /\d/.test(expr[k])) k++;
+                if (k > expDigitsStart) {
+                    expPart = expr.slice(j, k);
+                    j = k;
+                }
+            }
+
+            i = j;
+            return intPart + fracPart + expPart;
+        }
+
+        function parseDateLiteralValue(dateString, format) {
+            const now = new Date();
+            let date;
+
+            switch (format) {
+                case 'now':
+                    date = now;
+                    break;
+                case 'today':
+                    date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    break;
+                case 'YYYY-MM-DD HH:mm:ss':
+                    date = new Date(dateString);
+                    break;
+                case 'YYYY-MM-DD HH:mm':
+                    date = new Date(dateString + ':00');
+                    break;
+                case 'YYYY-MM-DD':
+                    date = new Date(dateString + 'T00:00:00');
+                    break;
+                case 'MM-DD HH:mm:ss':
+                    dateString = dateString.replace(/^(\d{1,2})-(\d{1,2})/, (match, m, d) =>
+                        `${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+                    date = new Date(now.getFullYear() + '-' + dateString);
+                    break;
+                case 'MM-DD HH:mm':
+                    dateString = dateString.replace(/^(\d{1,2})-(\d{1,2})/, (match, m, d) =>
+                        `${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+                    date = new Date(now.getFullYear() + '-' + dateString + ':00');
+                    break;
+                case 'YYYY-MM':
+                    date = new Date(dateString + '-01T00:00:00');
+                    break;
+                case 'MM-DD':
+                    dateString = dateString.replace(/(\d{1,2})-(\d{1,2})/, (match, m, d) =>
+                        `${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+                    date = new Date(now.getFullYear() + '-' + dateString + 'T00:00:00');
+                    break;
+                case 'YYYY':
+                    date = new Date(dateString + '-01-01T00:00:00');
+                    break;
+                default:
+                    return null;
+            }
+
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        function tryReadDateLiteral() {
+            if (expr[i] !== '@') return null;
+
+            let j = i + 1;
+            while (j < expr.length && /\s/.test(expr[j])) j++;
+            const rest = expr.slice(j);
+
+            const patterns = [
+                {
+                    regex: /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})(?![\d:])/,
+                    format: 'YYYY-MM-DD HH:mm:ss',
+                    extract: m => `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')} ${m[4]}:${m[5]}:${m[6]}`
+                },
+                {
+                    regex: /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2})(?![\d:])/,
+                    format: 'YYYY-MM-DD HH:mm',
+                    extract: m => `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')} ${m[4]}:${m[5]}`
+                },
+                {
+                    regex: /^(\d{4})-(\d{1,2})-(\d{1,2})(?![-\d])/,
+                    format: 'YYYY-MM-DD',
+                    extract: m => `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
+                },
+                {
+                    regex: /^(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})(?![\d:])/,
+                    format: 'MM-DD HH:mm:ss',
+                    extract: m => `${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')} ${m[3]}:${m[4]}:${m[5]}`
+                },
+                {
+                    regex: /^(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2})(?![\d:])/,
+                    format: 'MM-DD HH:mm',
+                    extract: m => `${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')} ${m[3]}:${m[4]}`
+                },
+                {
+                    regex: /^(\d{4})-(\d{1,2})(?![-\d])/,
+                    format: 'YYYY-MM',
+                    extract: m => `${m[1]}-${m[2].padStart(2, '0')}`
+                },
+                {
+                    regex: /^(\d{1,2})-(\d{1,2})(?![-\d])/,
+                    format: 'MM-DD',
+                    extract: m => `${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`
+                },
+                {
+                    regex: /^(\d{4})(?![-\d])/,
+                    format: 'YYYY',
+                    extract: m => m[1]
+                },
+                {
+                    regex: /^(now)(?![a-zA-Z0-9_])/,
+                    format: 'now',
+                    extract: m => m[1]
+                },
+                {
+                    regex: /^(today)(?![a-zA-Z0-9_])/,
+                    format: 'today',
+                    extract: m => m[1]
+                }
+            ];
+
+            for (const { regex, format, extract } of patterns) {
+                const match = regex.exec(rest);
+                if (!match) continue;
+                const parsed = parseDateLiteralValue(extract(match), format);
+                if (!parsed) continue;
+                return {
+                    value: parsed,
+                    nextIndex: j + match[0].length
+                };
+            }
+
+            return null;
+        }
+
+        function tryReadDurationLiteral() {
+            if (expr[i] !== '#') return null;
+
+            let j = i + 1;
+            while (j < expr.length && /\s/.test(expr[j])) j++;
+
+            const readParenthesizedExpression = (start) => {
+                if (expr[start] !== '(') return null;
+                let cursor = start + 1;
+                let depth = 1;
+                while (cursor < expr.length && depth > 0) {
+                    const currentChar = expr[cursor];
+                    if (currentChar === '(') {
+                        depth++;
+                    } else if (currentChar === ')') {
+                        depth--;
                     }
-                    if (j < parts.length - 1) {
-                        newTokens.push(['operator', '*']);
+                    cursor++;
+                }
+                if (depth !== 0) {
+                    throw new Error('时长字面量中括号未闭合');
+                }
+                const raw = expr.slice(start + 1, cursor - 1).trim();
+                if (!raw) {
+                    throw new Error('时长字面量括号内不能为空');
+                }
+                return { raw, nextIndex: cursor };
+            };
+
+            const clockMatch = /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?(?![\d:])/.exec(expr.slice(j));
+            if (clockMatch) {
+                const hours = Number(clockMatch[1]);
+                const minutes = Number(clockMatch[2]);
+                const seconds = Number(clockMatch[3] ?? '0');
+                if (minutes >= 60 || seconds >= 60) {
+                    throw new Error('时分秒格式错误，分钟和秒需小于60');
+                }
+                const totalMilliseconds = (((hours * 60) + minutes) * 60 + seconds) * 1000;
+                return {
+                    value: {
+                        parts: [
+                            {
+                                unit: 'milliseconds',
+                                valueType: 'number',
+                                value: String(totalMilliseconds)
+                            }
+                        ]
+                    },
+                    nextIndex: j + clockMatch[0].length
+                };
+            }
+
+            const seenUnits = new Set();
+            const parts = [];
+
+            while (j < expr.length) {
+                while (j < expr.length && /\s/.test(expr[j])) j++;
+                if (j >= expr.length) break;
+
+                let valueType = null;
+                let valueRaw = null;
+
+                const parenthesized = readParenthesizedExpression(j);
+                if (parenthesized) {
+                    valueType = 'expression';
+                    valueRaw = parenthesized.raw;
+                    j = parenthesized.nextIndex;
+                } else {
+                    const numberMatch = /^[+-]?\d+(?:\.\d+)?/.exec(expr.slice(j));
+                    if (!numberMatch) {
+                        break;
+                    }
+                    valueType = 'number';
+                    valueRaw = numberMatch[0];
+                    j += numberMatch[0].length;
+                }
+
+                while (j < expr.length && /\s/.test(expr[j])) j++;
+
+                let matchedUnit = null;
+                let canonicalUnit = null;
+                for (const [unitText, unitKey] of DURATION_UNIT_DEFINITIONS) {
+                    const tail = expr.slice(j, j + unitText.length);
+                    if (tail.length !== unitText.length) continue;
+                    if (tail.toLowerCase() !== unitText.toLowerCase()) continue;
+                    matchedUnit = unitText;
+                    canonicalUnit = unitKey;
+                    break;
+                }
+
+                if (!matchedUnit) {
+                    if (parts.length === 0) {
+                        return null;
+                    }
+                    throw new Error('时长字面量缺少合法单位');
+                }
+
+                if (seenUnits.has(canonicalUnit)) {
+                    throw new Error(`时长单位 "${canonicalUnit}" 重复赋值`);
+                }
+                seenUnits.add(canonicalUnit);
+
+                parts.push({
+                    unit: canonicalUnit,
+                    valueType,
+                    value: valueRaw
+                });
+                j += matchedUnit.length;
+            }
+
+            if (parts.length === 0) {
+                return null;
+            }
+
+            return {
+                value: { parts },
+                nextIndex: j
+            };
+        }
+
+        function maybeXAsMultiply() {
+            const char = expr[i];
+            if (char !== 'x' && char !== 'X') return false;
+            if (!isOperandToken(tokens[tokens.length - 1])) return false;
+
+            // 紧贴字母/_：不当乘法（2xa、2xor）；空格后仍可（2 x a）；$ 可紧贴（2x$1）
+            const nextRaw = expr[i + 1];
+            if (nextRaw && /[a-zA-Z_]/.test(nextRaw)) return false;
+
+            let nextIndex = i + 1;
+            while (nextIndex < expr.length && /\s/.test(expr[nextIndex])) nextIndex++;
+            const nextChar = expr[nextIndex];
+            if (!nextChar) return false;
+            const canStartOperand = /\d/.test(nextChar) || nextChar === '.' || nextChar === '(' || nextChar === '@' || nextChar === '#' || nextChar === '"' || nextChar === "'" || nextChar === '`' || isIdentifierStart(nextChar);
+            if (!canStartOperand) return false;
+
+            if (variables.has(char)) {
+                throw new Error(`变量 "${char}" 已存在，无法使用${char}作为乘法符号`);
+            }
+
+            addWarning(`使用${char}作为乘法符号`);
+            tokens.push(['operator', '*']);
+            i++;
+            return true;
+        }
+
+        function isPostfixOperatorName(opName) {
+            if (!OPERATORS[opName]) return false;
+
+            let current = opName;
+            const visited = new Set();
+            while (OPERATORS[current] && !visited.has(current)) {
+                visited.add(current);
+                const meta = OPERATORS[current];
+                if (meta.position === 'postfix') {
+                    return true;
+                }
+                if (!meta.alias) {
+                    break;
+                }
+                current = meta.alias;
+            }
+            return false;
+        }
+
+        const spacedPostfixCandidates = Object.keys(OPERATORS)
+            .filter(op => op.length > 1 && op.startsWith('>') && isPostfixOperatorName(op))
+            .sort((a, b) => b.length - a.length);
+
+        function matchSpacedPostfixOperator() {
+            if (expr[i] !== '>') return null;
+
+            const tryMatchWithOptionalSpaces = (operatorName) => {
+                let cursor = i;
+
+                for (let idx = 0; idx < operatorName.length; idx++) {
+                    const ch = operatorName[idx];
+
+                    if (idx > 0) {
+                        while (cursor < expr.length && /\s/.test(expr[cursor])) {
+                            cursor++;
+                        }
+                    }
+
+                    if (expr[cursor] !== ch) {
+                        return null;
+                    }
+                    cursor++;
+                }
+
+                // 对以字母/数字/下划线结尾的操作符（如 >cn）做边界校验
+                const tailChar = operatorName[operatorName.length - 1];
+                if (/[a-zA-Z0-9_$]/.test(tailChar)) {
+                    const nextChar = expr[cursor] || '';
+                    if (/[a-zA-Z0-9_$]/.test(nextChar)) {
+                        return null;
                     }
                 }
 
-                tokens.splice(i, 1, ...newTokens);
-                i += newTokens.length - 1;
+                return { op: operatorName, nextIndex: cursor };
+            };
+
+            for (const operatorName of spacedPostfixCandidates) {
+                const matched = tryMatchWithOptionalSpaces(operatorName);
+                if (matched) {
+                    return matched;
+                }
             }
 
-            return tokens;
+            return null;
         }
 
         const tokens = [];
         let i = 0;
+        const parenContextStack = [];
 
         // 使用新的 DELIMITERS 和 SEPARATORS
         const delimiters = new Set(Object.keys(DELIMITERS));
         const separators = new Set(Object.keys(SEPARATORS));
 
         const sortedOperators = [...operators].sort((a, b) => b.length - a.length);
-        let lastTokenType = null;  // 添加上一个 token 的类型记录
 
         while (i < expr.length) {
             const char = expr[i];
-            const remainingExpr = expr.slice(i);
+
+            if (/\s/.test(char)) {
+                i++;
+                continue;
+            }
+
+            if (char === '"' || char === "'" || char === '`') {
+                tokens.push(['string_literal', readQuotedString()]);
+                continue;
+            }
+
+            if (char === '@' && !isOperandToken(tokens[tokens.length - 1])) {
+                const dateLiteral = tryReadDateLiteral();
+                if (dateLiteral) {
+                    tokens.push(['date_literal', dateLiteral.value]);
+                    i = dateLiteral.nextIndex;
+                    continue;
+                }
+            }
+
+            if (char === '#' && !isOperandToken(tokens[tokens.length - 1])) {
+                const durationLiteral = tryReadDurationLiteral();
+                if (durationLiteral) {
+                    tokens.push(['duration_literal', durationLiteral.value]);
+                    i = durationLiteral.nextIndex;
+                    continue;
+                }
+            }
+
+            if (char === '(') {
+                const prev = tokens[tokens.length - 1];
+                const context = prev && prev[0] === 'function' ? 'func' : 'group';
+                parenContextStack.push(context);
+                tokens.push(['delimiter', '(']);
+                i++;
+                continue;
+            }
+
+            if (char === ')') {
+                if (parenContextStack.length > 0) {
+                    parenContextStack.pop();
+                }
+                tokens.push(['delimiter', ')']);
+                i++;
+                continue;
+            }
+
+            if (separators.has(char)) {
+                tokens.push(['separator', char]);
+                i++;
+                continue;
+            }
+
+            if (maybeXAsMultiply()) {
+                continue;
+            }
+
+            const spacedPostfix = matchSpacedPostfixOperator();
+            if (spacedPostfix && OPERATORS[spacedPostfix.op]) {
+                if (OPERATORS[spacedPostfix.op].alias) {
+                    tokens.push(['operator', OPERATORS[spacedPostfix.op].alias]);
+                } else {
+                    tokens.push(['operator', spacedPostfix.op]);
+                }
+                i = spacedPostfix.nextIndex;
+                continue;
+            }
+
+            // 函数管道：>func / > func（后面不是 '('）→ pipe token
+            // 常量/已定义变量仍留给比较运算符 >
+            if (char === '>') {
+                let j = i + 1;
+                while (j < expr.length && /\s/.test(expr[j])) j++;
+                if (j < expr.length && isIdentifierStart(expr[j])) {
+                    let k = j;
+                    while (k < expr.length && isIdentifierChar(expr[k])) k++;
+                    const name = expr.slice(j, k);
+                    let t = k;
+                    while (t < expr.length && /\s/.test(expr[t])) t++;
+                    if (expr[t] !== '(') {
+                        const isFunc = functions.has(name);
+                        const isConst = constants.has(name);
+                        const isVar = variables.has(name);
+                        if (isFunc || (!isConst && !isVar)) {
+                            let resolved = name;
+                            if (isFunc && FUNCTIONS[name]?.alias) {
+                                resolved = FUNCTIONS[name].alias;
+                            }
+                            tokens.push(['pipe', resolved]);
+                            i = k;
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            if (/\d/.test(char) || (char === '.' && /\d/.test(expr[i + 1]))) {
+                tokens.push(['number', readNumber()]);
+                continue;
+            }
 
             // 检查操作符
             let foundOperator = false;
+            const remainingExpr = expr.slice(i);
             for (const op of sortedOperators) {
                 if (remainingExpr.startsWith(op)) {
-                    // 如果是赋值运算符，将前一个字符串token改为identifier类型
-                    if (op === '=' || OPERATORS[op].isCompoundAssignment) {
-                        if (tokens.length > 0 && tokens[tokens.length - 1][0] === 'string') {
-                            tokens[tokens.length - 1][0] = 'identifier';
+                    if (/^[a-zA-Z_]+$/.test(op)) {
+                        const prevChar = expr[i - 1];
+                        const nextChar = expr[i + op.length];
+                        if (isIdentifierStart(prevChar) || isIdentifierStart(nextChar)) {
+                            continue;
                         }
                     }
                     // 移除连续运算符的检查
@@ -314,12 +755,13 @@ const Calculator = (function() {
                         } else {
                             tokens.push(['operator', '-']);
                         }
-                    // } else if (op === '@') {
-                    //     // 先统一标记为@，后面根据情况判断是日期符号还是矩阵乘法
-                    //     tokens.push(['operator', '@']);  
-                    // }else if (op === '%') {
-                    //     // 先统一标记为%，后面根据情况判断是百分号还是取模
-                    //     tokens.push(['operator', '%']);  
+                    } else if (op === '%') {
+                        if (!isOperandToken(tokens[tokens.length - 1])) {
+                            throw new Error('百分号前缺少操作数');
+                        }
+                        tokens.push(['operator', canStartModuloRightOperand() ? '%' : 'unary%']);
+                    } else if (op === '@') {
+                        tokens.push(['operator', isOperandToken(tokens[tokens.length - 1]) ? 'matmul@' : '@']);
                     } else {
                         // 其他操作符的处理
                         if (separators.has(op)) {
@@ -334,8 +776,7 @@ const Calculator = (function() {
                                 tokens.push(['operator', op]);
                             }
                         }
-                    }
-                    lastTokenType = 'operator';
+                    } 
                     i += op.length;
                     foundOperator = true;
                     break;
@@ -343,40 +784,41 @@ const Calculator = (function() {
             }
             if (foundOperator) continue;
 
-            // 检查分隔符和定界符
-            if (separators.has(char)) {
-                tokens.push(['separator', char]);
-                lastTokenType = 'separator';
-                i++;
-            } else if (delimiters.has(char)) {
-                tokens.push(['delimiter', char]);
-                lastTokenType = 'delimiter';
-                i++;
-            } else {
-                // 其他所有情况都作为字符串处理
-                const str = collectString();
-                if (str) {
-                    if (functions.has(str)) {
-                        // 检查函数是否有别名
-                        if (FUNCTIONS[str] && FUNCTIONS[str].alias) {
-                            tokens.push(['function', FUNCTIONS[str].alias]);
-                        } else {
-                            tokens.push(['function', str]);
-                        }
-                        lastTokenType = 'function';
-                    } else if (constants.has(str)) {
-                        tokens.push(['constant', str]);
-                        lastTokenType = 'constant';
+            if (isIdentifierStart(char)) {
+                const identifier = readIdentifier();
+                if (functions.has(identifier)) {
+                    if (FUNCTIONS[identifier] && FUNCTIONS[identifier].alias) {
+                        tokens.push(['function', FUNCTIONS[identifier].alias]);
                     } else {
-                        tokens.push(['string', str]);
-                        lastTokenType = 'string';
+                        tokens.push(['function', identifier]);
                     }
+                } else if (constants.has(identifier)) {
+                    tokens.push(['constant', identifier]);
+                } else {
+                    tokens.push(['identifier', identifier]);
+                }
+                continue;
+            }
+
+            if (constants.has(char)) {
+                tokens.push(['constant', char]);
+                i++;
+                continue;
+            }
+
+            // `.f` 形式：函数存在但不支持后缀调用时给出明确错误
+            if (char === '.' && isIdentifierStart(expr[i + 1])) {
+                let j = i + 1;
+                while (j < expr.length && isIdentifierChar(expr[j])) j++;
+                const name = expr.slice(i + 1, j);
+                if (functions.has(name)) {
+                    throw new Error(`函数${name}不支持作为后缀调用`);
                 }
             }
-        }
 
-        const processedTokens = postProcessTokens(tokens);
-        return processedTokens;
+            throw new Error(`无法识别的字符: "${char}"`);
+        }
+        return tokens;
     }
 
     // 3. 语法分析模块
@@ -404,6 +846,9 @@ const Calculator = (function() {
             return { value, args, type };
         }
 
+        // 表达式级逗号仅在函数实参外启用；实参内仍用 separator 切分
+        let arglistEnabled = true;
+
         function parsePrimary() {
             if (current >= tokens.length) {
                 throw new Error('意外的表达式结束');
@@ -420,15 +865,25 @@ const Calculator = (function() {
                 
                 case 'constant':
                 case 'identifier':
-                case 'string':
+                case 'number':
+                case 'string_literal':
+                case 'date_literal':
+                case 'duration_literal':
                     // 这些都是叶子节点
                     return createNode(value, [], type);
                     
                 case 'delimiter':
                     if (value === '(') {
-                        const expr = parseExpression(0);
-                        expectDelimiter(')');
-                        return expr;
+                        // 括号内恢复表达式级逗号，以支持 f((1,2 > max))
+                        const prevArglistEnabled = arglistEnabled;
+                        arglistEnabled = true;
+                        try {
+                            const expr = parseExpression(0);
+                            expectDelimiter(')');
+                            return expr;
+                        } finally {
+                            arglistEnabled = prevArglistEnabled;
+                        }
                     }
                     throw new Error(`意外的定界符: ${value}`);
                     
@@ -440,22 +895,44 @@ const Calculator = (function() {
         function parseFunctionCall(funcName) {
             expectDelimiter('(');
             const args = [];
+            const prevArglistEnabled = arglistEnabled;
+            arglistEnabled = false;
             
-            while (current < tokens.length) {
-                if (tokens[current][0] === 'delimiter' && 
-                    tokens[current][1] === ')') {
-                    break;
+            try {
+                while (current < tokens.length) {
+                    if (tokens[current][0] === 'delimiter' && 
+                        tokens[current][1] === ')') {
+                        break;
+                    }
+                    
+                    args.push(parseExpression(0));
+
+                    if (current >= tokens.length) {
+                        break;
+                    }
+
+                    if (tokens[current][0] === 'separator') {
+                        current++;
+                        continue;
+                    }
+
+                    if (tokens[current][0] === 'delimiter' && tokens[current][1] === ')') {
+                        break;
+                    }
+
+                    throw new Error(`函数 "${funcName}" 的参数需要用逗号分隔`);
                 }
                 
-                args.push(parseExpression(0));
-                
-                if (tokens[current][0] === 'separator') {
-                    current++;
-                }
+                expectDelimiter(')');
+            } finally {
+                arglistEnabled = prevArglistEnabled;
             }
-            
-            expectDelimiter(')');
             return createNode(funcName, args, 'function');
+        }
+
+        // 表达式级逗号扁平化
+        function flattenArglist(node) {
+            return node.type === 'arglist' ? node.args : [node];
         }
 
         function expectDelimiter(expected) {
@@ -500,72 +977,13 @@ const Calculator = (function() {
             depth++;
             checkDepth();
 
+            // 表达式级逗号（多参收集）与比较/管道同级
+            const COMMA_PRECEDENCE = 1;
+
             let left = parseUnary(precedence);
             
             while (current < tokens.length) {
                 const [type, value] = tokens[current];
-                
-                // 区分百分号运算符和取模运算符
-                if (type === 'operator' && value === '%') {
-                    // 看下一个token来判断是百分号还是取模
-                    const nextToken = tokens[current + 1];
-                    
-                    // 判断是否是取模运算符 - 后面必须是可以作为操作数的token
-                    const isModulo = nextToken && (
-                        nextToken[0] === 'string' ||  // 数字或变量
-                        nextToken[0] === 'constant' || // 常量
-                        nextToken[0] === 'function' || // 函数
-                        (nextToken[0] === 'delimiter' && nextToken[1] === '(') // 左括号
-                    );
-
-                    if (isModulo) {
-                        // 作为取模运算符处理
-                        if (OPERATORS['%'].precedence < precedence) {
-                            break;
-                        }
-                        current++;
-                        const right = parseExpression(OPERATORS['%'].precedence + 1);
-                        left = createNode('%', [left, right], 'operator');
-                    } else {
-                        // 作为百分号处理
-                        current++;
-                        left = createNode('unary%', [left], 'operator');
-                    }
-                    continue;
-                }
-
-                // 区分日期符号和矩阵乘法
-                if (type === 'operator' && value === '@') {
-                    // 看前一个token来判断是日期符号还是矩阵乘法
-                    const prevToken = tokens[current - 1];
-                
-                    // console.log("prevToken: ", prevToken);
-
-                    // 判断是否是矩阵乘法运算符 - 前面必须是可以作为操作数的token
-                    const isMatmul = prevToken && (
-                        prevToken[0] === 'string' ||  // 数字或变量
-                        prevToken[0] === 'constant' || // 常量
-                        prevToken[0] === 'function' || // 函数
-                        (prevToken[0] === 'delimiter' && prevToken[1] === ')') || // 右括号
-                        (prevToken[0] === 'operator' && prevToken[1] === '.T')    // 转置操作符
-                    );
-
-                    if (isMatmul) {
-                        // 作为矩阵乘法运算符处理
-                        if (OPERATORS['matmul@'].precedence < precedence) {
-                            break;
-                        }
-                        current++;
-                        const right = parseExpression(OPERATORS['matmul@'].precedence + 1);
-                        left = createNode('matmul@', [left, right], 'operator');
-                    } else {
-                        // 作为日期符号处理
-                        current++;
-                        const right = parseExpression(OPERATORS['@'].precedence + 1);
-                        left = createNode('@', [right], 'operator');
-                    }
-                    continue;
-                }
                 
                 // 处理后缀运算符
                 if (type === 'operator' && 
@@ -579,6 +997,31 @@ const Calculator = (function() {
                     left = createNode(value, [left], 'operator');
                     continue;
                 }
+
+                // 表达式级逗号：a,b > f ≡ f(a,b)；单独的 arglist 在求值时报错
+                if (arglistEnabled && type === 'separator' && value === ',') {
+                    if (COMMA_PRECEDENCE < precedence) {
+                        break;
+                    }
+                    current++;
+                    const right = parseExpression(COMMA_PRECEDENCE + 1);
+                    left = createNode(',', [...flattenArglist(left), right], 'arglist');
+                    continue;
+                }
+
+                // 函数管道 token：xxx > f ≡ f(xxx)，优先级与比较相同（1）
+                if (type === 'pipe') {
+                    const PIPE_PRECEDENCE = 1;
+                    if (PIPE_PRECEDENCE < precedence) {
+                        break;
+                    }
+                    current++;
+                    if (!FUNCTIONS[value]) {
+                        throw new Error(`函数 "${value}" 不存在`);
+                    }
+                    left = createNode(value, flattenArglist(left), 'function');
+                    continue;
+                }
                 
                 // 处理中缀运算符
                 if (type !== 'operator' || 
@@ -590,6 +1033,9 @@ const Calculator = (function() {
 
                 current++;
                 const op = OPERATORS[value];
+                if (op.isCompoundAssignment && left.type !== 'identifier') {
+                    throw new Error('赋值运算符左侧必须是变量名');
+                }
                 const nextPrecedence = op.isCompoundAssignment ? 
                     op.precedence :  
                     op.precedence + 1;  
@@ -658,30 +1104,88 @@ const Calculator = (function() {
 
     // 4. 求值模块
     function evaluate(node, operators, functions, constants, depth = 0) {
+        function evaluateDurationPartValue(part) {
+            if (part.valueType === 'number') {
+                return Number(part.value);
+            }
+
+            if (part.valueType === 'expression') {
+                if (part.value.includes('#')) {
+                    throw new Error('时长字面量括号内不支持嵌套 # 表达式');
+                }
+                const innerTokens = tokenize(part.value, operators, functions, constants);
+                const innerAst = buildAst(innerTokens, operators, functions);
+                const innerResult = evaluate(innerAst, operators, functions, constants, depth + 1);
+                const numeric = Number(Utils.convertTypes(innerResult, 'number'));
+                if (!Number.isFinite(numeric)) {
+                    throw new Error(`时长字面量单位 "${part.unit}" 的值必须是有限数字`);
+                }
+                return numeric;
+            }
+
+            throw new Error(`未知的时长值类型: ${part.valueType}`);
+        }
+
+        function buildDatestampFromDurationLiteral(durationLiteral) {
+            const values = {
+                years: 0,
+                months: 0,
+                weeks: 0,
+                days: 0,
+                hours: 0,
+                minutes: 0,
+                seconds: 0,
+                milliseconds: 0
+            };
+
+            for (const part of durationLiteral.parts) {
+                const numericValue = evaluateDurationPartValue(part);
+                if ((part.unit === 'years' || part.unit === 'months') && !Number.isInteger(numericValue)) {
+                    throw new Error(`${part.unit === 'years' ? '年' : '月'}必须是整数`);
+                }
+                values[part.unit] += numericValue;
+            }
+
+            const totalMilliseconds = ((((values.weeks * 7 + values.days) * 24 + values.hours) * 60 + values.minutes) * 60 + values.seconds) * 1000 + values.milliseconds;
+            return new Datestamp(values.years, values.months, totalMilliseconds);
+        }
+
         if (depth > MAX_DEPTH) {
             throw new Error('表达式求值嵌套深度过大，可能存在无限递归');
         }
 
         if (!node) return 0;
 
-        // 处理单独的字符串节点：a = 1 中的 1
-        // 也可能是变量名
-        if (node.type === 'string') {
-            if (variables.has(node.value)) {
-                return variables.get(node.value);
-            }
+        // 逗号列表仅作管道多参收集，不能独立求值
+        if (node.type === 'arglist') {
+            throw new Error('逗号表达式仅用于函数管道');
+        }
 
-            // 如果不是变量，则转换为CCnode，用于表示表达式中定义的类型
+        // 处理数字字面量
+        if (node.type === 'number') {
             return new CCnode(node.value);
+        }
+
+        // 处理字符串字面量
+        if (node.type === 'string_literal') {
+            return node.value;
+        }
+
+        // 处理日期字面量
+        if (node.type === 'date_literal') {
+            return node.value;
+        }
+
+        if (node.type === 'duration_literal') {
+            return buildDatestampFromDurationLiteral(node.value);
         }
 
         // 处理标识符节点 - 赋值表达式左侧的变量名
         if (node.type === 'identifier') {
-            // 这里该不该报提醒？
             if (variables.has(node.value)) {
                 return variables.get(node.value);
             }
-            return node.value;  // 不转换为数字
+            throw new Error(`变量 "${node.value}" 未定义`);
         }
                 
 
@@ -702,7 +1206,7 @@ const Calculator = (function() {
                     throw new Error(`运算符 "${node.value}" 需要 ${op.args} 个参数，但得到了 ${node.args.length} 个`);
                 }
                 // 检查左侧是否为标识符类型的节点
-                if (left.type !== 'identifier' && left.type !== 'string') {
+                if (left.type !== 'identifier') {
                     throw new Error('不能赋值常量，赋值运算符左侧必须是变量名');
                 }
                 
@@ -717,6 +1221,10 @@ const Calculator = (function() {
                     // 普通赋值
                     variables.set(left.value, rightValue);
                     let strRightValue = Utils.convertTypes(rightValue, 'string');
+
+                    if (left.value === 'x' || left.value === 'X') {
+                        addWarning(`将无法使用${left.value}作为乘法符号`);
+                    }
                     
                     if (left.value.startsWith('$')){
                         addInfo(`默认变量: ${left.value} = ${strRightValue}`)
@@ -792,83 +1300,26 @@ const Calculator = (function() {
     }
 
     // 5. 格式化输出模块, 添加额外提醒信息info
-    function formatOutput(result, ast, operators, functions) {
+    function formatOutput(result) {
 
         // console.log('result的类型: ', typeof result);
-        result = Utils.formatToDisplayString(result);
+        const display = Utils.formatToDisplayString(result);
 
-        // 如果result是对象，则添加info 
-        if(typeof result === 'object' && result !== null)
+        if(display.info)
         {
-            if(result.info)
-            {
-                addInfo(result.info);
-            }
-
-            if(result.warning)
-            {
-                addWarning(result.warning);
-            }
-            
-            result = result.value;
+            addInfo(display.info);
         }
 
-        // 防御性检查
-        if (!ast) {
-            return { 
-                value: result,
-                info: infos.length > 0 ? infos : null, 
-                warning: warnings.length > 0 ? warnings : null
-            };
+        if(display.warning)
+        {
+            addWarning(display.warning);
         }
 
-        try {
-            // 直接使用 ast 节点
-            let targetNode = ast;
-
-            // 如果是赋值运算符(只支持等号)，获取右侧表达式节点
-            //if (targetNode.type === 'operator' && OPERATORS[targetNode.value]?.isCompoundAssignment) {
-            if (targetNode.type === 'operator' && targetNode.value === '=') {
-                targetNode = targetNode.args[1];
-            }
-
-            // 根据节点类型查找对应的 repr 方法
-            let repr;
-            if (targetNode.type === 'function' && FUNCTIONS[targetNode.value]) {
-                repr = FUNCTIONS[targetNode.value].repr;
-            } else if (targetNode.type === 'operator' && OPERATORS[targetNode.value]) {
-                repr = OPERATORS[targetNode.value].repr;
-            }
-
-            // 如果找到了 repr 方法就调用它
-            if (typeof repr === 'function') {
-                try {
-                    // console.log('result: ', result);
-                    const formattedResult = repr(result);
-                    // console.log('formattedResult: ', formattedResult);
-                    // 确保 repr 返回了有效值, 并添加到INFO中
-                    if (formattedResult !== undefined && formattedResult !== null) {
-                        // result = formattedResult;
-                        addInfo(formattedResult);
-                    }
-                } catch (error) {
-                    throw new Error(`${error.message}`);
-                }
-            }
-
-            return { 
-                value: result,
-                info: infos.length > 0 ? infos : null, 
-                warning: warnings.length > 0 ? warnings : null
-            };
-        } catch (error) {
-            addWarning(`格式化输出时发生错误: ${error.message}`);
-            return { 
-                value: result,
-                info: infos.length > 0 ? infos : null, 
-                warning: warnings.length > 0 ? warnings : null
-            };
-        }
+        return { 
+            value: display.value,
+            info: infos.length > 0 ? infos : null, 
+            warning: warnings.length > 0 ? warnings : null
+        };
     }
 
     // 6. 返回公共API
@@ -914,8 +1365,8 @@ const Calculator = (function() {
                     warning: warnings.length > 0 ? warnings : null
                 };
             }
-            // 添加格式化处理，传入完整的上下文
-            const exprResult = formatOutput(result, ast, operators, functions);
+            // 添加格式化处理
+            const exprResult = formatOutput(result);
             return exprResult;
         },
 

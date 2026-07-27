@@ -32,6 +32,65 @@ const COMPOUND_ASSIGNMENT_OPERATORS = ASSIGNMENT_OPERATORS
 const customFunctionsStorage = typeof utools !== 'undefined' ? utools.dbStorage : localStorage;
 const inlineEditableCustomKeys = new Set();
 let expressionLineIdSeed = 1;
+let lastActiveInput = null;
+let lastSelection = { start: 0, end: 0 };
+
+function rememberActiveInputSelection(input = document.activeElement) {
+    if (!input || !input.classList?.contains('input')) return;
+    if (!input.closest('.expression-line')) return;
+    lastActiveInput = input;
+    lastSelection = {
+        start: input.selectionStart ?? 0,
+        end: input.selectionEnd ?? 0
+    };
+}
+
+function insertLineVariableAtCursor(lineNumber) {
+    if (!Number.isInteger(lineNumber) || lineNumber <= 0) {
+        notification.error('无法插入行变量');
+        return;
+    }
+
+    const input = lastActiveInput;
+    if (!input || !document.body.contains(input) || !input.classList.contains('input')) {
+        notification.warning('请先将光标放在表达式输入框中');
+        return;
+    }
+
+    const targetLine = input.closest('.expression-line');
+    const lines = document.querySelectorAll('.expression-line');
+    const insertLineNumber = Array.from(lines).indexOf(targetLine) + 1;
+
+    // 只能引用更早行：$n 的 n 必须严格小于插入所在行
+    if(insertLineNumber === lineNumber) {
+        notification.error(`行变量引用错误：不能引用自身行 $${insertLineNumber}`);
+        return;
+    }
+
+    if (insertLineNumber <= 0 || insertLineNumber < lineNumber) {
+        notification.error(`行变量引用错误：$n, 行${insertLineNumber}只能引用行变量$1 ~ $${insertLineNumber-1}`);
+        return;
+    }
+
+    const start = lastSelection.start;
+    const end = lastSelection.end;
+    if (typeof start !== 'number' || typeof end !== 'number' || start < 0 || end < 0) {
+        notification.error('无法在当前位置插入行变量');
+        return;
+    }
+
+    const value = input.value;
+    const safeStart = Math.min(start, value.length);
+    const safeEnd = Math.min(Math.max(end, safeStart), value.length);
+    const token = `$${lineNumber}`;
+    input.value = value.slice(0, safeStart) + token + value.slice(safeEnd);
+
+    const newPos = safeStart + token.length;
+    input.focus();
+    input.setSelectionRange(newPos, newPos);
+    lastSelection = { start: newPos, end: newPos };
+    input.dispatchEvent(new Event('input'));
+}
 
 function getStoredCustomFunctions() {
     try {
@@ -178,6 +237,8 @@ function handleResize(textarea) {
 function handleFocus(event) {
     const textarea = event.target;
     if (!textarea.classList.contains('input')) return;
+
+    rememberActiveInputSelection(textarea);
     
     // 重新计算当前获得焦点的输入框大小
     handleResize(textarea);
@@ -186,6 +247,9 @@ function handleFocus(event) {
 function handleBlur(event) {
     const textarea = event.target;
     if (!textarea.classList.contains('input')) return;
+
+    // blur 时仍可读到 selection，先记住光标位置
+    rememberActiveInputSelection(textarea);
     
     // 失去焦点时重置为单行
     textarea.classList.remove('multiline');
@@ -217,7 +281,7 @@ function remapLineReferencesAfterDelete(deletedLineNumber) {
             const num = Number(numStr);
             // 删除第 n 行后，引用该行的变量标记为 $del
             if (num === deletedLineNumber) {
-                return `$del-${deletedLineNumber}`;
+                return `$del:${deletedLineNumber}`;
             }
             // 删除第 n 行后，后续行号前移一位
             if (num > deletedLineNumber) {
@@ -503,12 +567,10 @@ function handleInput(event) {
     // 移除补全提示
     removeCompletionHint(input);
     
-    // 自动添加下一行的逻辑
-    const addedNewLine = autoAddNextLineIfNeeded(input);
-    // 自动新增行时，addNewLine() 内部已经触发了整表重算，避免副作用表达式重复执行
-    if (addedNewLine) return;
-    
-    // 计算表达式
+    // 自动添加下一行（仅插空行，不负责计算）
+    autoAddNextLineIfNeeded(input);
+
+    // 计算表达式（插行后下一行为空，isLastExpression 仍为 true，只算当前行即可）
     if (isLastExpression()) {
         const expression = input.value.trim();
         // 赋值表达式在输入过程中会有中间态（如 a+=1 -> a+=11）
@@ -751,6 +813,20 @@ function buildFuncRegex(names) {
     return new RegExp(prefix + name + suffix, 'g');
 }
 
+// 后缀调用 .f：点后跟可作属性的函数名（非小数点）
+function buildPropertyFuncRegex(names) {
+    if (!names.length) return null;
+    const name = '(' + names.join('|') + ')';
+    return new RegExp('\\.' + name + '(?=$|[^A-Za-z0-9_])', 'g');
+}
+
+// 函数管道：> f / >f（HTML 转义后为 &gt;）
+function buildPipeFuncRegex(names) {
+    if (!names.length) return null;
+    const name = '(' + names.join('|') + ')';
+    return new RegExp('(&gt;\\s*)' + name + '(?=$|[^A-Za-z0-9_])', 'g');
+}
+
 function buildConstRegex(names, allowDigitPrefix) {
     if (!names.length) return null;
     const name = '(' + names.join('|') + ')';
@@ -761,13 +837,32 @@ function buildConstRegex(names, allowDigitPrefix) {
     return new RegExp(prefix + name + suffix, 'g');
 }
 
+function resolveFunctionMeta(func) {
+    let resolved = func;
+    while (resolved?.alias) {
+        resolved = FUNCTIONS[resolved.alias];
+    }
+    return resolved || null;
+}
+
+function supportsAsProperty(func) {
+    const resolved = resolveFunctionMeta(func);
+    return !!(resolved && (resolved.args === 1 || resolved.asProperty));
+}
+
 let _FUNCTION_REGEX = null;
+let _PROPERTY_FUNC_REGEX = null;
+let _PIPE_FUNC_REGEX = null;
 let _CONST_REGEX_1 = null;
 let _CONST_REGEX_N = null;
 
 function refreshHighlightRegexes() {
     const functionNames = Object.keys(FUNCTIONS)
         .filter(name => /^[a-zA-Z_]/.test(name))
+        .map(escapeRegExp)
+        .sort((a, b) => b.length - a.length);
+    const propertyFunctionNames = Object.keys(FUNCTIONS)
+        .filter(name => /^[a-zA-Z_]/.test(name) && supportsAsProperty(FUNCTIONS[name]))
         .map(escapeRegExp)
         .sort((a, b) => b.length - a.length);
     const constantNames = Object.keys(CONSTANTS || {})
@@ -778,6 +873,8 @@ function refreshHighlightRegexes() {
     const constantNamesN = constantNames.filter(n => n.length > 1);
 
     _FUNCTION_REGEX = buildFuncRegex(functionNames);
+    _PROPERTY_FUNC_REGEX = buildPropertyFuncRegex(propertyFunctionNames);
+    _PIPE_FUNC_REGEX = buildPipeFuncRegex(functionNames);
     _CONST_REGEX_N = buildConstRegex(constantNamesN, true);
     if (!constantNames1.length) {
         _CONST_REGEX_1 = null;
@@ -814,9 +911,21 @@ function syncInputHighlightForTextarea(textarea, highlightEl = null) {
 
 // 科学计数法：1e2 / 1e-2 / 1.23e+4（只高亮 e）
 const SCI_REGEX = /(^|[^A-Za-z0-9_])(\d+(?:\.\d+)?)(e)([+-]?\d+)(?=$|[^A-Za-z0-9_])/gi;
+// 已删除行变量：$del:3
+const DELETED_VAR_REGEX = /(^|[^A-Za-z0-9_])(\$del:\d+)(?=$|[^A-Za-z0-9_])/g;
+// 默认变量：$1 / $12 / $999
+const DEFAULT_VAR_REGEX = /(^|[^A-Za-z0-9_])(\$\d+)(?=$|[^A-Za-z0-9_])/g;
+// 后缀操作符：>@ / ># / >#w 等（包含可选空格写法；cn 已改为函数，走管道高亮）
+const POSTFIX_OP_REGEX = /(&gt;\s*(?:#\s*[wWdDhHmMsS@]?|@))(?![A-Za-z0-9_])/gi;
 
 function highlightExpressionText(raw) {
     let text = escapeHTML(raw);
+
+    // 已删除行变量优先标记为错误，避免被其他规则覆盖
+    text = text.replace(DELETED_VAR_REGEX, '$1<span class="cc-syntax-error-var">$2</span>');
+
+    // 默认变量优先高亮，颜色与左上角标签保持一致
+    text = text.replace(DEFAULT_VAR_REGEX, '$1<span class="cc-syntax-default-var">$2</span>');
 
     if (_CONST_REGEX_N) {
         text = text.replace(_CONST_REGEX_N, '$1<span class="cc-syntax-const">$2</span>');
@@ -827,9 +936,18 @@ function highlightExpressionText(raw) {
     if (_FUNCTION_REGEX) {
         text = text.replace(_FUNCTION_REGEX, '$1<span class="cc-syntax-func">$2</span>');
     }
+    if (_PROPERTY_FUNC_REGEX) {
+        text = text.replace(_PROPERTY_FUNC_REGEX, '.<span class="cc-syntax-func">$1</span>');
+    }
 
     // 科学计数法最后处理，避免与常量/函数高亮嵌套
     text = text.replace(SCI_REGEX, '$1$2<span class="cc-syntax-sci">$3</span>$4');
+
+    // 后缀 op 优先于管道函数，避免 >cn 被误认
+    text = text.replace(POSTFIX_OP_REGEX, '<span class="cc-syntax-op">$1</span>');
+    if (_PIPE_FUNC_REGEX) {
+        text = text.replace(_PIPE_FUNC_REGEX, '$1<span class="cc-syntax-func">$2</span>');
+    }
 
     // 确保空行仍然有高度
     if (text === '') {
@@ -879,6 +997,20 @@ function initializeUI() {
     // 添加容器点击事件监听
     document.getElementById('expression-container')
         .addEventListener('click', handleContainerClick);
+
+    // 跟踪表达式输入框光标，供点击 $n 图标插入使用
+    const expressionContainer = document.getElementById('expression-container');
+    ['keyup', 'click', 'select', 'mouseup'].forEach(eventName => {
+        expressionContainer.addEventListener(eventName, (event) => {
+            if (event.target?.classList?.contains('input')) {
+                rememberActiveInputSelection(event.target);
+            }
+        });
+    });
+
+    document.addEventListener('codecalc:insertLineVariable', (event) => {
+        insertLineVariableAtCursor(event.detail?.lineNumber);
+    });
 
     // 使用事件委托来处理所有消息图标的点击
     document.getElementById('expression-container').addEventListener('click', function(event) {
@@ -1024,9 +1156,22 @@ function calculateLine(input, ignoreEmptyLine=false) {
         return;
     }
 
-    const deletedLineRefMatch = rawExpression.match(/\$del-(\d+)\b/);
+    const deletedLineRefMatch = rawExpression.match(/\$del:(\d+)\b/);
     if (deletedLineRefMatch) {
         setState('', 'error', `使用了已删除的行变量 $${deletedLineRefMatch[1]}`);
+        return;
+    }
+
+    const lines = document.querySelectorAll('.expression-line');
+    const currentIndex = Array.from(lines).indexOf(expressionLine);
+    const lineNumber = currentIndex + 1;
+    const lineVarName = `$${lineNumber}`;
+
+    // 禁止引用当前行自己的行变量。
+    // 否则最后一行增量计算时会沿用上次结果（如先输入 1 再改成 1+$2 → 得到 2）。
+    if (lineNumber > 0 && new RegExp(`\\$${lineNumber}\\b`).test(rawExpression)) {
+        Calculator.deleteVariable(lineVarName);
+        setState('', 'error', `不能引用当前行变量 ${lineVarName}`);
         return;
     }
 
@@ -1133,14 +1278,11 @@ function calculateLine(input, ignoreEmptyLine=false) {
         // 如果勾选了将数字转换为大写中文，则添加.toCN 将数字转换为中文大写
         const toCNToggle = document.getElementById('toCNToggle');
         if (toCNToggle.checked) {
-            expression = `(${expression}).toCN`;
+            expression = `(${expression}) >cn`;
         }
 
         // 添加行号赋值
-        const lines = document.querySelectorAll('.expression-line');
-        const currentLine = input.closest('.expression-line');
-        const currentIndex = Array.from(lines).indexOf(currentLine);
-        expression = `$${currentIndex + 1} = ${expression}`;
+        expression = `${lineVarName} = ${expression}`;
 
         // console.log("expression: ", expression);
 
@@ -1176,7 +1318,7 @@ function calculateLine(input, ignoreEmptyLine=false) {
             setNormalState(value.value);
         }
     } catch (error) {
-        const deletedFromError = (error?.message || '').match(/\$del-(\d+)\b/);
+        const deletedFromError = (error?.message || '').match(/\$del:(\d+)\b/);
         if (deletedFromError) {
             setState('', 'error', `使用了已删除的行变量 $${deletedFromError[1]}`);
         }else{
@@ -1205,7 +1347,8 @@ function clearAll() {
             // 使用 Promise 来处理异步动画
             const animationPromise = new Promise(resolve => {
                 setTimeout(() => {
-                    snapshotIcon.style.color = '#aaa';
+                    // 恢复为样式表控制，避免内联色值覆盖“快照面板已打开”的绿色状态
+                    snapshotIcon.style.color = '';
                     snapshotIcon.style.transform = '';
                     setTimeout(() => {
                         snapshotIcon.style.transition = '';

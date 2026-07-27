@@ -11,6 +11,8 @@
     "test:m": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/matrix.test.js",
     "test:d": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/data.test.js",
     "test:c": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/custom.test.js",
+    "test:p": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/pipe.test.js",
+    "test:t": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose __tests__/tokenize.test.js",
     "perf": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --verbose __tests__/perf.bench.js"
   },
   "keywords": [],

@@ -15,10 +15,157 @@ describe('日期时间数据类型测试', () => {
             expect(() => Calculator.calculate('@now')).not.toThrow();
             expect(() => Calculator.calculate('@today')).not.toThrow();
             expect(() => Calculator.calculate('@now - #7d > @')).not.toThrow();
+            expect(() => Calculator.calculate('@now - #7d >    @')).not.toThrow();
             expect(() => Calculator.calculate('@now+#1y > @')).not.toThrow();
             expect(() => Calculator.calculate('@now - #1y > @')).not.toThrow();
             expect(() => Calculator.calculate('@today+#1m > @')).not.toThrow();
             expect(() => Calculator.calculate('@today - #1m > @')).not.toThrow();
+        });
+
+        test('日期字面量由 lexer 直接识别', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('@2020-03-15 + @today', operators, functions, constants);
+            expect(expr).toBe('@2020-03-15 + @today');
+
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens[0][0]).toBe('date_literal');
+            expect(tokens[1][0]).toBe('operator');
+            expect(tokens[2][0]).toBe('date_literal');
+            expect(tokens[0][1] instanceof Date).toBe(true);
+            expect(tokens[2][1] instanceof Date).toBe(true);
+        });
+
+        test('时长字面量由 lexer 直接识别', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('#1d + #(2+1)h', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+
+            expect(tokens[0][0]).toBe('duration_literal');
+            expect(tokens[1]).toEqual(['operator', '+']);
+            expect(tokens[2][0]).toBe('duration_literal');
+        });
+
+        test('preprocess 不再改写 # 语法糖文本', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr } = Calculator.preprocess('@now - #1d > #', operators, functions, constants);
+            expect(expr).toBe('@now - #1d > #');
+        });
+
+        test('时分秒格式由 lexer 直接识别为时长字面量', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('#17:30:45', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens).toHaveLength(1);
+            expect(tokens[0][0]).toBe('duration_literal');
+        });
+
+        test('duration_literal.parts 结构-数字单位组合', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('#1y2m3w4d5h6mm7s8ms', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens).toHaveLength(1);
+            expect(tokens[0][0]).toBe('duration_literal');
+            expect(tokens[0][1]).toEqual({
+                parts: [
+                    { unit: 'years', valueType: 'number', value: '1' },
+                    { unit: 'months', valueType: 'number', value: '2' },
+                    { unit: 'weeks', valueType: 'number', value: '3' },
+                    { unit: 'days', valueType: 'number', value: '4' },
+                    { unit: 'hours', valueType: 'number', value: '5' },
+                    { unit: 'minutes', valueType: 'number', value: '6' },
+                    { unit: 'seconds', valueType: 'number', value: '7' },
+                    { unit: 'milliseconds', valueType: 'number', value: '8' },
+                ]
+            });
+        });
+
+        test('duration_literal.parts 结构-括号表达式单位', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('#(1+2)d', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens).toHaveLength(1);
+            expect(tokens[0][0]).toBe('duration_literal');
+            expect(tokens[0][1]).toEqual({
+                parts: [
+                    { unit: 'days', valueType: 'expression', value: '1+2' },
+                ]
+            });
+        });
+
+        test('duration_literal.parts 结构-clock 映射为 milliseconds', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('#01:02:03', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens).toHaveLength(1);
+            expect(tokens[0][0]).toBe('duration_literal');
+            expect(tokens[0][1]).toEqual({
+                parts: [
+                    { unit: 'milliseconds', valueType: 'number', value: '3723000' },
+                ]
+            });
+        });
+
+        test('时长字面量支持大写单位别名', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('#1D + #2H + #3MS', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens[0][0]).toBe('duration_literal');
+            expect(tokens[2][0]).toBe('duration_literal');
+            expect(tokens[4][0]).toBe('duration_literal');
+        });
+
+        test('时长字面量可在括号内包含函数表达式', () => {
+            expect(Calculator.calculate('#(max(1,2)+1)d').value).toBe('259200000ms');
+        });
+
+        test('时长字面量重复单位抛错', () => {
+            expect(() => Calculator.calculate('#1d2day')).toThrow('重复赋值');
+        });
+
+        test('时分秒格式分钟/秒超界抛错', () => {
+            expect(() => Calculator.calculate('#12:70')).toThrow('分钟和秒需小于60');
+            expect(() => Calculator.calculate('#12:59:70')).toThrow('分钟和秒需小于60');
+        });
+
+        test('时长字面量括号内禁止嵌套 # 表达式', () => {
+            expect(() => Calculator.calculate('#(#1h)d')).toThrow('不支持嵌套 # 表达式');
+        });
+
+        test('矩阵乘法 @ 保持运算符语义', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('A@B', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens).toEqual([
+                ['identifier', 'A'],
+                ['operator', 'matmul@'],
+                ['identifier', 'B']
+            ]);
+        });
+
+        test('非日期形式保持 @ 前缀运算符路径', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('@foo', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens).toEqual([
+                ['operator', '@'],
+                ['identifier', 'foo']
+            ]);
+        });
+
+        test('百分号在 lexer 阶段完成消歧', () => {
+            const { operators, functions, constants } = Calculator.getCfg();
+            const { expr, operators: sortedOperators } = Calculator.preprocess('50% + (7%3)', operators, functions, constants);
+            const tokens = Calculator.tokenize(expr, sortedOperators, functions, constants);
+            expect(tokens).toEqual([
+                ['number', '50'],
+                ['operator', 'unary%'],
+                ['operator', '+'],
+                ['delimiter', '('],
+                ['number', '7'],
+                ['operator', '%'],
+                ['number', '3'],
+                ['delimiter', ')']
+            ]);
         });
     });
 
@@ -67,6 +214,8 @@ describe('日期时间数据类型测试', () => {
         test('时间组合显示', () => {
             expect(Calculator.calculate('#3w4d5h6mm7s8ms > # ').value).toBe('25天 5小时 6分钟 7秒');
             expect(Calculator.calculate('#3w4d5h6mm7s8ms > # w ').value).toBe('3.60周');
+            expect(Calculator.calculate('#3w4d5h6mm7s8ms >#w').value).toBe('3.60周');
+            expect(Calculator.calculate('#3w4d5h6mm7s8ms >   #    w').value).toBe('3.60周');
             expect(Calculator.calculate('#3w4d5h6mm7s8ms > # d ').value).toBe('25.21天');
             expect(Calculator.calculate('#3w4d5h6mm7s8ms > # h ').value).toBe('605.10小时');
             expect(Calculator.calculate('#3w4d5h6mm7s8ms > # m ').value).toBe('36306.12分钟');
@@ -81,10 +230,25 @@ describe('日期时间数据类型测试', () => {
 
         test('时间戳转日期', () => {
             expect(Calculator.calculate('#1693827361289').value).toBe('2023-09-04 19:36:01');
+            expect(Calculator.calculate('#1693827361289 >#').value).toBe('1693827361289');
+            expect(Calculator.calculate('#1693827361289 >@').value).toBe('2023-09-04 19:36:01');
+
             expect(Calculator.calculate('#1584201600000').value).toBe('2020-03-15');
+            expect(Calculator.calculate('#1584201600000 >#').value).toBe('1584201600000');
+            expect(Calculator.calculate('#1584201600000 >@').value).toBe('2020-03-15');
+
             expect(Calculator.calculate('#1582992000000').value).toBe('2020-03-01');
+            expect(Calculator.calculate('#1582992000000 >#').value).toBe('1582992000000');
+            expect(Calculator.calculate('#1582992000000 >@').value).toBe('2020-03-01');
+
             expect(Calculator.calculate('#-315648000000').value).toBe('1960-01-01');
+            expect(Calculator.calculate('#-315648000000 >#').value).toBe('-315648000000');
+            expect(Calculator.calculate('#-315648000000 >@').value).toBe('1960-01-01');
+
             expect(Calculator.calculate('#-2209017943000').value).toBe('1900-01-01');
+            expect(Calculator.calculate('#-2209017943000 >#').value).toBe('-2209017943000');
+            expect(Calculator.calculate('#-2209017943000 >@').value).toBe('1900-01-01');
+
         });
     });
 
@@ -258,6 +422,8 @@ describe('日期时间数据类型测试', () => {
             expect(() => Calculator.calculate('#1d()')).toThrow();
             expect(() => Calculator.calculate('#()d')).toThrow();
             expect(() => Calculator.calculate('#1d+d')).toThrow();
+            expect(() => Calculator.calculate('#1d+')).toThrow();
+            expect(() => Calculator.calculate('#1+d')).toThrow();
         });
 
         test('非法数值测试', () => {

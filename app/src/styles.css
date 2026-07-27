@@ -190,6 +190,20 @@ body {
     color: var(--completion-property-selected);
 }
 
+.cc-syntax-op {
+    /* 与补全中的 operator 色系保持一致 */
+    color: var(--completion-operator-selected);
+}
+
+.cc-syntax-default-var {
+    /* 与左上角 $行号 颜色一致 */
+    color: var(--tag-color);
+}
+
+.cc-syntax-error-var {
+    color: var(--error-color);
+}
+
 
 .result {
     font-size: 1.5rem;

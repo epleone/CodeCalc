@@ -19,6 +19,7 @@ describe('Matrix Operations', () => {
       expect(Calculator.calculate('[-1 -2 --3]').value).toBe('[-1,-2,3]');
 
       expect(Calculator.calculate('[- 1 -2 --3]').value).toBe('[-1,-2,3]');
+      expect(Calculator.calculate('[1.1 2.1 3.1] ').value).toBe('[1.1,2.1,3.1]');
       expect(Calculator.calculate('[---- 1 -2 --3]').value).toBe('[1,-2,3]');
 
       expect(Calculator.calculate('[1-2]').value).toBe('[-1]');
@@ -56,6 +57,7 @@ describe('Matrix Operations', () => {
       expect(Calculator.calculate('[1,2,3] - [4,5,6]').value).toBe('[-3,-3,-3]');
       expect(Calculator.calculate('[1,2,3] - [4,5,6] + [7,8,9]').value).toBe('[4,5,6]');
 
+      expect(Calculator.calculate('[0.1 1.1 0.1] + [1,1,1]').value).toBe('[1.1,2.1,1.1]');
 
     });
 
@@ -76,7 +78,8 @@ describe('Matrix Operations', () => {
       expect(Calculator.calculate('[1---2 2 3]').value).toBe('[-1,2,3]');
 
       // 位运算
-      expect(Calculator.calculate('[2^2]').value).toBe('[0]');
+      expect(Calculator.calculate('[2^2]').value).toBe('[4]');
+      expect(Calculator.calculate('[2^^2]').value).toBe('[0]');
       expect(Calculator.calculate('[2or2]').value).toBe('[2]');
       expect(Calculator.calculate('[~2]').value).toBe('[-3]');
 
@@ -122,6 +125,7 @@ describe('Matrix Operations', () => {
       // expect(Calculator.calculate('[a + b]').value).toBe('[0]');
       // expect(Calculator.calculate('[a * b]').value).toBe('[-1]');
       // expect(Calculator.calculate('[a / b]').value).toBe('[-1]');
+      // expect(Calculator.calculate('[a ^^ b]').value).toBe('[-2]');
       // expect(Calculator.calculate('[a ^ b]').value).toBe('[1]');
       // expect(Calculator.calculate('[a ** b]').value).toBe('[1]');
 
@@ -131,8 +135,9 @@ describe('Matrix Operations', () => {
       // 多个元素
       expect(Calculator.calculate('[a+b, b-a ]').value).toBe('[0,-2]');
       expect(Calculator.calculate('[ a*b, b/a]').value).toBe('[-1,-1]');
-      expect(Calculator.calculate('[a^b, b^a]').value).toBe('[-2,-2]');
+      expect(Calculator.calculate('[a^^b, b^^a]').value).toBe('[-2,-2]');
       expect(Calculator.calculate('[ a**b, b**a ]').value).toBe('[1,-1]');
+      expect(Calculator.calculate('[ a^b, b^a ]').value).toBe('[1,-1]');
       expect(Calculator.calculate('[max(a,b), min(a,b)]').value).toBe('[1,-1]');
 
     
@@ -183,6 +188,7 @@ describe('Matrix Operations', () => {
 
       expect(Calculator.calculate('{1 -2 --3}').value).toBe('{1,-2,3}');
       expect(Calculator.calculate('{-1 -2 --3}').value).toBe('{-1,-2,3}');
+      expect(Calculator.calculate('{1.1 2.1 3.1}').value).toBe('{1.1,2.1,3.1}');
 
       expect(Calculator.calculate('{- 1 -2 --3}').value).toBe('{-1,-2,3}');
       expect(Calculator.calculate('{---- 1 -2 --3}').value).toBe('{1,-2,3}');
@@ -218,7 +224,7 @@ describe('Matrix Operations', () => {
 
       expect(Calculator.calculate('{1,2,3} + {4,5,6}').value).toBe('{5,7,9}');
       expect(Calculator.calculate('{1,2,3} + {4,5,6} + {7,8,9}').value).toBe('{12,15,18}');
-      
+      expect(Calculator.calculate('{0.1 1.1 0.1} + {1,1,1}').value).toBe('{1.1,2.1,1.1}');
     });
 
     test('复杂行向量', () => {
@@ -238,7 +244,8 @@ describe('Matrix Operations', () => {
       expect(Calculator.calculate('{1---2 2 3}').value).toBe('{-1,2,3}');
 
       // 位运算
-      expect(Calculator.calculate('{2^2}').value).toBe('[0]');
+      expect(Calculator.calculate('{2^^2}').value).toBe('[0]');
+      expect(Calculator.calculate('{2^2}').value).toBe('[4]');
       expect(Calculator.calculate('{2or2}').value).toBe('[2]');
       expect(Calculator.calculate('{~2}').value).toBe('[-3]');
 
@@ -284,6 +291,7 @@ describe('Matrix Operations', () => {
       // expect(Calculator.calculate('[a + b]').value).toBe('[0]');
       // expect(Calculator.calculate('[a * b]').value).toBe('[-1]');
       // expect(Calculator.calculate('[a / b]').value).toBe('[-1]');
+      // expect(Calculator.calculate('[a ^^ b]').value).toBe('[-2]');
       // expect(Calculator.calculate('[a ^ b]').value).toBe('[1]');
       // expect(Calculator.calculate('[a ** b]').value).toBe('[1]');
 
@@ -293,8 +301,9 @@ describe('Matrix Operations', () => {
       // 多个元素
       expect(Calculator.calculate('{a+b, b-a }').value).toBe('{0,-2}');
       expect(Calculator.calculate('{ a*b, b/a}').value).toBe('{-1,-1}');
-      expect(Calculator.calculate('{a^b, b^a}').value).toBe('{-2,-2}');
+      expect(Calculator.calculate('{a^^b, b^^a}').value).toBe('{-2,-2}');
       expect(Calculator.calculate('{ a**b, b**a }').value).toBe('{1,-1}');
+      expect(Calculator.calculate('{ a^b, b^a }').value).toBe('{1,-1}');
       expect(Calculator.calculate('{max(a,b), min(a,b)}').value).toBe('{1,-1}');
 
     
@@ -393,11 +402,13 @@ describe('Matrix Operations', () => {
       expect(Calculator.calculate('{ - a;--b; -c}').value).toBe('[-1,2,-3]');
       expect(Calculator.calculate('{a b c;d f g}').value).toBe('{1,2,3;4,5,6}');
       expect(Calculator.calculate('{a,b,c;d f g}').value).toBe('{1,2,3;4,5,6}');
+      expect(Calculator.calculate('{a, b, c; d f g}').value).toBe('{1,2,3;4,5,6}');
       expect(Calculator.calculate('{a,b,c;d,f,g}').value).toBe('{1,2,3;4,5,6}');
 
       // 报错
       expect(() => Calculator.calculate('{a - b c;d f g}')).toThrow();
       expect(() => Calculator.calculate('{a,b c;d f g}')).toThrow();
+      expect(() => Calculator.calculate('{a, b c;d f g}')).toThrow();
       expect(() => Calculator.calculate('{a,b-c;d f g}')).toThrow();
     });
 
@@ -514,7 +525,8 @@ describe('Matrix Operations', () => {
       // expect(Calculator.calculate('{1; 1}').value).toBe('[1,1]');
 
       // 位运算
-      expect(Calculator.calculate('{2^2, 2+1}').value).toBe('{0,3}');
+      expect(Calculator.calculate('{2^^2, 2+1}').value).toBe('{0,3}');
+      expect(Calculator.calculate('{2^2, 2+1}').value).toBe('{4,3}');
       expect(Calculator.calculate('{2 or 2, 2 and 2}').value).toBe('{2,2}');
       expect(Calculator.calculate('{~2, ~-2}').value).toBe('{-3,1}');
 
@@ -615,13 +627,15 @@ describe('Matrix Operations', () => {
       expect(Calculator.calculate('{m, n; m, n}').value).toBe('{1,2;1,2}');
       expect(Calculator.calculate('{max(m, n), 1}').value).toBe('{2,1}');
       expect(Calculator.calculate('{min(m, n),  -+-+1}').value).toBe('{1,1}');
-      expect(Calculator.calculate('{m^n}').value).toBe('[3]');
+      expect(Calculator.calculate('{m^^n}').value).toBe('[3]');
+      expect(Calculator.calculate('{m^n}').value).toBe('[1]');
       expect(Calculator.calculate('{n**n}').value).toBe('[4]');
 
       // 两个元素的运算
       expect(Calculator.calculate('{m + 1, n - 1}').value).toBe('{2,1}');
       expect(Calculator.calculate('{m * 2, n / 2}').value).toBe('{2,1}');
-      expect(Calculator.calculate('{m ^ 2, n ** 2}').value).toBe('{3,4}');
+      expect(Calculator.calculate('{m ^^ 2, n ** 2}').value).toBe('{3,4}');
+      expect(Calculator.calculate('{m ^ 2, n ** 2}').value).toBe('{1,4}');
       expect(Calculator.calculate('{max(m, 1), min(n, 1)}').value).toBe('{1,1}');
 
       // 分号和逗号组合

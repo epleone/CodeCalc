@@ -4,6 +4,7 @@
     --settings-item-bg: #ffffff;
     --settings-text: #333333;
     --settings-title: #212121;
+    --settings-desc: #888888;
     --settings-border: #e0e0e0;
     --settings-shadow: rgba(0, 0, 0, 0.15);
     --settings-shortcut-bg: #f5f5f5;
@@ -16,6 +17,7 @@
     --settings-item-bg: #2d2d2d;
     --settings-text: #e0e0e0;
     --settings-title: #ffffff;
+    --settings-desc: #9a9a9a;
     --settings-border: #404040;
     --settings-shadow: rgba(0, 0, 0, 0.3);
     --settings-shortcut-bg: #333333;
@@ -89,14 +91,41 @@
 /* 设置项样式 */
 .setting-item {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0;
+}
+
+.setting-main {
+    display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0;
+    gap: 8px;
 }
 
 .setting-label {
     font-size: 14px;
     color: var(--settings-text);
+}
+
+.setting-desc {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--settings-desc);
+}
+
+.setting-desc-on,
+.setting-desc-off {
+    display: none;
+}
+
+.setting-item:has(input:checked) .setting-desc-on {
+    display: inline;
+}
+
+.setting-item:has(input:not(:checked)) .setting-desc-off {
+    display: inline;
 }
 
 /* 快捷键项样式 */

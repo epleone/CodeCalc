@@ -15,6 +15,8 @@
     --completion-property-selected: #455a64;
     --completion-constant-color: #795548;
     --completion-constant-selected: #2f7a5b;
+    --completion-operator-color: #5f8f6b;
+    --completion-operator-selected: #4b7a57;
     --completion-description: #999;
     --completion-description-selected: #666;
 }
@@ -35,6 +37,8 @@
     --completion-property-selected: #b0bec5;
     --completion-constant-color: #bcaaa4;
     --completion-constant-selected: #7fbfa4;
+    --completion-operator-color: #8fbc9b;
+    --completion-operator-selected: #a8d5b3;
     --completion-description: #888;
     --completion-description-selected: #aaa;
 }
@@ -142,6 +146,14 @@
 
 .completion-item[data-type="constant"].selected {
     color: var(--completion-constant-selected);
+}
+
+.completion-item[data-type="operator"] {
+    color: var(--completion-operator-color);
+}
+
+.completion-item[data-type="operator"].selected {
+    color: var(--completion-operator-selected);
 }
 
 /* 补全项文本和描述样式 */

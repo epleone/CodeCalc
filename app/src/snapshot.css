@@ -377,6 +377,12 @@ body #snapshot-panel.show ~ .snapshot-toggle-btn .snapshot-icon {
     transform: rotate(-360deg);
 }
 
+/* JS 显式激活态（避免不同平台下选择器/内联样式导致状态不一致） */
+.snapshot-toggle-btn.active .snapshot-icon {
+    color: var(--snapshot-button-color) !important;
+    transform: rotate(-360deg);
+}
+
 /* 面板打开时的悬停效果 */
 body #snapshot-panel.show ~ .snapshot-toggle-btn:hover .snapshot-icon {
     color: var(--snapshot-delete-color) !important; /* 添加 !important 来确保颜色变化优先级 */

@@ -170,11 +170,19 @@ export const OPERATORS = {
         description: '按位或'
     },
     '^': {
+        alias: '**',
+        description: '幂运算'
+    },
+    '^^': {
         precedence: 1,
         args: 2,
         func: (x, y) => x ^ y,
         position: 'infix',
         argTypes: 'bigint',
+        description: '按位异或'
+    },
+    'xor': {
+        alias: '^^',
         description: '按位异或'
     },
     '~': {
@@ -460,6 +468,7 @@ export const OPERATORS = {
         argTypes: 'any', 
         position: 'postfix',
         hidden: true,
+        description: '时间戳转日期'
     },
 };
 
@@ -482,12 +491,14 @@ export const FUNCTIONS = {
     // 数学函数
     'max': {
         func: (...args) => Utils.max(...args),
-        args: -1,  // 支持1~N个参数  
+        args: -1,  // 支持1~N个参数
+        asProperty: true,
         description: '求最大值'
     },
     'min': {
         func: (...args) => Utils.min(...args),
-        args: -1,  // 支持1~N个参数  
+        args: -1,  // 支持1~N个参数
+        asProperty: true,
         description: '求最小值'
     },
     'sum': {
@@ -596,6 +607,7 @@ export const FUNCTIONS = {
     'random': {
         func: (...args) => Utils.random(...args),
         args: -2, // 支持0~N个参数   
+        asProperty: true,
         description: '随机数生成0~1'
     },
 
@@ -616,21 +628,18 @@ export const FUNCTIONS = {
         description: '正切函数'
     },
     'asin': {
-        func: x => Utils.mapFuncArgs1('asin', x, x => Decimal.asin(x)),
+        func: Utils.asin,
         args: 1,
-        repr: x => Utils.formatRad(x), // 格式化输出函数
         description: '反正弦函数'
     },
     'acos': {
-        func: x => Utils.mapFuncArgs1('acos', x, x => Decimal.acos(x)),
+        func: Utils.acos,
         args: 1,
-        repr: x => Utils.formatRad(x), // 格式化输出函数
         description: '反余弦函数'
     },
     'atan': {
-        func: x => Utils.mapFuncArgs1('atan', x, x => Decimal.atan(x)),
+        func: Utils.atan,
         args: 1,
-        repr: x => Utils.formatRad(x), // 格式化输出函数
         description: '反正切函数'
     },
 
@@ -663,23 +672,18 @@ export const FUNCTIONS = {
     'abs': {
         args: 1,
         func: x => Utils.mapFuncArgs1('abs', x, x => x.abs()),
-        asProperty: true,
         description: '绝对值'
     },
     'rad': {
         args: 1,
-        func: x => x.times(M_CONST.pi).div(180),
-        asProperty: true,
+        func: Utils.rad,
         preventSelfReference: true,       // 禁止自引用
-        repr: x => Utils.formatRad(x),    // 格式化输出函数
         description: '度数转换为弧度'
     },
     'deg': {
         args: 1,
-        func: Utils.radianToDeg,
-        asProperty: true,
+        func: Utils.deg,
         preventSelfReference: true,
-        repr: x => '角度: ' + Utils.toFixed(x, 3) + '°',  // 格式化输出函数
         description: '弧度转换为度数'
     },
 
@@ -688,43 +692,40 @@ export const FUNCTIONS = {
         args: 1,
         func: x => x.toUpperCase(),
         argTypes: 'any',
-        asProperty: true,
         description: '转换为大写'
     },
     'lower': {
         args: 1,
         func: x => x.toLowerCase(),
         argTypes: 'any',
-        asProperty: true,
         description: '转换为小写'
     },
     'length': {
         args: 1,
         func: x => x.length,
         argTypes: 'any',
-        asProperty: true,
         description: '字符串长度'
     },
-    // 进制转换函数
+    // 进制转换函数（负数按补码，可选第 2 参数指定位宽，默认 16/32）
     'bin': {
-        args: 1,
-        func: x => "0b" + x.toString(2),
+        args: -1,
+        func: (...args) => Utils.toRadixString('bin', '0b', 2, 16, ...args),
         asProperty: true,
-        argTypes: 'bigint',
+        argTypes: 'any',
         description: '十进制转二进制'
     },
     'oct': {
-        args: 1,
-        func: x => "0o" + x.toString(8),
+        args: -1,
+        func: (...args) => Utils.toRadixString('oct', '0o', 8, 32, ...args),
         asProperty: true,
-        argTypes: 'bigint',
+        argTypes: 'any',
         description: '十进制转八进制'
     },
     'hex': {
-        args: 1,
-        func: x => "0x" + x.toString(16),
+        args: -1,
+        func: (...args) => Utils.toRadixString('hex', '0x', 16, 32, ...args),
         asProperty: true,
-        argTypes: 'bigint',
+        argTypes: 'any',
         description: '十进制转十六进制'
     },
 
@@ -733,18 +734,13 @@ export const FUNCTIONS = {
         args: 1,
         func: x => {
             try {
-                // 确保输入是字符串
-                if (typeof x !== 'string') {
-                    x = String(x);
-                }
                 return btoa(x);
             } catch (e) {
                 throw new Error('Base64编码失败: ' + e.message);
             }
         },
-        description: 'Base64编码',
-        argTypes: 'any',
-        asProperty: true
+        argTypes: 'string',
+        description: 'Base64编码'
     },
 
     // Base64 解码函数
@@ -752,27 +748,21 @@ export const FUNCTIONS = {
         args: 1,
         func: x => {
             try {
-                // 确保输入是字符串
-                if (typeof x !== 'string') {
-                    x = String(x);
-                }
                 return atob(x);
             } catch (e) {
                 throw new Error('Base64解码失败: ' + e.message);
             }
         },
-        description: 'Base64解码',
-        argTypes: 'any',
-        asProperty: true
+        argTypes: 'string',
+        description: 'Base64解码'
     },
 
-    // 中文数字函数
-    'toCN': {
+    // 中文数字运算符
+    'cn': {
         args: 1,
         func: Utils.formatToChinese,
-        description: '转换为中文大写数字',
         argTypes: 'any',
-        asProperty: true,
+        description: '转成中文数字'
     },
 
     // 日期函数
@@ -810,17 +800,20 @@ export const FUNCTIONS = {
     },
     'ones': {
         func: (...args) => Utils.ones(...args),
-        args: -1, // 支持1~N个参数 
+        args: -1, // 支持1~N个参数
+        asProperty: true,
         description: '生成全1矩阵'
     },
     'zeros': { 
         func: (...args) => Utils.zeros(...args),
         args: -1, // 支持1~N个参数 
+        asProperty: true,
         description: '生成全0矩阵'
     },
     'range': {
         func: (...args) => Utils.range(...args),
         args: -1, // 支持1~N个参数 
+        asProperty: true,
         description: '生成等差数列'
     },
 
@@ -850,7 +843,6 @@ export const FUNCTIONS = {
         func: Utils.transpose,
         args: 1,
         description: '转置',
-        asProperty: true,
         hidden: true
     },
     'transpose': {
@@ -860,14 +852,12 @@ export const FUNCTIONS = {
     'inv': {
         func: Utils.inverse,
         args: 1,
-        description: '求逆',
-        asProperty: true
+        description: '求逆'
     },
     'det': {
         func: Utils.determinant,
         args: 1,
-        description: '行列式',
-        asProperty: true
+        description: '行列式'
     },
     'eigenvalues': {
         func: Utils.eigenvalues,
@@ -923,7 +913,7 @@ export const FUNCTIONS = {
     // 版本号
     'version': {
         args: 0,
-        func: () => 'CodeCalcCore 3.2.3',
+        func: () => 'CodeCalcCore 3.3.0',
         description: 'CodeCalcCore 版本号'
     }
 }; 

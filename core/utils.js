@@ -38,13 +38,12 @@ class CCObj {
         this.value = value;     // 参与计算的值
         this.info = info;
         this.warning = warning;
-
-        // TODO: 后续统一显示的值
-        this._fmtValue = undefined;       // 外部显示值
+        this._fmtValue = undefined;       // 可选：自定义外部显示值（如中文大写、日期文本）
     }
 
     set fmtValue(val) { this._fmtValue = val; }
-    get fmtValue() { return this._fmtValue ?? this.value.toString(); }
+    /** 仅返回自定义显示值；未设置时为 undefined，由 formatToDisplayString(value) 统一格式化 */
+    get fmtValue() { return this._fmtValue; }
 
     toString() {
         return this.value.toString();
@@ -90,26 +89,6 @@ class Datestamp {
 }
 
 
-// 定义类 ChineseNumber，用于保存中文数字转换结果
-class ChineseNumber {
-    constructor(value, CNValue) {
-        this.value = value;
-        this.CNValue = CNValue;
-    }
-
-    toCNString() {
-        if(this.CNValue === null) {
-            return  this.value;
-        }
-        return this.CNValue;
-    }
-
-    toString() {
-        return this.value.toString();
-    }
-
-}
-
 // 判断是否是CCObj
 function isCCObj(value) {
     return value instanceof CCObj;
@@ -129,10 +108,6 @@ function isBigInt(value) {
     
 function isDecimal(value) {
     return value instanceof Decimal;
-}
-
-function isChineseNumber(value) {
-    return value instanceof ChineseNumber;
 }
 
 // 判断是否是数字类型，可以相互转换
@@ -199,11 +174,11 @@ function checkMatrixArgs(args0, args1) {
 
 // 添加标量和矩阵运算支持，注意是否满足交换律
 function addOpSupport(opName, x, y, op_xy, op_yx) {
-    if(isChineseNumber(x)) {
+    if(isCCObj(x)) {
         x = x.value;
     }
 
-    if(isChineseNumber(y)) {
+    if(isCCObj(y)) {
         y = y.value;
     }
 
@@ -238,11 +213,6 @@ const Utils = {
 
         // 如果是CCObj，先获取value参与计算
         if(isCCObj(value)) {
-            value = value.value;
-        }
-
-        // 如果是中文数字，先获取value参与计算
-        if(isChineseNumber(value)) {
             value = value.value;
         }
     
@@ -284,7 +254,7 @@ const Utils = {
         }
     },
 
-    // 将不同的输出格式化成字符串
+    // 将不同的输出格式化成统一结构: { value, info?, warning? }
     formatToDisplayString(result) {
         // console.log('utils@cfg precision:', config.get('precision'));
         // console.log('result的类型: ', typeof result);
@@ -295,22 +265,15 @@ const Utils = {
             return Utils.formatToDisplayString(converted);
         }
 
-        // 如果是CCObj，则返回value
+        // CCObj：info/warning 挂在外壳；显示值与裸 value 走同一套格式化后合并
         if(isCCObj(result)) {
-
-            // 如果是日期，则返回日期字符串
-            if(isDate(result.value)) {
-                return {
-                    value: Utils.formatDate(result.value), 
-                    info: result.info || undefined,
-                    warning: result.warning || undefined
-                };
-            }
-
+            const display = Utils.formatToDisplayString(
+                result.fmtValue !== undefined ? result.fmtValue : result.value
+            );
             return {
-                value: result.value,
-                info: result.info || undefined,
-                warning: result.warning || undefined
+                value: display.value,
+                info: result.info || display.info || undefined,
+                warning: result.warning || display.warning || undefined
             };
         }
 
@@ -330,7 +293,7 @@ const Utils = {
                 let str = result.toString();
                 let [coefficient, exponent] = str.split('e-');
                 if(exponent > 20) {
-                    return '0';
+                    return { value: '0' };
                 }
             }
 
@@ -340,16 +303,16 @@ const Utils = {
                 let [coefficient, exponent] = str.split('e');
                 // 去掉末尾的0
                 coefficient = coefficient.replace(/\.?0+$/, '');
-                return coefficient + 'e' + exponent;
+                return { value: coefficient + 'e' + exponent };
             }
 
             // 如果是整数，直接返回
             if(result.isInteger()) {
-                return result.toString();
+                return { value: result.toString() };
             }
 
             // 显示16位有效数字，并去掉末尾的0
-            return result.toFixed(16).replace(/\.?0+$/, '');
+            return { value: result.toFixed(16).replace(/\.?0+$/, '') };
         }
 
         if(isMatrix(result)) {
@@ -360,37 +323,41 @@ const Utils = {
             return { value: result.toString(), info: "isMatrix" };
         }
 
-        // 如果是中文数字
-        if (isChineseNumber(result)) {
-            const hasCNValue = result.CNValue !== null;
-
-            return {
-                value: result.toCNString(),
-                info: hasCNValue ? "原始值: " + result.toString() : undefined,
-                warning: hasCNValue ? undefined : `无法转换为中文数字`
-            };
-        }
-
-        // 如果是对象，则返回对象
-        if (typeof result === 'object' && result.value) {
-            return {
-                value: result.value,
-                info: result.info || undefined,
-                warning: result.warning || undefined
-            };
-        }
-
-        return result.toString();
+        return { value: result.toString() };
     },
 
-    // 将数字格式化成中文数字 壹 贰 叁 肆 伍 陆 柒 捌 玖 拾 佰 仟 万 亿 兆
+    /** 十进制转指定进制；负数按补码解释，可选位宽（未指定时用 defaultBits） */
+    toRadixString(name, prefix, radix, defaultBits, ...args) {
+        if (args.length < 1 || args.length > 2) {
+            throw new Error(`${name} 函数支持 1 或 2 个参数`);
+        }
+
+        const value = BigInt(args[0]);
+        if (value < 0n) {
+            const rawBits = args.length === 2 ? args[1] : defaultBits;
+            const bits = Number(rawBits);
+            if (!Number.isInteger(bits) || bits <= 0) {
+                throw new Error(`${name} 的位宽参数必须是正整数`);
+            }
+            return new CCObj(
+                prefix + BigInt.asUintN(bits, value).toString(radix),
+                `补码位宽: ${bits}`
+            );
+        }
+        return prefix + value.toString(radix);
+    },
+
+    // 将数字格式化为会计大写金额（参考财政部《会计基础工作规范》）
     formatToChinese(x) {
-        if(isChineseNumber(x)) {
+        if(isCCObj(x)) {
             return x;
         }
 
         if (!isDecimal(x)) {
-            return new ChineseNumber(x, null);
+            if (isDate(x)) {
+                return Utils.ccDate(x, undefined, '无法转换为中文数字');
+            }
+            return new CCObj(x, undefined, '无法转换为中文数字');
         }
     
         let num = x.toNumber();
@@ -402,15 +369,22 @@ const Utils = {
             negative = true;
         }
     
-        // 四舍五入到3位小数
-        num = Math.round(num * 1000) / 1000;
-        let str = num.toString();
-        let [integer, decimal = ""] = str.split(".");
+        // 会计金额精确到分：四舍五入到 2 位小数；与原始值有差异时给出 warning
+        const absDecimal = x.abs();
+        const roundedAbs = absDecimal.toDecimalPlaces(2);
+        let roundWarning;
+        if (!roundedAbs.equals(absDecimal)) {
+            const roundedSigned = negative ? roundedAbs.neg() : roundedAbs;
+            roundWarning = `已四舍五入到分: ${x.toString()} → ${roundedSigned.toString()}`;
+        }
+        num = roundedAbs.toNumber();
+        let str = num.toFixed(2);
+        let [integer, decimal = "00"] = str.split(".");
     
         const CN_NUM = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
         const CN_UNIT = ["", "拾", "佰", "仟"];
-        const CN_BIG_UNIT = ["", "万", "亿", "兆"];
-        const CN_DOT = ["角", "分", "厘"];
+        // 规范用字仅列到“亿”；更大数位用“万亿”
+        const CN_BIG_UNIT = ["", "万", "亿", "万亿"];
     
         // 处理整数部分
         let integerPart = "";
@@ -446,7 +420,7 @@ const Utils = {
                     }
                 }
     
-                // 追加大单位（万、亿、兆），如果组不全为零
+                // 追加大单位（万、亿、万亿），如果组不全为零
                 if (!allZero) {
                     groupStr += CN_BIG_UNIT[groups.length - i - 1];
                     integerPart += groupStr;
@@ -473,22 +447,25 @@ const Utils = {
         integerPart = integerPart || CN_NUM[0]; // 空则默认“零”
         integerPart += "元"; // 追加“元”
     
-        // 处理小数部分
+        // 处理角分：到元/角为止写“整”；有分不写“整”；角为 0 且有分时补“零”
+        const jiao = parseInt(decimal[0] || "0", 10);
+        const fen = parseInt(decimal[1] || "0", 10);
         let decimalPart = "";
-        if (decimal && decimal !== "00") {
-            decimal = decimal.padEnd(3, "0").slice(0, 3); // 确保3位小数
-            for (let i = 0; i < decimal.length; i++) {
-                const digit = parseInt(decimal[i]);
-                if (digit !== 0) {
-                    decimalPart += CN_NUM[digit] + CN_DOT[i];
-                }
-            }
+        if (jiao !== 0) {
+            decimalPart += CN_NUM[jiao] + "角";
         }
-    
-        decimalPart = decimalPart || "整"; // 无小数则为“整”
+        if (fen !== 0) {
+            if (jiao === 0) {
+                decimalPart += CN_NUM[0];
+            }
+            decimalPart += CN_NUM[fen] + "分";
+        } else {
+            decimalPart += "整";
+        }
 
-        // return { value: (negative ? "负" : "") + integerPart + decimalPart, info: `原始数字: ${x.toNumber()}` };
-        return new ChineseNumber(x, (negative ? "负" : "") + integerPart + decimalPart);
+        const result = new CCObj(x, `原始值: ${x.toString()}`, roundWarning);
+        result.fmtValue = (negative ? "负" : "") + integerPart + decimalPart;
+        return result;
     },
       
 
@@ -508,7 +485,7 @@ const Utils = {
             newDate.setMonth(newDate.getMonth() + y.month);
             // 加上毫秒
             newDate.setMilliseconds(newDate.getMilliseconds() + y.timestamp);
-            return new CCObj(newDate);
+            return Utils.ccDate(newDate);
         }
 
         if(isDate(y) && isDatestamp(x))
@@ -518,7 +495,7 @@ const Utils = {
             newDate.setMonth(newDate.getMonth() + x.month);
             // 加上毫秒
             newDate.setMilliseconds(newDate.getMilliseconds() + x.timestamp);
-            return new CCObj(newDate);
+            return Utils.ccDate(newDate);
         }
 
         if(isDate(x) && isDate(y))
@@ -555,7 +532,7 @@ const Utils = {
                 newDate.setMonth(newDate.getMonth() - y.month);
                 // 减去毫秒
                 newDate.setMilliseconds(newDate.getMilliseconds() - y.timestamp);
-                return new CCObj(newDate);
+                return Utils.ccDate(newDate);
             }else if(isDate(y)){
                 const timestamp = x.getTime() - y.getTime();
                 return new Datestamp(0, 0, timestamp);
@@ -703,26 +680,45 @@ const Utils = {
     // 辅助函数：尝试弧度数字转换为 π 的倍数或分数形式
     radianToPi(value) {
         const ratio = isDecimal(value) ? value : new Decimal(value);
-        // 转换为 PI 的倍数
         const piRatio = ratio.div(M_CONST.pi);
+        const eps = new Decimal('1e-10');
 
-        // 检查是否为整数倍
-        if (piRatio.isInteger()) {
-            if (piRatio.equals(1)) return 'π';
-            if (piRatio.equals(-1)) return '-π';
-            return `${piRatio}*π`;     
+        const formatPiMultiple = (n, d = 1) => {
+            // 约分，避免 2*π/2
+            const g = (a, b) => {
+                a = Math.abs(a);
+                b = Math.abs(b);
+                while (b) { const t = b; b = a % b; a = t; }
+                return a || 1;
+            };
+            const div = g(n, d);
+            n /= div;
+            d /= div;
+            if (n === 0) return '0';
+            if (d === 1) {
+                if (n === 1) return 'π';
+                if (n === -1) return '-π';
+                return `${n}*π`;
+            }
+            if (Math.abs(n) === 1) {
+                return n > 0 ? `π/${d}` : `-π/${d}`;
+            }
+            return `${n}*π/${d}`;
+        };
+
+        // 接近整数倍（acos(-1) 等浮点误差）
+        const nearestInt = piRatio.toNearest(1, Decimal.ROUND_HALF_UP);
+        if (piRatio.minus(nearestInt).abs().lte(eps)) {
+            return formatPiMultiple(nearestInt.toNumber());
         }
 
-        // 检查常见的分数
+        // 常见分数
         const denominators = [2, 3, 4, 6, 8, 12];
         for (const den of denominators) {
-            const num = piRatio.toNumber() * den;
-            if (Math.abs(Math.round(num) - num) < 1e-8) {
-                const roundedNum = Math.round(num);
-                if (Math.abs(roundedNum) === 1) {
-                    return roundedNum > 0 ? `π/${den}` : `-π/${den}`;
-                }
-                return `${roundedNum}*π/${den}`;
+            const scaled = piRatio.times(den);
+            const nearestNum = scaled.toNearest(1, Decimal.ROUND_HALF_UP);
+            if (scaled.minus(nearestNum).abs().lte(eps)) {
+                return formatPiMultiple(nearestNum.toNumber(), den);
             }
         }
 
@@ -730,7 +726,7 @@ const Utils = {
         return `${piRatio.toFixed(6)}*π`;
     },
 
-    // 定义弧度转角度
+    // 定义弧度转角度（计算值，0-360）
     radianToDeg(value) {
         const radian = isDecimal(value) ? value : new Decimal(value);
 
@@ -760,6 +756,36 @@ const Utils = {
         return rslt;
     },
 
+    /** 标量结果附带弧度/角度 info；矩阵等无法 formatRad 时原样返回 */
+    withRadInfo(value) {
+        const info = Utils.formatRad(value);
+        if (info == null) return value;
+        return new CCObj(value, info);
+    },
+
+    asin(x) {
+        return Utils.withRadInfo(Utils.mapFuncArgs1('asin', x, x => Decimal.asin(x)));
+    },
+
+    acos(x) {
+        return Utils.withRadInfo(Utils.mapFuncArgs1('acos', x, x => Decimal.acos(x)));
+    },
+
+    atan(x) {
+        return Utils.withRadInfo(Utils.mapFuncArgs1('atan', x, x => Decimal.atan(x)));
+    },
+
+    // 度数转弧度，带 formatRad info
+    rad(x) {
+        return Utils.withRadInfo(x.times(M_CONST.pi).div(180));
+    },
+
+    // 弧度转度数，带角度 info
+    deg(x) {
+        const degrees = Utils.radianToDeg(x);
+        return new CCObj(degrees, '角度: ' + Utils.toFixed(degrees, 3) + '°');
+    },
+
     // 时间和日期计算依旧使用默认的Math库
     // 日期转时间戳
     dateToTimestamp(x) {
@@ -785,7 +811,8 @@ const Utils = {
         date.setMonth(month);
         // return date;
 
-        return new CCObj(date);
+        return Utils.ccDate(date, "时间戳: " + x.toString().replace(/ms$/, '') + " 转到日期");
+   
     },
 
     // 格式化成日期字符串
@@ -812,6 +839,13 @@ const Utils = {
         }
 
         return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    },
+
+    /** Date 作计算值，显示为 formatDate 文本 */
+    ccDate(date, info=undefined, warning=undefined) {
+        const obj = new CCObj(date, info, warning);
+        obj.fmtValue = Utils.formatDate(date);
+        return obj;
     },
 
     // 时间戳可视化成时间差

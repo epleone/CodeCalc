@@ -52,47 +52,199 @@ describe('Basic Functions and Operators Tests', () => {
       // 所有用例统一以小写 x 写模板，这里自动生成 x / X 两个变体
       const cases = [
         // 基本数字乘法
-        { expr: '3 x 4', expected: '12' },
-        { expr: '1.5 x 2', expected: '3' },
-        { expr: '-2 x 3', expected: '-6' },
+        { expr: '3 x 4', expected: '12', warnAsMultiply: true },
+        { expr: '1.5 x 2', expected: '3', warnAsMultiply: true },
+        { expr: '-2 x 3', expected: '-6', warnAsMultiply: true },
 
         // 基本数字乘法（紧凑写法，无空格）
-        { expr: '3x4', expected: '12' },
-        { expr: '1.5x2', expected: '3' },
-        { expr: '-2x3', expected: '-6' },
+        { expr: '3x4', expected: '12', warnAsMultiply: true },
+        { expr: '1.5x2', expected: '3', warnAsMultiply: true },
+        { expr: '-2x3', expected: '-6', warnAsMultiply: true },
 
         // 括号与 x 组合（左侧为数字）
-        { expr: '3x(1 + 2)', expected: '9' },
-        { expr: '3 x (1 + 2)', expected: '9' },
+        { expr: '3x(1 + 2)', expected: '9', warnAsMultiply: true },
+        { expr: '3 x (1 + 2)', expected: '9', warnAsMultiply: true },
 
         // 括号与 x 组合（左侧为括号）
-        { expr: '(1 + 2)x3', expected: '9' },
-        { expr: '(1 + 2) x 3', expected: '9' },
-        { expr: '(1 + 2)x(3 + 4)', expected: '21' },
-        { expr: '(1 + 2) x (3 + 4)', expected: '21' },
+        { expr: '(1 + 2)x3', expected: '9', warnAsMultiply: true },
+        { expr: '(1 + 2) x 3', expected: '9', warnAsMultiply: true },
+        { expr: '(1 + 2)x(3 + 4)', expected: '21', warnAsMultiply: true },
+        { expr: '(1 + 2) x (3 + 4)', expected: '21', warnAsMultiply: true },
 
         // 与 0 / 0x 相关的场景
-        { expr: '0 x 100', expected: '0' },
-        { expr: '0x 100', expected: '0' },
+        { expr: '0 x 100', expected: '0', warnAsMultiply: true },
+        { expr: '0x 100', expected: '0', warnAsMultiply: true },
         // 16进制数（无空格）
-        { expr: '0x100', expected: '256' },
+        { expr: '0x100', expected: '256', warnAsMultiply: false },
 
         // 紧凑与带空格混合场景
-        { expr: '100x100', expected: '10000' },
-        { expr: '100 x100', expected: '10000' },
-        { expr: '100x 100', expected: '10000' },
-        { expr: '100 x 100', expected: '10000' },
+        { expr: '100x100', expected: '10000', warnAsMultiply: true },
+        { expr: '100 x100', expected: '10000', warnAsMultiply: true },
+        { expr: '100x 100', expected: '10000', warnAsMultiply: true },
+        { expr: '100 x 100', expected: '10000', warnAsMultiply: true },
       ];
 
-      for (const { expr, expected } of cases) {
-        expect(Calculator.calculate(expr).value).toBe(expected);
-        const upper = expr.replace(/x/g, 'X');
-        expect(Calculator.calculate(upper).value).toBe(expected);
-      }
+      for (const { expr, expected, warnAsMultiply } of cases) {
+        const lowerResult = Calculator.calculate(expr);
+        expect(lowerResult.value).toBe(expected);
+        if (warnAsMultiply) {
+          expect(lowerResult.warning).toContain('使用x作为乘法符号');
+        } else {
+          expect(lowerResult.warning).toBe(null);
+        }
 
-      expect(() => Calculator.calculate('x=1')).toThrow();
-      expect(() => Calculator.calculate('X = 1')).toThrow();
+        const upper = expr.replace(/x/g, 'X');
+        const upperResult = Calculator.calculate(upper);
+        expect(upperResult.value).toBe(expected);
+        if (warnAsMultiply) {
+          expect(upperResult.warning).toContain('使用X作为乘法符号');
+        } else {
+          expect(upperResult.warning).toBe(null);
+        }
+      }
     });
+
+    test('x/X 和变量a=1一起使用', () => {
+      Calculator.calculate('a=1');
+      expect(Calculator.calculate('a*2').value).toBe('2');
+      expect(Calculator.calculate('2*a').value).toBe('2');
+      expect(Calculator.calculate('2 x a').value).toBe('2');
+      expect(Calculator.calculate('2 X a').value).toBe('2');
+
+      // x 字母粘连不当乘法
+      expect(() => Calculator.calculate('ax2')).toThrow();
+      expect(() => Calculator.calculate('aX2')).toThrow();
+      expect(() => Calculator.calculate('2xa')).toThrow();
+      expect(() => Calculator.calculate('2Xa')).toThrow();
+
+      // 括号
+      expect(Calculator.calculate('(a + 0)*2').value).toBe('2');
+      expect(Calculator.calculate('(a + 0)x2').value).toBe('2');
+      expect(Calculator.calculate('(a + 0)X2').value).toBe('2');
+      expect(Calculator.calculate('2*(a + 0)').value).toBe('2');
+      expect(Calculator.calculate('2x(a + 0)').value).toBe('2');
+      expect(Calculator.calculate('2X(a + 0)').value).toBe('2');
+    });
+
+
+    test('x/X 和变量$1=1一起使用', () => {
+      Calculator.calculate('$1=1');
+      expect(Calculator.calculate('$1*2').value).toBe('2');
+      expect(Calculator.calculate('$1x2').value).toBe('2');
+      expect(Calculator.calculate('$1X2').value).toBe('2');
+      expect(Calculator.calculate('2*$1').value).toBe('2');
+      expect(Calculator.calculate('2 x $1').value).toBe('2');
+      expect(Calculator.calculate('2 X $1').value).toBe('2');
+
+      expect(Calculator.calculate('2x$1').value).toBe('2');
+      expect(Calculator.calculate('2X$1').value).toBe('2');
+
+      // 括号
+      expect(Calculator.calculate('($1 + 0)*2').value).toBe('2');
+      expect(Calculator.calculate('($1 + 0)x2').value).toBe('2');
+      expect(Calculator.calculate('($1 + 0)X2').value).toBe('2');
+      expect(Calculator.calculate('2*($1 + 0)').value).toBe('2');
+      expect(Calculator.calculate('2x($1 + 0)').value).toBe('2');
+      expect(Calculator.calculate('2X($1 + 0)').value).toBe('2');
+    });
+
+
+    test('x/X 和变量xy=1一起使用', () => {
+      Calculator.calculate('xy=1');
+      expect(Calculator.calculate('xy*2').value).toBe('2');
+      expect(Calculator.calculate('xy x 2').value).toBe('2');
+      expect(Calculator.calculate('xy X 2').value).toBe('2');
+      expect(Calculator.calculate('xy x2').value).toBe('2');
+      expect(Calculator.calculate('xy X2').value).toBe('2');
+
+      expect(Calculator.calculate('2x xy').value).toBe('2');
+      expect(Calculator.calculate('2X xy').value).toBe('2');
+      expect(Calculator.calculate('2 x xy').value).toBe('2');
+      expect(Calculator.calculate('2 X xy').value).toBe('2');
+
+      // 字母粘连不当乘法
+      expect(() => Calculator.calculate('xyx2')).toThrow();
+      expect(() => Calculator.calculate('xyX2')).toThrow();
+      expect(() => Calculator.calculate('xyx 2')).toThrow();
+      expect(() => Calculator.calculate('xyX 2')).toThrow();
+
+      expect(() => Calculator.calculate('2xxy')).toThrow();
+      expect(() => Calculator.calculate('2Xxy')).toThrow();
+      expect(() => Calculator.calculate('2 xxy')).toThrow();
+      expect(() => Calculator.calculate('2 Xxy')).toThrow();
+    });
+
+    test('x/X 和变量ax=1一起使用', () => {
+      Calculator.calculate('a=1');
+      Calculator.calculate('ax=1');
+
+      expect(Calculator.calculate('ax+1').value).toBe('2');
+      expect(Calculator.calculate('ax*2').value).toBe('2');
+      expect(Calculator.calculate('ax x 2').value).toBe('2');
+      expect(Calculator.calculate('ax X 2').value).toBe('2');
+      expect(Calculator.calculate('ax x2').value).toBe('2');
+      expect(Calculator.calculate('ax X2').value).toBe('2');
+      expect(Calculator.calculate('2x ax').value).toBe('2');
+      expect(Calculator.calculate('2X ax').value).toBe('2');
+      expect(Calculator.calculate('2 x ax').value).toBe('2');
+      expect(Calculator.calculate('2 X ax').value).toBe('2');
+
+
+      // 字母粘连不当乘法
+      expect(() => Calculator.calculate('ax1')).toThrow();
+      
+      expect(() => Calculator.calculate('axx2')).toThrow();
+      expect(() => Calculator.calculate('axX2')).toThrow();
+      
+      expect(() => Calculator.calculate('axx 2')).toThrow();
+      expect(() => Calculator.calculate('axX 2')).toThrow();
+
+      
+
+      expect(() => Calculator.calculate('2xax')).toThrow();
+      expect(() => Calculator.calculate('2Xax')).toThrow();
+      expect(() => Calculator.calculate('2 xax')).toThrow();
+      expect(() => Calculator.calculate('2 Xax')).toThrow();
+    });
+
+
+    test('x/X 和函数一起使用', () => {
+      Calculator.calculate('a=1');
+      expect(Calculator.calculate('max(a, 0)*2').value).toBe('2');
+      expect(Calculator.calculate('max(a, 0)x2').value).toBe('2');
+      expect(Calculator.calculate('max(a, 0)X2').value).toBe('2');
+      expect(Calculator.calculate('2*max(a, 0)').value).toBe('2');
+      expect(Calculator.calculate('2 x max(a, 0)').value).toBe('2');
+      expect(Calculator.calculate('2 X max(a, 0)').value).toBe('2');
+
+      // x 字母粘连不当乘法，避免与 xmax 等变量/函数名冲突
+      expect(() => Calculator.calculate('2xmax(a, 0)')).toThrow();
+      expect(() => Calculator.calculate('2Xmax(a, 0)')).toThrow();
+    });
+
+
+    test('x/X 作为变量名', () => {
+      const xAssign = Calculator.calculate('x=1');
+      expect(xAssign.value).toBe('1');
+      expect(xAssign.warning).toContain('将无法使用x作为乘法符号');
+      expect(() => Calculator.calculate('3x4')).toThrow('无法使用x作为乘法符号');
+      expect(Calculator.calculate('3*4').value).toBe('12');
+
+      const xUpperAssign = Calculator.calculate('X = 2');
+      expect(xUpperAssign.value).toBe('2');
+      expect(xUpperAssign.warning).toContain('将无法使用X作为乘法符号');
+      expect(() => Calculator.calculate('3X4')).toThrow('无法使用X作为乘法符号');
+      expect(Calculator.calculate('3*4').value).toBe('12');
+
+      const xxAssign = Calculator.calculate('xX = x + X');
+      expect(xxAssign.value).toBe('3');
+      expect(xxAssign.warning).toBe(null);
+
+      const xxRead = Calculator.calculate('xX');
+      expect(xxRead.value).toBe('3');
+      expect(xxRead.warning).toBe(null);
+    });
+
 
     test('除法运算符 /', () => {
       expect(Calculator.calculate('8 / 2').value).toBe('4');
@@ -120,6 +272,15 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('-7 % 3').value).toBe('-1');
       expect(Calculator.calculate('7 % (-3)').value).toBe('1');
       expect(Calculator.calculate('7 % -3').value).toBe('-2.93');
+      expect(Calculator.calculate('50% + 1').value).toBe('1.5');
+      expect(() => Calculator.calculate('%50')).toThrow('百分号前缺少操作数');
+    });
+
+    test('函数参数分隔符回归', () => {
+      expect(Calculator.calculate('max(1,2)').value).toBe('2');
+      expect(Calculator.calculate('max(1, 2, 3)').value).toBe('3');
+      expect(() => Calculator.calculate('max(1 2)')).toThrow();
+      expect(() => Calculator.calculate('max(1, 2 3)')).toThrow();
     });
 
     test('幂运算符 **', () => {
@@ -127,6 +288,12 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('4 ** 0.5').value).toBe('2');
       expect(Calculator.calculate('2 ** -2').value).toBe('0.25');
       expect(Calculator.calculate('(-2) ** 2').value).toBe('4');
+
+      // ^ 作为幂运算别名
+      expect(Calculator.calculate('2 ^ 3').value).toBe('8');
+      expect(Calculator.calculate('4 ^ 0.5').value).toBe('2');
+      expect(Calculator.calculate('2 ^ -2').value).toBe('0.25');
+      expect(Calculator.calculate('(-2) ^ 2').value).toBe('4');
     });
   });
 
@@ -363,10 +530,14 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('5 or 3').value).toBe('7');
     });
 
-    test('按位异或 ^', () => {
-      expect(Calculator.calculate('5 ^ 3').value).toBe('6');
-      expect(Calculator.calculate('12 ^ 7').value).toBe('11');
-      expect(Calculator.calculate('15 ^ 15').value).toBe('0');
+    test('按位异或 ^^ / xor', () => {
+      expect(Calculator.calculate('5 ^^ 3').value).toBe('6');
+      expect(Calculator.calculate('12 ^^ 7').value).toBe('11');
+      expect(Calculator.calculate('15 ^^ 15').value).toBe('0');
+
+      expect(Calculator.calculate('5 xor 3').value).toBe('6');
+      expect(Calculator.calculate('12 xor 7').value).toBe('11');
+      expect(Calculator.calculate('15 xor 15').value).toBe('0');
     });
 
     test('按位取反 ~', () => {
@@ -419,6 +590,9 @@ describe('Basic Functions and Operators Tests', () => {
 
       expect(Calculator.calculate('b = [1,2,3]').value).toBe('[1,2,3]');
       expect(Calculator.calculate('b').value).toBe('[1,2,3]');
+      expect(() => Calculator.calculate('1 = 2')).toThrow('赋值运算符左侧必须是变量名');
+      expect(() => Calculator.calculate('a + 1 = 2')).toThrow('赋值运算符左侧必须是变量名');
+      expect(() => Calculator.calculate('d')).toThrow('变量 "d" 未定义');
     });
 
     test('加法赋值 +=', () => {
@@ -696,18 +870,34 @@ describe('Basic Functions and Operators Tests', () => {
     });
 
     test('random - 随机数生成', () => {
-      // 基本随机数 0~1
-      const result1 = Calculator.calculate('random()');
-      expect(typeof result1.value).toBe('string');
-      const num1 = parseFloat(result1.value);
-      expect(num1).toBeGreaterThanOrEqual(0);
-      expect(num1).toBeLessThan(1);
-      
-      // 随机向量
-      expect(() => Calculator.calculate('random(3)')).not.toThrow();
-      
-      // 随机矩阵
-      expect(() => Calculator.calculate('random(2, 3)')).not.toThrow();
+      // 标量：值在 [0, 1)
+      const scalar = parseFloat(Calculator.calculate('random()').value);
+      expect(scalar).toBeGreaterThanOrEqual(0);
+      expect(scalar).toBeLessThan(1);
+
+      // 向量：形状
+      expect(Calculator.calculate('random(3)').value).toMatch(/^\[[0-9.]+,[0-9.]+,[0-9.]+\]$/);
+
+      // 矩阵：2×3 形状
+      expect(Calculator.calculate('random(2, 3)').value)
+        .toMatch(/^\{[0-9.]+,[0-9.]+,[0-9.]+;[0-9.]+,[0-9.]+,[0-9.]+\}$/);
+
+      // 参数错误
+      expect(() => Calculator.calculate('random(2, 3, 4)')).toThrow();
+    });
+
+    test('random - 后缀调用 .random', () => {
+      // n.random ≡ random(n)，生成长度为 n 的向量
+      expect(Calculator.calculate('3.random').value).toMatch(/^\[[0-9.]+,[0-9.]+,[0-9.]+\]$/);
+      expect(Calculator.calculate('1.random').value).toMatch(/^\[[0-9.]+\]$/);
+
+      const elems = Calculator.calculate('3.random').value.slice(1, -1).split(',');
+      expect(elems).toHaveLength(3);
+      for (const e of elems) {
+        const n = parseFloat(e);
+        expect(n).toBeGreaterThanOrEqual(0);
+        expect(n).toBeLessThan(1);
+      }
     });
   });
 
@@ -758,26 +948,37 @@ describe('Basic Functions and Operators Tests', () => {
 
     test('asin - 反正弦函数', () => {
       expect(Calculator.calculate('asin(0)').value).toBe('0');
+      expect(Calculator.calculate('asin(0)').info).toContain('弧度: 0 | 角度: 0°');
       expect(Calculator.calculate('asin(1)').value).toBe(Calculator.calculate('pi/2').value);
+      expect(Calculator.calculate('asin(1)').info).toContain('弧度: π/2 | 角度: 90°');
       expect(Calculator.calculate('asin(-1)').value).toBe(Calculator.calculate('-pi/2').value);
-      
+      expect(Calculator.calculate('asin(-1)').info).toContain('弧度: -π/2 | 角度: 270°');
+
       // 超出定义域错误
       expect(Calculator.calculate('asin(2)').value).toBe('NaN');
+      expect(Calculator.calculate('asin(2)').info).toBe(null);
     });
 
     test('acos - 反余弦函数', () => {
       expect(Calculator.calculate('acos(1)').value).toBe('0');
+      expect(Calculator.calculate('acos(1)').info).toContain('弧度: 0 | 角度: 0°');
       expect(Calculator.calculate('acos(0)').value).toBe(Calculator.calculate('pi/2').value);
+      expect(Calculator.calculate('acos(0)').info).toContain('弧度: π/2 | 角度: 90°');
       expect(Calculator.calculate('acos(-1)').value).toBe(Calculator.calculate('pi').value);
-      
+      expect(Calculator.calculate('acos(-1)').info).toContain('弧度: π | 角度: 180°');
+
       // 超出定义域错误
       expect(Calculator.calculate('acos(2)').value).toBe('NaN');
+      expect(Calculator.calculate('acos(2)').info).toBe(null);
     });
 
     test('atan - 反正切函数', () => {
       expect(Calculator.calculate('atan(0)').value).toBe('0');
+      expect(Calculator.calculate('atan(0)').info).toContain('弧度: 0 | 角度: 0°');
       expect(Calculator.calculate('atan(1)').value).toBe(Calculator.calculate('pi/4').value);
+      expect(Calculator.calculate('atan(1)').info).toContain('弧度: π/4 | 角度: 45°');
       expect(Calculator.calculate('atan(-1)').value).toBe(Calculator.calculate('-pi/4').value);
+      expect(Calculator.calculate('atan(-1)').info).toContain('弧度: -π/4 | 角度: 315°');
     });
   });
 
@@ -845,19 +1046,25 @@ describe('Basic Functions and Operators Tests', () => {
 
     test('rad - 度数转弧度', () => {
       expect(Calculator.calculate('90.rad').value).toBe(Calculator.calculate('pi/2').value);
+      expect(Calculator.calculate('90.rad').info).toContain('弧度: π/2 | 角度: 90°');
+      expect(Calculator.calculate('rad(90)').info).toContain('弧度: π/2 | 角度: 90°');
       expect(Calculator.calculate('180.rad').value).toBe(Calculator.calculate('pi').value);
+      expect(Calculator.calculate('180.rad').info).toContain('弧度: π | 角度: 180°');
       expect(Calculator.calculate('0.rad').value).toBe('0');
+      expect(Calculator.calculate('0.rad').info).toContain('弧度: 0 | 角度: 0°');
     });
 
     test('deg - 弧度转度数', () => {
-      // 使用 toFixed 比较浮点数
-      const result1 = parseFloat(Calculator.calculate('(pi/2).deg').value.match(/[\d.]+/)[0]);
-      expect(result1).toBeCloseTo(90, 3);
-      
-      const result2 = parseFloat(Calculator.calculate('pi.deg').value.match(/[\d.]+/)[0]);
-      expect(result2).toBeCloseTo(180, 3);
-      
-      expect(Calculator.calculate('(0).deg').value).toContain('0');
+      expect(Calculator.calculate('(pi/2).deg').value).toBe('90');
+      expect(Calculator.calculate('(pi/2).deg').info).toContain('角度: 90°');
+      expect(Calculator.calculate('deg(pi/2)').info).toContain('角度: 90°');
+
+      expect(Calculator.calculate('pi.deg').value).toBe('180');
+      expect(Calculator.calculate('pi.deg').info).toContain('角度: 180°');
+      expect(Calculator.calculate('deg(pi)').info).toContain('角度: 180°');
+
+      expect(Calculator.calculate('(0).deg').value).toBe('0');
+      expect(Calculator.calculate('(0).deg').info).toContain('角度: 0°');
     });
   });
 
@@ -882,6 +1089,9 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('"hello".length').value).toBe("5");
       expect(Calculator.calculate('"".length').value).toBe("0");
       expect(Calculator.calculate('"中文".length').value).toBe("2");
+      expect(Calculator.calculate('"a\\\"b".length').value).toBe("3");
+      expect(Calculator.calculate("'a\\'b'.length").value).toBe("3");
+      expect(Calculator.calculate('`a\\`b`.length').value).toBe("3");
     });
   });
 
@@ -894,18 +1104,138 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('(5).bin').value).toBe('0b101');
       expect(Calculator.calculate('(8).bin').value).toBe('0b1000');
       expect(Calculator.calculate('(0).bin').value).toBe('0b0');
+
+      const negativeDefault = Calculator.calculate('(-1).bin');
+      expect(negativeDefault.value).toBe('0b1111111111111111');
+      expect(negativeDefault.info).toContain('补码位宽: 16');
+      expect(Calculator.calculate('(-10).bin').value).toBe('0b1111111111110110');
+
+      expect(Calculator.calculate('bin(-1, 8)').value).toBe('0b11111111');
+      expect(Calculator.calculate('bin(-1, 16)').value).toBe('0b1111111111111111');
+      expect(Calculator.calculate('bin(-1, 32)').value).toBe('0b11111111111111111111111111111111');
+      expect(Calculator.calculate('bin(-1, 64)').value).toBe('0b' + '1'.repeat(64));
+      expect(Calculator.calculate('bin(-10, 8)').value).toBe('0b11110110');
+      expect(Calculator.calculate('bin(10, 8)').value).toBe('0b1010');
     });
 
     test('oct - 十进制转八进制', () => {
       expect(Calculator.calculate('(8).oct').value).toBe('0o10');
       expect(Calculator.calculate('(64).oct').value).toBe('0o100');
       expect(Calculator.calculate('(0).oct').value).toBe('0o0');
+
+      const negativeDefault = Calculator.calculate('(-1).oct');
+      expect(negativeDefault.value).toBe('0o37777777777');
+      expect(negativeDefault.info).toContain('补码位宽: 32');
+      expect(Calculator.calculate('(-10).oct').value).toBe('0o37777777766');
+
+      expect(Calculator.calculate('oct(-1, 8)').value).toBe('0o377');
+      expect(Calculator.calculate('oct(-1, 16)').value).toBe('0o177777');
+      expect(Calculator.calculate('oct(-1, 32)').value).toBe('0o37777777777');
+      expect(Calculator.calculate('oct(-1, 64)').value).toBe('0o1777777777777777777777');
+      expect(Calculator.calculate('oct(-10, 8)').value).toBe('0o366');
+      expect(Calculator.calculate('oct(10, 8)').value).toBe('0o12');
     });
 
     test('hex - 十进制转十六进制', () => {
       expect(Calculator.calculate('(15).hex').value).toBe('0xf');
       expect(Calculator.calculate('(255).hex').value).toBe('0xff');
       expect(Calculator.calculate('(0).hex').value).toBe('0x0');
+      const negativeDefault = Calculator.calculate('(-1).hex');
+      expect(negativeDefault.value).toBe('0xffffffff');
+      expect(negativeDefault.info).toContain('补码位宽: 32');
+      expect(Calculator.calculate('(-10).hex').value).toBe('0xfffffff6');
+
+      const negative4 = Calculator.calculate('hex(-1, 4)');
+      expect(negative4.value).toBe('0xf');
+      expect(negative4.info).toContain('补码位宽: 4');
+
+      const negative8 = Calculator.calculate('hex(-1, 8)');
+      expect(negative8.value).toBe('0xff');
+      expect(negative8.info).toContain('补码位宽: 8');
+
+      const negative16 = Calculator.calculate('hex(-1, 16)');
+      expect(negative16.value).toBe('0xffff');
+      expect(negative16.info).toContain('补码位宽: 16');
+
+      const negative32 = Calculator.calculate('hex(-1, 32)');
+      expect(negative32.value).toBe('0xffffffff');
+      expect(negative32.info).toContain('补码位宽: 32');
+
+      const negative64 = Calculator.calculate('hex(-1, 64)');
+      expect(negative64.value).toBe('0xffffffffffffffff');
+      expect(negative64.info).toContain('补码位宽: 64');
+
+      const negative128 = Calculator.calculate('hex(-1, 128)');
+      expect(negative128.value).toBe('0xffffffffffffffffffffffffffffffff');
+      expect(negative128.info).toContain('补码位宽: 128');
+
+      expect(Calculator.calculate('hex(-10, 16)').value).toBe('0xfff6');
+      expect(Calculator.calculate('hex(10, 8)').value).toBe('0xa');
+    });
+
+    test('进制转换 - 负数位宽与参数边界', () => {
+      // 正数不返回补码位宽 info（即使传了 bits）
+      expect(Calculator.calculate('hex(255, 4)').value).toBe('0xff');
+      expect(Calculator.calculate('hex(255, 4)').info).toBe(null);
+      expect(Calculator.calculate('bin(255, 4)').info).toBe(null);
+      expect(Calculator.calculate('oct(255, 4)').info).toBe(null);
+
+      // 参数校验
+      expect(() => Calculator.calculate('hex(-1, 0)')).toThrow('hex 的位宽参数必须是正整数');
+      expect(() => Calculator.calculate('hex(-1, -8)')).toThrow('hex 的位宽参数必须是正整数');
+      expect(() => Calculator.calculate('hex(-1, 3.5)')).toThrow('hex 的位宽参数必须是正整数');
+      expect(() => Calculator.calculate('hex()')).toThrow('函数 "hex" 至少需要1个参数');
+      expect(() => Calculator.calculate('hex(1, 2, 3)')).toThrow('hex 函数支持 1 或 2 个参数');
+      expect(() => Calculator.calculate('bin(-1, 0)')).toThrow('bin 的位宽参数必须是正整数');
+      expect(() => Calculator.calculate('bin(1, 2, 3)')).toThrow('bin 函数支持 1 或 2 个参数');
+      expect(() => Calculator.calculate('oct(-1, 0)')).toThrow('oct 的位宽参数必须是正整数');
+      expect(() => Calculator.calculate('oct(1, 2, 3)')).toThrow('oct 函数支持 1 或 2 个参数');
+    });
+
+    test('进制转换 - 负数位宽BYTE', () => {
+      expect(Calculator.calculate('bin(-9, 8)').value).toBe('0b11110111');
+      expect(Calculator.calculate('oct(-9, 8)').value).toBe('0o367');
+      expect(Calculator.calculate('hex(-9, 8)').value).toBe('0xf7');
+
+      expect(Calculator.calculate('bin(-99, 8)').value).toBe('0b10011101');
+      expect(Calculator.calculate('oct(-99, 8)').value).toBe('0o235');
+      expect(Calculator.calculate('hex(-99, 8)').value).toBe('0x9d');
+
+    });
+
+
+    test('进制转换 - 负数位宽WORD', () => {
+      expect(Calculator.calculate('bin(-9, 16)').value).toBe('0b1111111111110111');
+      expect(Calculator.calculate('oct(-9, 16)').value).toBe('0o177767');
+      expect(Calculator.calculate('hex(-9, 16)').value).toBe('0xfff7');
+
+      expect(Calculator.calculate('bin(-99, 16)').value).toBe('0b1111111110011101');
+      expect(Calculator.calculate('oct(-99, 16)').value).toBe('0o177635');
+      expect(Calculator.calculate('hex(-99, 16)').value).toBe('0xff9d');
+
+    });
+
+
+    test('进制转换 - 负数位宽DWORD', () => {
+      expect(Calculator.calculate('bin(-9, 32)').value).toBe('0b11111111111111111111111111110111');
+      expect(Calculator.calculate('oct(-9, 32)').value).toBe('0o37777777767');
+      expect(Calculator.calculate('hex(-9, 32)').value).toBe('0xfffffff7');
+
+      expect(Calculator.calculate('bin(-99, 32)').value).toBe('0b11111111111111111111111110011101');
+      expect(Calculator.calculate('oct(-99, 32)').value).toBe('0o37777777635');
+      expect(Calculator.calculate('hex(-99, 32)').value).toBe('0xffffff9d');
+
+    });
+
+    test('进制转换 - 负数位宽QWORD', () => {
+      expect(Calculator.calculate('bin(-9, 64)').value).toBe('0b1111111111111111111111111111111111111111111111111111111111110111');
+      expect(Calculator.calculate('oct(-9, 64)').value).toBe('0o1777777777777777777767');
+      expect(Calculator.calculate('hex(-9, 64)').value).toBe('0xfffffffffffffff7');
+
+      expect(Calculator.calculate('bin(-99, 64)').value).toBe('0b1111111111111111111111111111111111111111111111111111111110011101');
+      expect(Calculator.calculate('oct(-99, 64)').value).toBe('0o1777777777777777777635');
+      expect(Calculator.calculate('hex(-99, 64)').value).toBe('0xffffffffffffff9d');
+
     });
 
     test('二进制转十进制', () => {
@@ -927,6 +1257,21 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('0x0 * 1').value).toBe('0');
       expect(Calculator.calculate('0xAA').value).toBe('170');
     });
+
+    //小数应该报错
+    test('进制转换 - 小数报错', () => {
+      expect(() => Calculator.calculate('bin(0.1)')).toThrow();
+      expect(() => Calculator.calculate('oct(0.1)')).toThrow();
+      expect(() => Calculator.calculate('hex(0.1)')).toThrow();
+
+      expect(() => Calculator.calculate('bin(-0.1)')).toThrow();
+      expect(() => Calculator.calculate('oct(-0.1)')).toThrow();
+      expect(() => Calculator.calculate('hex(-0.1)')).toThrow();
+
+      expect(() => Calculator.calculate('bin(-0.1, 8)')).toThrow();
+      expect(() => Calculator.calculate('oct(-0.1, 8)')).toThrow();
+      expect(() => Calculator.calculate('hex(-0.1, 8)')).toThrow();
+    });
   });
 
   describe('Base64编码函数', () => {
@@ -941,6 +1286,9 @@ describe('Basic Functions and Operators Tests', () => {
       
       // 数字转字符串再编码
       expect(() => Calculator.calculate('(123).base64')).not.toThrow();
+
+      // 错误测试
+      expect(() => Calculator.calculate('hello.base64')).toThrow();
     });
 
     test('unbase64 - Base64解码', () => {
@@ -950,6 +1298,9 @@ describe('Basic Functions and Operators Tests', () => {
       
       // 错误的Base64字符串
       expect(() => Calculator.calculate('"invalid!@#".unbase64')).toThrow();
+
+      // 错误测试
+      expect(() => Calculator.calculate('hello.unbase64')).toThrow();
     });
   });
 
@@ -958,105 +1309,141 @@ describe('Basic Functions and Operators Tests', () => {
       Calculator.clearAllCache();
     });
 
+    // 参考财政部《会计基础工作规范》：到元/角写“整”；有分不写“整”；
+    // 精确到分；角为 0 且有分时写“零”；用字不含“厘/兆”。
     test('基础测试', () => {
-      expect(Calculator.calculate('(0.001).toCN').value).toBe('零元壹厘');
-      expect(Calculator.calculate('(0.01).toCN').value).toBe('零元壹分');
-      expect(Calculator.calculate('(0.1).toCN').value).toBe('零元壹角');
-      expect(Calculator.calculate('(0.11).toCN').value).toBe('零元壹角壹分');
-      expect(Calculator.calculate('(0.111).toCN').value).toBe('零元壹角壹分壹厘');
+      expect(Calculator.calculate('(1.0) >cn').value).toBe('壹元整');
+      expect(Calculator.calculate('(0.01) >cn').value).toBe('零元零壹分');
+      expect(Calculator.calculate('(0.1) >cn').value).toBe('零元壹角整');
+      expect(Calculator.calculate('(0.11) >cn').value).toBe('零元壹角壹分');
+      expect(Calculator.calculate('(0.001) >cn').value).toBe('零元整'); // 不足分四舍五入
+      expect(Calculator.calculate('(0.001) >cn').warning).toEqual(expect.arrayContaining([expect.stringContaining('已四舍五入到分')]));
 
-      expect(Calculator.calculate('(-0.001).toCN').value).toBe('负零元壹厘');
-      expect(Calculator.calculate('(-0.01).toCN').value).toBe('负零元壹分');
-      expect(Calculator.calculate('(-0.1).toCN').value).toBe('负零元壹角');
-      expect(Calculator.calculate('(-0.11).toCN').value).toBe('负零元壹角壹分');
-      expect(Calculator.calculate('(-0.111).toCN').value).toBe('负零元壹角壹分壹厘');
+      expect(Calculator.calculate('(-0.01) >cn').value).toBe('负零元零壹分');
+      expect(Calculator.calculate('(-0.1) >cn').value).toBe('负零元壹角整');
+      expect(Calculator.calculate('(-0.11) >cn').value).toBe('负零元壹角壹分');
 
+      expect(Calculator.calculate('(1) >cn').value).toBe('壹元整');
+      expect(Calculator.calculate('(10) >cn').value).toBe('壹拾元整');
+      expect(Calculator.calculate('(100) >cn').value).toBe('壹佰元整');
+      expect(Calculator.calculate('(1000) >cn').value).toBe('壹仟元整');
+      expect(Calculator.calculate('(10000) >cn').value).toBe('壹万元整');
+      expect(Calculator.calculate('(100000000) >cn').value).toBe('壹亿元整');
+      expect(Calculator.calculate('(1000000000) >cn').value).toBe('壹拾亿元整');
+      expect(Calculator.calculate('(1000000000000) >cn').value).toBe('壹万亿元整');
 
-      expect(Calculator.calculate('(1).toCN').value).toBe('壹元整');
-      expect(Calculator.calculate('(10).toCN').value).toBe('壹拾元整');
-      expect(Calculator.calculate('(100).toCN').value).toBe('壹佰元整');
-      expect(Calculator.calculate('(1000).toCN').value).toBe('壹仟元整');
-      expect(Calculator.calculate('(10000).toCN').value).toBe('壹万元整');
-      expect(Calculator.calculate('(100000000).toCN').value).toBe('壹亿元整');
-      expect(Calculator.calculate('(1000000000).toCN').value).toBe('壹拾亿元整');
-      expect(Calculator.calculate('(1000000000000).toCN').value).toBe('壹兆元整');
+      expect(Calculator.calculate('(-1) >cn').value).toBe('负壹元整');
+      expect(Calculator.calculate('(-10) >cn').value).toBe('负壹拾元整');
+      expect(Calculator.calculate('(-100) >cn').value).toBe('负壹佰元整');
+      expect(Calculator.calculate('(-1000) >cn').value).toBe('负壹仟元整');
+      expect(Calculator.calculate('(-10000) >cn').value).toBe('负壹万元整');
+      expect(Calculator.calculate('(-100000000) >cn').value).toBe('负壹亿元整');
+      expect(Calculator.calculate('(-1000000000) >cn').value).toBe('负壹拾亿元整');
+      expect(Calculator.calculate('(-1000000000000) >cn').value).toBe('负壹万亿元整');
+    });
 
-      expect(Calculator.calculate('(-1).toCN').value).toBe('负壹元整');
-      expect(Calculator.calculate('(-10).toCN').value).toBe('负壹拾元整');
-      expect(Calculator.calculate('(-100).toCN').value).toBe('负壹佰元整');
-      expect(Calculator.calculate('(-1000).toCN').value).toBe('负壹仟元整');
-      expect(Calculator.calculate('(-10000).toCN').value).toBe('负壹万元整');
-      expect(Calculator.calculate('(-100000000).toCN').value).toBe('负壹亿元整');
-      expect(Calculator.calculate('(-1000000000).toCN').value).toBe('负壹拾亿元整');
-      expect(Calculator.calculate('(-1000000000000).toCN').value).toBe('负壹兆元整');
+    test('基础测试 空格分隔', () => {
+      expect(Calculator.calculate('0.01 > cn').value).toBe('零元零壹分');
+      expect(Calculator.calculate('0.1 > cn').value).toBe('零元壹角整');
+      expect(Calculator.calculate('0.11 > cn').value).toBe('零元壹角壹分');
+
+      expect(Calculator.calculate('1 > cn').value).toBe('壹元整');
+      expect(Calculator.calculate('10 >cn').value).toBe('壹拾元整');
+      expect(Calculator.calculate('100 > cn').value).toBe('壹佰元整');
+      expect(Calculator.calculate('1000 > cn').value).toBe('壹仟元整');
+      expect(Calculator.calculate('10000 > cn').value).toBe('壹万元整');
+      expect(Calculator.calculate('100000000 > cn').value).toBe('壹亿元整');
+      expect(Calculator.calculate('1000000000 > cn').value).toBe('壹拾亿元整');
+      expect(Calculator.calculate('1000000000000 > cn').value).toBe('壹万亿元整');
     });
 
     test('进阶测试', () => {
-      expect(Calculator.calculate('(305.2).toCN').value).toBe('叁佰零伍元贰角');
-      expect(Calculator.calculate('(305.25).toCN').value).toBe('叁佰零伍元贰角伍分');
-      expect(Calculator.calculate('(305.253).toCN').value).toBe('叁佰零伍元贰角伍分叁厘');
-      expect(Calculator.calculate('(1000000).toCN').value).toBe('壹佰万元整');
-      expect(Calculator.calculate('(123456789).toCN').value).toBe('壹亿零贰仟叁佰肆拾伍万零陆仟柒佰捌拾玖元整');
-      expect(Calculator.calculate('(123.01).toCN').value).toBe('壹佰贰拾叁元壹分');
-      expect(Calculator.calculate('(-305.25).toCN').value).toBe('负叁佰零伍元贰角伍分');
-      expect(Calculator.calculate('(0).toCN').value).toBe('零元整');
-      expect(Calculator.calculate('(00000).toCN').value).toBe('零元整');
-      expect(Calculator.calculate('(0.0).toCN').value).toBe('零元整');
-      expect(Calculator.calculate('(00.000).toCN').value).toBe('零元整');
+      // 到角为止加“整”；有分不加“整”；角为 0 有分写“零”
+      expect(Calculator.calculate('(305.2) >cn').value).toBe('叁佰零伍元贰角整');
+      expect(Calculator.calculate('(305.25) >cn').value).toBe('叁佰零伍元贰角伍分');
+      expect(Calculator.calculate('(305.253) >cn').value).toBe('叁佰零伍元贰角伍分'); // 厘四舍五入到分
+      expect(Calculator.calculate('(305.253) >cn').warning).toEqual(expect.arrayContaining([expect.stringContaining('已四舍五入到分')]));
+      expect(Calculator.calculate('(1000000) >cn').value).toBe('壹佰万元整');
+      expect(Calculator.calculate('(123456789) >cn').value).toBe('壹亿零贰仟叁佰肆拾伍万零陆仟柒佰捌拾玖元整');
+      expect(Calculator.calculate('(123.01) >cn').value).toBe('壹佰贰拾叁元零壹分');
+      expect(Calculator.calculate('(-305.25) >cn').value).toBe('负叁佰零伍元贰角伍分');
+      expect(Calculator.calculate('(0) >cn').value).toBe('零元整');
+      expect(Calculator.calculate('(00000) >cn').value).toBe('零元整');
+      expect(Calculator.calculate('(0.0) >cn').value).toBe('零元整');
+      expect(Calculator.calculate('(00.000) >cn').value).toBe('零元整');
 
-      // 测试：负数，带有零的数字（数位之间）
-      expect(Calculator.calculate('(-100100100.111).toCN').value).toBe('负壹亿零壹拾万零壹佰元壹角壹分壹厘');
-      expect(Calculator.calculate('(100100100.111).toCN').value).toBe('壹亿零壹拾万零壹佰元壹角壹分壹厘');
-      expect(Calculator.calculate('(-500500500.0).toCN').value).toBe('负伍亿零伍拾万零伍佰元整');
-      expect(Calculator.calculate('(500500500.0).toCN').value).toBe('伍亿零伍拾万零伍佰元整');
-      expect(Calculator.calculate('(-1234567890.123).toCN').value).toBe('负壹拾贰亿零叁仟肆佰伍拾陆万零柒仟捌佰玖拾元壹角贰分叁厘');
-      expect(Calculator.calculate('(1234567890.123).toCN').value).toBe('壹拾贰亿零叁仟肆佰伍拾陆万零柒仟捌佰玖拾元壹角贰分叁厘');
-      expect(Calculator.calculate('(-100000000.0).toCN').value).toBe('负壹亿元整');
-      expect(Calculator.calculate('(100000000.0).toCN').value).toBe('壹亿元整');
-      expect(Calculator.calculate('(-0.001).toCN').value).toBe('负零元壹厘');
-      expect(Calculator.calculate('(0.001).toCN').value).toBe('零元壹厘');
-      expect(Calculator.calculate('(-100500000.00).toCN').value).toBe('负壹亿零伍拾万元整');
-      expect(Calculator.calculate('(100500000.00).toCN').value).toBe('壹亿零伍拾万元整');
+      // 中间连续 0 只写一个零
+      expect(Calculator.calculate('(100100100.11) >cn').value).toBe('壹亿零壹拾万零壹佰元壹角壹分');
+      expect(Calculator.calculate('(500500500.0) >cn').value).toBe('伍亿零伍拾万零伍佰元整');
+      expect(Calculator.calculate('(1234567890.12) >cn').value).toBe('壹拾贰亿零叁仟肆佰伍拾陆万零柒仟捌佰玖拾元壹角贰分');
+      expect(Calculator.calculate('(100000000.0) >cn').value).toBe('壹亿元整');
+      expect(Calculator.calculate('(100500000.00) >cn').value).toBe('壹亿零伍拾万元整');
+      expect(Calculator.calculate('(-100100100.11) >cn').value).toBe('负壹亿零壹拾万零壹佰元壹角壹分');
 
       // 边界与特殊值
-      expect(Calculator.calculate('(0.01).toCN').value).toBe('零元壹分');
-      expect(Calculator.calculate('(0.10).toCN').value).toBe('零元壹角');
-      expect(Calculator.calculate('(0.11).toCN').value).toBe('零元壹角壹分');
-      expect(Calculator.calculate('(0.001).toCN').value).toBe('零元壹厘');
-      expect(Calculator.calculate('(0.101).toCN').value).toBe('零元壹角壹厘');
-      expect(Calculator.calculate('(0.110).toCN').value).toBe('零元壹角壹分');
-      expect(Calculator.calculate('(0.111).toCN').value).toBe('零元壹角壹分壹厘');
-      expect(Calculator.calculate('(0.0001).toCN').value).toBe('零元整');
-      expect(Calculator.calculate('(0.005).toCN').value).toBe('零元伍厘');
-      expect(Calculator.calculate('(0.009).toCN').value).toBe('零元玖厘');
-      expect(Calculator.calculate('(0.999).toCN').value).toBe('零元玖角玖分玖厘');
-      expect(Calculator.calculate('(1).toCN').value).toBe('壹元整');
-      expect(Calculator.calculate('(10).toCN').value).toBe('壹拾元整');
-      expect(Calculator.calculate('(100).toCN').value).toBe('壹佰元整');
-      expect(Calculator.calculate('(1000).toCN').value).toBe('壹仟元整');
-      expect(Calculator.calculate('(10000).toCN').value).toBe('壹万元整');
-      expect(Calculator.calculate('(100000000).toCN').value).toBe('壹亿元整');
-      expect(Calculator.calculate('(1000000000).toCN').value).toBe('壹拾亿元整');
-      expect(Calculator.calculate('(1000000000000).toCN').value).toBe('壹兆元整');
-      expect(Calculator.calculate('(100100100.01).toCN').value).toBe('壹亿零壹拾万零壹佰元壹分'); // Corrected
-      expect(Calculator.calculate('(100100100.10).toCN').value).toBe('壹亿零壹拾万零壹佰元壹角');
-      expect(Calculator.calculate('(100100100.11).toCN').value).toBe('壹亿零壹拾万零壹佰元壹角壹分');
-      expect(Calculator.calculate('(100100100.111).toCN').value).toBe('壹亿零壹拾万零壹佰元壹角壹分壹厘');
-      expect(Calculator.calculate('(-0.01).toCN').value).toBe('负零元壹分');
-      expect(Calculator.calculate('(-0.10).toCN').value).toBe('负零元壹角');
-      expect(Calculator.calculate('(-0.11).toCN').value).toBe('负零元壹角壹分');
-      expect(Calculator.calculate('(-0.001).toCN').value).toBe('负零元壹厘');
-      expect(Calculator.calculate('(-0.101).toCN').value).toBe('负零元壹角壹厘');
-      expect(Calculator.calculate('(-0.110).toCN').value).toBe('负零元壹角壹分');
-      expect(Calculator.calculate('(-0.111).toCN').value).toBe('负零元壹角壹分壹厘');
-      expect(Calculator.calculate('(-100100100.111).toCN').value).toBe('负壹亿零壹拾万零壹佰元壹角壹分壹厘');
-      expect(Calculator.calculate('(1002003004.56).toCN').value).toBe('壹拾亿零贰佰万零叁仟零肆元伍角陆分');
-      expect(Calculator.calculate('(1002003004.567).toCN').value).toBe('壹拾亿零贰佰万零叁仟零肆元伍角陆分柒厘');
-      expect(Calculator.calculate('(1002003004.000).toCN').value).toBe('壹拾亿零贰佰万零叁仟零肆元整');
-      expect(Calculator.calculate('(1002003004.001).toCN').value).toBe('壹拾亿零贰佰万零叁仟零肆元壹厘');
-      expect(Calculator.calculate('(1002003004.010).toCN').value).toBe('壹拾亿零贰佰万零叁仟零肆元壹分');
-      expect(Calculator.calculate('(1002003004.100).toCN').value).toBe('壹拾亿零贰佰万零叁仟零肆元壹角');
+      expect(Calculator.calculate('(0.01) >cn').value).toBe('零元零壹分');
+      expect(Calculator.calculate('(0.10) >cn').value).toBe('零元壹角整');
+      expect(Calculator.calculate('(0.11) >cn').value).toBe('零元壹角壹分');
+      expect(Calculator.calculate('(0.101) >cn').value).toBe('零元壹角整'); // 1 厘四舍五入
+      expect(Calculator.calculate('(0.101) >cn').warning).toEqual(expect.arrayContaining([expect.stringContaining('已四舍五入到分')]));
+      expect(Calculator.calculate('(0.110) >cn').value).toBe('零元壹角壹分');
+      expect(Calculator.calculate('(0.110) >cn').warning).toBeNull();
+      expect(Calculator.calculate('(0.005) >cn').value).toBe('零元零壹分'); // 5 厘进位
+      expect(Calculator.calculate('(0.005) >cn').warning).toEqual(expect.arrayContaining([expect.stringContaining('已四舍五入到分')]));
+      expect(Calculator.calculate('(0.004) >cn').value).toBe('零元整');
+      expect(Calculator.calculate('(0.004) >cn').warning).toEqual(expect.arrayContaining([expect.stringContaining('已四舍五入到分')]));
+      expect(Calculator.calculate('(0.999) >cn').value).toBe('壹元整'); // 999 厘进位到元
+      expect(Calculator.calculate('(0.999) >cn').warning).toEqual(expect.arrayContaining([expect.stringContaining('已四舍五入到分')]));
+      expect(Calculator.calculate('(1) >cn').warning).toBeNull();
+      expect(Calculator.calculate('(100100100.01) >cn').value).toBe('壹亿零壹拾万零壹佰元零壹分');
+      expect(Calculator.calculate('(100100100.10) >cn').value).toBe('壹亿零壹拾万零壹佰元壹角整');
+      expect(Calculator.calculate('(1002003004.56) >cn').value).toBe('壹拾亿零贰佰万零叁仟零肆元伍角陆分');
+      expect(Calculator.calculate('(1002003004.00) >cn').value).toBe('壹拾亿零贰佰万零叁仟零肆元整');
+      expect(Calculator.calculate('(1002003004.01) >cn').value).toBe('壹拾亿零贰佰万零叁仟零肆元零壹分');
+      expect(Calculator.calculate('(1002003004.10) >cn').value).toBe('壹拾亿零贰佰万零叁仟零肆元壹角整');
     });
+
+    // 添加运算测试
+    test('运算测试', () => {
+      expect(Calculator.calculate('1 + 1 >cn').value).toBe('贰元整');
+      expect(Calculator.calculate('1 - 1 >cn').value).toBe('零元整');
+      expect(Calculator.calculate('1 * 1 >cn').value).toBe('壹元整');
+      expect(Calculator.calculate('1 / 1 >cn').value).toBe('壹元整');
+      expect(Calculator.calculate('1 % 1 >cn').value).toBe('零元整');
+      expect(Calculator.calculate('1 x 1 >cn').value).toBe('壹元整');
+      expect(Calculator.calculate('1 X 1 >cn').value).toBe('壹元整');
+    });
+
+    // 复杂四则运算测试（精确到分）
+    test('复杂表达式测试，精确到分', () => {
+      expect(Calculator.calculate('1.01 + 1 x 2 >cn').value).toBe('叁元零壹分');
+      expect(Calculator.calculate('1.10 + 2 / 1 >cn').value).toBe('叁元壹角整');
+      expect(Calculator.calculate('1 * 2 + 1.01 - 0 >cn').value).toBe('叁元零壹分');
+      expect(Calculator.calculate('2 / 1 + 1.10 + 0 > cn').value).toBe('叁元壹角整');
+      expect(Calculator.calculate('max(1, 2, 3.01) > cn').value).toBe('叁元零壹分');
+    });
+
+    test('与日期时间戳运算测试', () => {
+      expect(() => Calculator.calculate('#12345678900000 >cn')).not.toThrow();
+      const result = Calculator.calculate('#12345678900000 >cn');
+      expect(result.value).toMatch(/^\d{4}-\d{2}-\d{2}/);
+      expect(result.warning).toContain('无法转换为中文数字');
+    });
+
+    test('与矩阵运算测试', () => {
+      expect(() => Calculator.calculate('[1,2,3] + [4,5,6] >cn')).not.toThrow();
+      const result = Calculator.calculate('[1,2,3] + [4,5,6] >cn');
+      expect(result.value).toBe('[5,7,9]');
+      expect(result.warning).toContain('无法转换为中文数字');
+    });
+
+    test('与字符串运算测试', () => {
+      expect(() => Calculator.calculate('"hello" + "world" >cn')).not.toThrow();
+      const result = Calculator.calculate('"hello" + "world" >cn');
+      expect(result.value).toBe('helloworld');
+      expect(result.warning).toContain('无法转换为中文数字');
+    });
+  
   });
 
   describe('条件函数', () => {
@@ -1121,6 +1508,200 @@ describe('Basic Functions and Operators Tests', () => {
       expect(Calculator.calculate('if(1, [1,2,3] * 2, 3 * [4,5,6])').value).toBe('[2,4,6]');
       expect(Calculator.calculate('if(1, [1,2,3] / 2, 3 / [4,5,6])').value).toBe('[0.5,1,1.5]');
 
+    });
+  });
+
+  describe('后缀函数调用 .f', () => {
+    beforeEach(() => {
+      Calculator.clearAllCache();
+    });
+
+    test('类型转换 .f', () => {
+      expect(Calculator.calculate('123.str').value).toBe('123');
+      expect(Calculator.calculate('3.14.str').value).toBe('3.14');
+      expect(Calculator.calculate('(123).str').value).toBe('123');
+      expect(Calculator.calculate('(3.14).str').value).toBe('3.14');
+      expect(Calculator.calculate('"123".num').value).toBe('123');
+      expect(Calculator.calculate('"3.14".num').value).toBe('3.14');
+    });
+
+    test('统计函数 向量.f', () => {
+      expect(Calculator.calculate('[1,2,3].min').value).toBe('1');
+      expect(Calculator.calculate('[1,2,3].max').value).toBe('3');
+      expect(Calculator.calculate('[1,2,3].sum').value).toBe('6');
+      expect(Calculator.calculate('[1,2,3].mean').value).toBe('2');
+      expect(Calculator.calculate('[1,2,3].avg').value).toBe('2');
+      expect(Calculator.calculate('[1,2,3,4].median').value).toBe('2.5');
+      expect(Calculator.calculate('[1,1,1].var').value).toBe('0');
+      expect(Calculator.calculate('[1,1,1].std').value).toBe('0');
+      expect(Calculator.calculate('[3,1,2].sort').value).toBe('[1,2,3]');
+    });
+
+    test('统计函数 矩阵.f', () => {
+      expect(Calculator.calculate('{1,2;3,4}.min').value).toBe('1');
+      expect(Calculator.calculate('{1,2;3,4}.max').value).toBe('4');
+      expect(Calculator.calculate('{1,2;3,4}.sum').value).toBe('10');
+      expect(Calculator.calculate('{1,2;2,3}.mean').value).toBe('2');
+      expect(Calculator.calculate('{1,2;2,3}.avg').value).toBe('2');
+      expect(Calculator.calculate('{1,2;3,4}.median').value).toBe('2.5');
+      expect(Calculator.calculate('{1,1;1,1}.var').value).toBe('0');
+      expect(Calculator.calculate('{1,1;1,1}.std').value).toBe('0');
+      expect(Calculator.calculate('{3,2;1,4}.sort').value).toBe('{1,2;3,4}');
+    });
+
+    test('对数与指数 .f', () => {
+      expect(Calculator.calculate('100.lg').value).toBe('2');
+      expect(Calculator.calculate('8.lb').value).toBe('3');
+      expect(Calculator.calculate('1.ln').value).toBe('0');
+      expect(Calculator.calculate('0.exp').value).toBe('1');
+      expect(Calculator.calculate('[1,10,100].lg').value).toBe('[0,1,2]');
+    });
+
+    test('取整函数 .f', () => {
+      expect(Calculator.calculate('(1.2).round').value).toBe('1');
+      expect(Calculator.calculate('(1.8).floor').value).toBe('1');
+      expect(Calculator.calculate('(1.2).ceil').value).toBe('2');
+      expect(Calculator.calculate('(-1.2).floor').value).toBe('-2');
+      expect(Calculator.calculate('(-1.2).ceil').value).toBe('-1');
+    });
+
+    test('三角函数 .f', () => {
+      expect(Calculator.calculate('(0).sin').value).toBe('0');
+      expect(Calculator.calculate('(pi/2).sin').value).toBe('1');
+      expect(Calculator.calculate('(0).cos').value).toBe('1');
+      expect(Calculator.calculate('(0).tan').value).toBe('0');
+      expect(Calculator.calculate('(0).asin').value).toBe('0');
+      expect(Calculator.calculate('(1).acos').value).toBe('0');
+      expect(Calculator.calculate('(0).atan').value).toBe('0');
+    });
+
+    test('双曲函数 .f', () => {
+      expect(Calculator.calculate('(0).sinh').value).toBe('0');
+      expect(Calculator.calculate('(0).cosh').value).toBe('1');
+      expect(Calculator.calculate('(0).tanh').value).toBe('0');
+    });
+
+    test('其他数学函数 .f', () => {
+      expect(Calculator.calculate('4.sqrt').value).toBe('2');
+      expect(Calculator.calculate('9.sqrt').value).toBe('3');
+      expect(Calculator.calculate('[4,9,16].sqrt').value).toBe('[2,3,4]');
+      expect(Calculator.calculate('(-5).abs').value).toBe('5');
+      expect(Calculator.calculate('[-1,2,-3].abs').value).toBe('[1,2,3]');
+    });
+
+    test('角度转换 .f', () => {
+      expect(Calculator.calculate('90.rad').value).toBe(Calculator.calculate('pi/2').value);
+      expect(Calculator.calculate('180.rad').value).toBe(Calculator.calculate('pi').value);
+      expect(Calculator.calculate('(pi/2).deg').value).toBe('90');
+      expect(Calculator.calculate('pi.deg').value).toBe('180');
+      expect(Calculator.calculate('(0).deg').value).toBe('0');
+    });
+
+    test('字符串与编码 .f', () => {
+      expect(Calculator.calculate('"hello".upper').value).toBe('HELLO');
+      expect(Calculator.calculate('"HELLO".lower').value).toBe('hello');
+      expect(Calculator.calculate('"hello".length').value).toBe('5');
+      expect(Calculator.calculate('"中文".length').value).toBe('2');
+      expect(Calculator.calculate('"ab".base64').value).toBe('YWI=');
+      expect(Calculator.calculate('"YWI=".unbase64').value).toBe('ab');
+    });
+
+    test('矩阵函数 .f', () => {
+      expect(Calculator.calculate('(2).eye').value).toBe('{1,0;0,1}');
+      expect(Calculator.calculate('[1,2].diag').value).toBe('{1,0;0,2}');
+      expect(Calculator.calculate('{1,2;3,4}.T').value).toBe('{1,3;2,4}');
+      expect(Calculator.calculate('{1,2;3,4}.transpose').value).toBe('{1,3;2,4}');
+      expect(Calculator.calculate('{1,0;0,1}.inv').value).toBe('{1,0;0,1}');
+      expect(Calculator.calculate('{1,2;3,4}.det').value).toBe('-2');
+      expect(Calculator.calculate('{1,0;0,2}.eigenvalues').value).toBe('[1,2]');
+    });
+
+    test('asProperty 的多变量函数支持单参 .f', () => {
+      expect(Calculator.calculate('(15).hex').value).toBe('0xf');
+      expect(Calculator.calculate('(255).hex').value).toBe('0xff');
+      expect(Calculator.calculate('(5).bin').value).toBe('0b101');
+      expect(Calculator.calculate('(8).bin').value).toBe('0b1000');
+      expect(Calculator.calculate('(8).oct').value).toBe('0o10');
+      expect(Calculator.calculate('(0).hex').value).toBe('0x0');
+    });
+
+    test('不支持后缀调用的函数应报错', () => {
+      expect(() => Calculator.calculate('2.pow')).toThrow('函数pow不支持作为后缀调用');
+      expect(() => Calculator.calculate('1.log')).toThrow('函数log不支持作为后缀调用');
+      expect(() => Calculator.calculate('1.if')).toThrow('函数if不支持作为后缀调用');
+      expect(() => Calculator.calculate('1.clamp')).toThrow('函数clamp不支持作为后缀调用');
+      expect(() => Calculator.calculate('1.reshape')).toThrow('函数reshape不支持作为后缀调用');
+      expect(() => Calculator.calculate('1.resize')).toThrow('函数resize不支持作为后缀调用');
+      expect(() => Calculator.calculate('1.repeat')).toThrow('函数repeat不支持作为后缀调用');
+      expect(() => Calculator.calculate('1.solve')).toThrow('函数solve不支持作为后缀调用');
+      expect(() => Calculator.calculate('1.version')).toThrow('函数version不支持作为后缀调用');
+    });
+
+    test('.f 与普通调用结果一致', () => {
+      const pairs = [
+        ['123.str', 'str(123)'],
+        ['"42".num', 'num("42")'],
+        ['[1,2,3].min', 'min([1,2,3])'],
+        ['[1,2,3].max', 'max([1,2,3])'],
+        ['1.max', 'max(1)'],
+        ['1.min', 'min(1)'],
+        ['[1,2,3].sum', 'sum([1,2,3])'],
+        ['[1,2,3].mean', 'mean([1,2,3])'],
+        ['[1,2,3].avg', 'avg([1,2,3])'],
+        ['[3,1,2].median', 'median([3,1,2])'],
+        ['[3,1,2].sort', 'sort([3,1,2])'],
+        ['{3,2;1,4}.sort', 'sort({3,2;1,4})'],
+        ['3.ones', 'ones(3)'],
+        ['3.zeros', 'zeros(3)'],
+        ['3.range', 'range(3)'],
+        ['100.lg', 'lg(100)'],
+        ['8.lb', 'lb(8)'],
+        ['1.ln', 'ln(1)'],
+        ['0.exp', 'exp(0)'],
+        ['(1.6).round', 'round(1.6)'],
+        ['(1.6).floor', 'floor(1.6)'],
+        ['(1.2).ceil', 'ceil(1.2)'],
+        ['(0).sin', 'sin(0)'],
+        ['(0).cos', 'cos(0)'],
+        ['(0).tan', 'tan(0)'],
+        ['(0).asin', 'asin(0)'],
+        ['(1).acos', 'acos(1)'],
+        ['(0).atan', 'atan(0)'],
+        ['(0).sinh', 'sinh(0)'],
+        ['(0).cosh', 'cosh(0)'],
+        ['(0).tanh', 'tanh(0)'],
+        ['9.sqrt', 'sqrt(9)'],
+        ['(-5).abs', 'abs(-5)'],
+        ['90.rad', 'rad(90)'],
+        ['(pi/2).deg', 'deg(pi/2)'],
+        ['"Hi".upper', 'upper("Hi")'],
+        ['"Hi".lower', 'lower("Hi")'],
+        ['"Hi".length', 'length("Hi")'],
+        ['"ab".base64', 'base64("ab")'],
+        ['"YWI=".unbase64', 'unbase64("YWI=")'],
+        ['(2).eye', 'eye(2)'],
+        ['[1,2].diag', 'diag([1,2])'],
+        ['{1,2;3,4}.T', 'T({1,2;3,4})'],
+        ['{1,2;3,4}.transpose', 'transpose({1,2;3,4})'],
+        ['{1,0;0,1}.inv', 'inv({1,0;0,1})'],
+        ['{1,2;3,4}.det', 'det({1,2;3,4})'],
+        ['{1,0;0,2}.eigenvalues', 'eigenvalues({1,0;0,2})'],
+        ['(15).hex', 'hex(15)'],
+        ['(5).bin', 'bin(5)'],
+        ['(8).oct', 'oct(8)'],
+      ];
+      for (const [postfix, normal] of pairs) {
+        expect(Calculator.calculate(postfix).value).toBe(Calculator.calculate(normal).value);
+      }
+    });
+
+    test('.f 优先级高于加减乘', () => {
+      // 1+8.sqrt ≡ 1+sqrt(8)? No - .sqrt binds to 8, so 1+sqrt(8)
+      // Actually: 1+4.sqrt = 1 + sqrt(4) = 3
+      expect(Calculator.calculate('1+4.sqrt').value).toBe('3');
+      expect(Calculator.calculate('2*4.sqrt').value).toBe('4');
+      expect(Calculator.calculate('(-5).abs+1').value).toBe('6');
+      expect(Calculator.calculate('90.rad.deg').value).toBe('90');
     });
   });
 

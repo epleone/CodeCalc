@@ -119,7 +119,8 @@ if (isUtoolsEnv) {
             if(type == "regex") {
                 let value = "";
                 let expr = handleRegexInput(code, payload);
-                let title = "点击复制结果";
+                const settings = window.CodeCalcCore.getCalculatorSettings();
+                let title = settings.quickCalcPasteToggle ? "点击粘贴结果" : "点击进入插件";
                 
                 try {
                     const rslt = Calculator.calculate(expr);
@@ -137,15 +138,16 @@ if (isUtoolsEnv) {
                         icon: "logo-equal.png",
                         text: value.toString(),
                         title: title,
-                    }, //...
+                    },
                 ];
             }
         },
         ({ code, type, payload, option }) => {
-            // if (option.text == "进入插件") {
-            //     return true;  // 返回 true 表示需要进入插件应用处理
-            // }
-            // 不进入插件应用 "执行粘贴文本"
+            const settings = window.CodeCalcCore.getCalculatorSettings();
+            if (!settings.quickCalcPasteToggle) {
+                return true;  // 进入插件
+            }
+            // 粘贴计算结果
             utools.hideMainWindowPasteText(option.text);
         }
     );

@@ -66,7 +66,8 @@ export class Settings {
                 historyToggle: document.getElementById('historyToggle')?.checked ?? false,
                 onlyCopyRsltToggle: document.getElementById('onlyCopyRsltToggle')?.checked ?? false,
                 toCNToggle: document.getElementById('toCNToggle')?.checked ?? false,
-                AutoNextLine: document.getElementById('AutoNextLine')?.checked ?? false
+                AutoNextLine: document.getElementById('AutoNextLine')?.checked ?? false,
+                quickCalcPasteToggle: document.getElementById('quickCalcPasteToggle')?.checked ?? true
             };
             
             this.storage.setItem('calculatorSettings', JSON.stringify(settings));
@@ -103,12 +104,14 @@ export class Settings {
         const onlyCopyRsltToggle = document.getElementById('onlyCopyRsltToggle');
         const toCNToggle = document.getElementById('toCNToggle');
         const AutoNextLine = document.getElementById('AutoNextLine');
+        const quickCalcPasteToggle = document.getElementById('quickCalcPasteToggle');
         
         if (completionToggle && settings.completionToggle !== undefined) completionToggle.checked = settings.completionToggle;
         if (historyToggle && settings.historyToggle !== undefined) historyToggle.checked = settings.historyToggle;
         if (onlyCopyRsltToggle && settings.onlyCopyRsltToggle !== undefined) onlyCopyRsltToggle.checked = settings.onlyCopyRsltToggle;
         if (toCNToggle && settings.toCNToggle !== undefined) toCNToggle.checked = settings.toCNToggle;
         if (AutoNextLine && settings.AutoNextLine !== undefined) AutoNextLine.checked = settings.AutoNextLine;
+        if (quickCalcPasteToggle && settings.quickCalcPasteToggle !== undefined) quickCalcPasteToggle.checked = settings.quickCalcPasteToggle;
         
         // 完成应用设置
         this.isApplyingSettings = false;
@@ -117,7 +120,7 @@ export class Settings {
     // 初始化设置项的监听器
     initToggleListeners() {
         // 监听所有设置项的变化
-        const settingIds = ['completionToggle', 'historyToggle', 'onlyCopyRsltToggle', 'toCNToggle', 'AutoNextLine'];
+        const settingIds = ['completionToggle', 'historyToggle', 'onlyCopyRsltToggle', 'toCNToggle', 'AutoNextLine', 'quickCalcPasteToggle'];
         
         settingIds.forEach(id => {
             const element = document.getElementById(id);

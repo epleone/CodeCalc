@@ -62,47 +62,92 @@
         <div class="settings-content">
             <div class="settings-section">
                 <div class="setting-item">
-                    <span class="setting-label">函数提示和补全</span>
-                    <label class="switch">
-                        <input type="checkbox" id="completionToggle" checked>
-                        <span class="slider round"></span>
-                    </label>
+                    <div class="setting-main">
+                        <span class="setting-label">函数补全</span>
+                        <label class="switch">
+                            <input type="checkbox" id="completionToggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="setting-desc">
+                        <span class="setting-desc-on">开启函数补全提示</span>
+                        <span class="setting-desc-off">关闭输入补全</span>
+                    </p>
                 </div>
             </div>
             <div class="settings-section">
                 <div class="setting-item">
-                    <span class="setting-label">退出保留页面记录</span>
-                    <label class="switch">
-                        <input type="checkbox" id="historyToggle" checked>
-                        <span class="slider round"></span>
-                    </label>
+                    <div class="setting-main">
+                        <span class="setting-label">页面输入记录</span>
+                        <label class="switch">
+                            <input type="checkbox" id="historyToggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="setting-desc">
+                        <span class="setting-desc-on">退出时保留页面记录</span>
+                        <span class="setting-desc-off">退出时清空页面记录</span>
+                    </p>
                 </div>
             </div>
             <div class="settings-section">
                 <div class="setting-item">
-                    <span class="setting-label">只复制计算结果</span>
-                    <label class="switch">
-                        <input type="checkbox" id="onlyCopyRsltToggle" checked>
-                        <span class="slider round"></span>
-                    </label>
+                    <div class="setting-main">
+                        <span class="setting-label">结果复制格式</span>
+                        <label class="switch">
+                            <input type="checkbox" id="onlyCopyRsltToggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="setting-desc">
+                        <span class="setting-desc-on">只复制结果数值,不包含表达式</span>
+                        <span class="setting-desc-off">复制「表达式 = 结果」,包含表达式</span>
+                    </p>
                 </div>
             </div>
             <div class="settings-section">
                 <div class="setting-item">
-                    <span class="setting-label">将数字转换为大写中文</span>
-                    <label class="switch">
-                        <input type="checkbox" id="toCNToggle">
-                        <span class="slider round"></span>
-                    </label>
+                    <div class="setting-main">
+                        <span class="setting-label">中文数字金额显示</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toCNToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="setting-desc">
+                        <span class="setting-desc-on">结果数字按大写中文金额显示,如: 壹元整</span>
+                        <span class="setting-desc-off">正常数字显示</span>
+                    </p>
                 </div>
             </div>
             <div class="settings-section">
                 <div class="setting-item">
-                    <span class="setting-label">自动添加下一行</span>
-                    <label class="switch">
-                        <input type="checkbox" id="AutoNextLine">
-                        <span class="slider round"></span>
-                    </label>
+                    <div class="setting-main">
+                        <span class="setting-label">自动换行</span>
+                        <label class="switch">
+                            <input type="checkbox" id="AutoNextLine">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="setting-desc">
+                        <span class="setting-desc-on">自动换行, 自动插入空行</span>
+                        <span class="setting-desc-off">需手动按Enter添加新行</span>
+                    </p>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="setting-item">
+                    <div class="setting-main">
+                        <span class="setting-label">快速运算后粘贴结果</span>
+                        <label class="switch">
+                            <input type="checkbox" id="quickCalcPasteToggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="setting-desc">
+                        <span class="setting-desc-on">选中结果后直接粘贴,不进入插件</span>
+                        <span class="setting-desc-off">选中结果后进入主界面, 继续计算</span>
+                    </p>
                 </div>
             </div>
         </div>

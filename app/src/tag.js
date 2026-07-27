@@ -2,12 +2,49 @@ import { showTooltip, hideTooltip } from './notification.js';
 
 let tooltipTimer;
 
+function getLineNumber(line) {
+    const lines = document.querySelectorAll('.expression-line');
+    return Array.from(lines).indexOf(line) + 1;
+}
+
+function openTagEditor(line) {
+    hideTooltip();
+    showTagInput(line);
+}
+
+function insertLineVariable(line) {
+    const lineNumber = getLineNumber(line);
+    if (lineNumber <= 0) return;
+    document.dispatchEvent(new CustomEvent('codecalc:insertLineVariable', {
+        detail: { lineNumber }
+    }));
+}
+
 // 标签相关函数
 export function initializeTagButton(line) {
     const tagButton = line.querySelector('.tag-button');
+
+    // 避免点击时抢走输入框焦点，从而丢失光标位置
+    // Mac 触控板双指点按 / Ctrl+点击也会走 button===2 或随后的 contextmenu
+    tagButton.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    // 左键：插入当前行变量 $n
     tagButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        showTagInput(line);
+        e.preventDefault();
+        // 仅响应主键（左键）；忽略中键等
+        if (e.button !== 0) return;
+        insertLineVariable(line);
+    });
+
+    // 右键：打开标签编辑（覆盖 Windows/Linux 右键、Mac 双指点按、Ctrl+点击）
+    tagButton.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openTagEditor(line);
     });
     
     tagButton.addEventListener('mouseenter', (e) => {
@@ -15,9 +52,12 @@ export function initializeTagButton(line) {
         
         tooltipTimer = setTimeout(() => {
             const rect = tagButton.getBoundingClientRect();
-            // 检查是否已经存在标签，显示相应的提示
+            const lineNumber = getLineNumber(line);
             const existingTag = line.querySelector('.tag');
-            const tooltipText = existingTag ? '修改标签' : '添加标签';
+            const tagAction = existingTag ? '右键修改标签' : '右键添加标签';
+            const tooltipText = lineNumber > 0
+                ? `左键插入 $${lineNumber} , ${tagAction}`
+                : tagAction;
             showTooltip(tooltipText, rect.right + 5, rect.bottom + 5);
         }, 300);
     });

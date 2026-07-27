@@ -1,6 +1,19 @@
 const FUNCTIONS = window.CodeCalcCore.FUNCTIONS;
 const CONSTANTS = window.CodeCalcCore.CONSTANTS;
+const OPERATORS = window.CodeCalcCore.OPERATORS;
 
+function resolveFunctionMeta(func) {
+    let resolved = func;
+    while (resolved?.alias) {
+        resolved = FUNCTIONS[resolved.alias];
+    }
+    return resolved || null;
+}
+
+function supportsAsProperty(func) {
+    const resolved = resolveFunctionMeta(func);
+    return !!(resolved && (resolved.args === 1 || resolved.asProperty));
+}
 
 // 从 OPERATORS 和 FUNCTIONS 中生成补全列表
 function generateCompletions() {
@@ -16,8 +29,8 @@ function generateCompletions() {
     for (const funcName of sortedFunctionNames) {
         const func = FUNCTIONS[funcName];
 
-        // 如果是属性函数，额外添加 .funcName 形式
-        if (func.asProperty) {
+        // 后缀调用形式：单变量 / asProperty 函数，不带括号
+        if (supportsAsProperty(func)) {
             completions.push(`.${funcName}`);
         } 
         
@@ -51,12 +64,21 @@ function generateCompletions() {
     return completions;
 }
 
+function generatePostfixOperatorCompletions() {
+    return Object.entries(OPERATORS)
+        .filter(([op, meta]) => op.startsWith('>') && meta && meta.position === 'postfix' && !meta.hidden)
+        .map(([op]) => op)
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
 // 生成补全列表
 let completions = generateCompletions();
+let postfixOperatorCompletions = generatePostfixOperatorCompletions();
 
 // 手动刷新补全列表的函数
 function refreshCompletions() {
     completions = generateCompletions();
+    postfixOperatorCompletions = generatePostfixOperatorCompletions();
 }
 
 // 全局变量
@@ -71,8 +93,11 @@ const functionFirstChars = new Set(
 );
 
 // 显示补全提示
-function showCompletionHint(input, matches, isPropertyCompletion) {
+// mode: true/'property' | 'pipe' | false/其他
+function showCompletionHint(input, matches, mode) {
     removeCompletionHint(input);
+    const isPropertyCompletion = mode === true || mode === 'property';
+    const isPipeCompletion = mode === 'pipe';
     
     const hint = document.createElement('div');
     hint.className = 'completion-hint';
@@ -88,9 +113,14 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
         item.className = 'completion-item';
         
         // 添加类型标记
-        const type = isPropertyCompletion ? 'property' : 
+        const type = isPropertyCompletion ? 'property' :
+                    isPipeCompletion ? 'function' :
+                    match.startsWith('>') ? 'operator' :
                     match.endsWith('(') ? 'function' : 'constant';
         item.setAttribute('data-type', type);
+        if (isPipeCompletion) {
+            item.setAttribute('data-pipe', '1');
+        }
         
         // 添加主要文本
         const text = document.createElement('span');
@@ -99,10 +129,16 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
         item.appendChild(text);
         
         // 添加函数描述信息
-        if (FUNCTIONS[match.replace(/[(.]/g, '')]) {
+        const functionName = match.replace(/[(.]/g, '');
+        const operatorName = match.trim();
+        if (FUNCTIONS[functionName] || OPERATORS[operatorName]) {
             const desc = document.createElement('span');
             desc.className = 'description';
-            desc.textContent = FUNCTIONS[match.replace(/[(.]/g, '')].description;
+            if (FUNCTIONS[functionName]) {
+                desc.textContent = FUNCTIONS[functionName].description;
+            } else {
+                desc.textContent = OPERATORS[operatorName].description;
+            }
             desc.style.display = 'none';
             item.appendChild(desc);
         }
@@ -117,7 +153,7 @@ function showCompletionHint(input, matches, isPropertyCompletion) {
         }
         
         // 添加点击事件处理
-        const handler = createCompletionItemHandler(input, match, isPropertyCompletion, item);
+        const handler = createCompletionItemHandler(input, match, mode, item);
         item.addEventListener('click', handler, { once: true });
         
         list.appendChild(item);
@@ -260,29 +296,33 @@ function applySelectedCompletion(input) {
     if (selectedItem) {
         const textElement = selectedItem.querySelector('.text');
         const match = textElement.textContent;
-        const isPropertyCompletion = selectedItem.getAttribute('data-type') === 'property';
-        applyCompletion(input, match, isPropertyCompletion);
+        const mode = selectedItem.getAttribute('data-pipe') === '1' ? 'pipe'
+            : selectedItem.getAttribute('data-type') === 'property' ? 'property'
+            : false;
+        applyCompletion(input, match, mode);
     }
 }
 
 // 创建补全项的点击处理函数
-function createCompletionItemHandler(input, match, isPropertyCompletion, item) {
+function createCompletionItemHandler(input, match, mode, item) {
     return function handler(event) {
         event.preventDefault(); // 阻止默认行为
         event.stopPropagation(); // 阻止冒泡
-        applyCompletion(input, match, isPropertyCompletion);
+        applyCompletion(input, match, mode);
         item.removeEventListener('click', handler); // 恢复这行
         removeCompletionHint(input); // 恢复这行
     };
 }
 
 // 应用补全
-function applyCompletion(input, match, isPropertyCompletion) {
+function applyCompletion(input, match, mode) {
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
     const afterCursor = input.value.substring(cursorPos);
     
     const completionText = match.split(/\s+/)[0];
+    const isPropertyCompletion = mode === true || mode === 'property';
+    const isPipeCompletion = mode === 'pipe';
     
     if (isPropertyCompletion) {
         const dotMatch = textBeforeCursor.match(/\.([a-zA-Z0-9]*)$/);
@@ -290,6 +330,26 @@ function applyCompletion(input, match, isPropertyCompletion) {
             const beforeDot = textBeforeCursor.slice(0, -dotMatch[0].length);
             input.value = beforeDot + '.' + completionText + afterCursor;
             const newCursorPos = beforeDot.length + completionText.length + 1;
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }
+    } else if (isPipeCompletion) {
+        // 保留已有的 `>` 与可选空格，只替换其后的函数名前缀
+        const pipeMatch = textBeforeCursor.match(/^(.*?>\s*)([a-zA-Z]*)$/);
+        if (pipeMatch) {
+            input.value = pipeMatch[1] + completionText + afterCursor;
+            const newCursorPos = pipeMatch[1].length + completionText.length;
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }
+    } else if (completionText.startsWith('>')) {
+        const postfixMatch = textBeforeCursor.match(/>\s*[#@a-zA-Z]*$/);
+        if (postfixMatch) {
+            const beforePostfix = textBeforeCursor.slice(0, -postfixMatch[0].length);
+            input.value = beforePostfix + completionText + afterCursor;
+            const newCursorPos = beforePostfix.length + completionText.length;
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        } else {
+            input.value = textBeforeCursor + completionText + afterCursor;
+            const newCursorPos = textBeforeCursor.length + completionText.length;
             input.setSelectionRange(newCursorPos, newCursorPos);
         }
     } else {
@@ -323,12 +383,22 @@ function shouldTriggerCompletion(input, key) {
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
     
-    // 如果光标前有#，不触发任何补全
+    if (key === '>') {
+        return true;
+    }
+
+    // 支持 > 系列后缀操作符补全（如 >@, >#, >#w, >cn）
+    const postfixContext = />\s*[#@a-zA-Z]*$/.test(textBeforeCursor);
+    if (postfixContext) {
+        return key.match(/[a-zA-Z]/) || key === '>' || key === '#' || key === '@' || key === ' ';
+    }
+
+    // 如果光标前有#，不触发普通补全
     if (textBeforeCursor.includes('#')) {
         return false;
     }
     
-    // 只在输入字母或点号时触发补全
+    // 只在输入字母或点号时触发普通补全
     return key.match(/[a-zA-Z]/) || key === '.';
 }
 
@@ -342,15 +412,42 @@ function checkCompletion(input) {
     const cursorPos = input.selectionStart;
     const textBeforeCursor = input.value.substring(0, cursorPos);
 
-    // 如果光标前有#，不进行任何补全
-    if (textBeforeCursor.includes('#')) {
+    const postfixMatch = textBeforeCursor.match(/>\s*[#@a-zA-Z]*$/);
+    if (postfixMatch) {
+        const normalizedPrefix = postfixMatch[0].replace(/\s+/g, '').toLowerCase();
+        const operatorMatches = postfixOperatorCompletions
+            .filter(op => op.toLowerCase().startsWith(normalizedPrefix));
+
+        if (operatorMatches.length > 0) {
+            showCompletionHint(input, operatorMatches, false);
+            return;
+        }
+
+        // 未命中 >cn 等 op 时，补全函数管道（裸函数名）
+        const funcPrefix = normalizedPrefix.slice(1); // 去掉 '>'
+        if (/^[a-zA-Z]*$/.test(funcPrefix)) {
+            const pipeMatches = Object.keys(FUNCTIONS)
+                .filter(name => /^[a-zA-Z_]/.test(name) && name.toLowerCase().startsWith(funcPrefix))
+                .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+            if (pipeMatches.length > 0) {
+                showCompletionHint(input, pipeMatches, false, 'pipe');
+                return;
+            }
+        }
+
+        removeCompletionHint(input);
         return;
     }
 
-    // 检查是否是属性函数补全
+    // 如果光标前有#，不进行普通补全
+    if (textBeforeCursor.includes('#')) {
+        removeCompletionHint(input);
+        return;
+    }
+
+    // 检查是否是属性/后缀函数补全（前面有点时不加括号）
     const dotMatch = textBeforeCursor.match(/\.([a-zA-Z]*)$/);
     if (dotMatch) {
-        // 只显示属性函数
         const propertyMatches = completions
             .filter(funcname => 
                 funcname.startsWith('.') && 
@@ -360,8 +457,10 @@ function checkCompletion(input) {
         
         if (propertyMatches.length > 0) {
             showCompletionHint(input, propertyMatches, true);
-            return;
+        } else {
+            removeCompletionHint(input);
         }
+        return;
     }
 
     // 普通函数补全
@@ -369,10 +468,12 @@ function checkCompletion(input) {
     if (wordMatch) {
         const word = wordMatch[0].toLowerCase();
         const matches = completions
-            .filter(name => name.toLowerCase().startsWith(word));
+            .filter(name => !name.startsWith('.') && name.toLowerCase().startsWith(word));
         
         if (matches.length > 0) {
             showCompletionHint(input, matches, false);
+        } else {
+            removeCompletionHint(input);
         }
     } else {
         removeCompletionHint(input); // 如果没有匹配，移除补全提示

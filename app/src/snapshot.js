@@ -57,9 +57,9 @@ export class Snapshot {
         });
         
         // 添加切换按钮点击事件
-        const toggleBtn = document.querySelector('.snapshot-toggle-btn');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
+        this.toggleBtn = document.querySelector('.snapshot-toggle-btn');
+        if (this.toggleBtn) {
+            this.toggleBtn.addEventListener('click', () => {
                 this.togglePanel();
             });
         }
@@ -601,11 +601,17 @@ export class Snapshot {
             }
             this.panel.classList.add('show');
             this.overlay.classList.add('show');
+            if (this.toggleBtn) {
+                this.toggleBtn.classList.add('active');
+            }
             document.body.style.overflow = 'hidden';
         } else {
             this.clearActionTooltip();
             this.panel.classList.remove('show');
             this.overlay.classList.remove('show');
+            if (this.toggleBtn) {
+                this.toggleBtn.classList.remove('active');
+            }
             document.body.style.overflow = '';
             // 退出后聚焦到最后一个输入框
             const inputs = document.querySelectorAll('.input');
