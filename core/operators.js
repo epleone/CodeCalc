@@ -923,7 +923,7 @@ export const FUNCTIONS = {
     // 版本号
     'version': {
         args: 0,
-        func: () => 'CodeCalcCore 3.3.0',
+        func: () => 'CodeCalcCore 3.3.1',
         description: 'CodeCalcCore 版本号'
     }
 }; 
