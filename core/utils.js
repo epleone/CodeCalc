@@ -35,10 +35,11 @@ class CCnode {
 // 定义类 CCObj，用于保存所有的计算结果，op + func调用结果
 class CCObj {
     constructor(value, info=undefined, warning=undefined) {
-        this.value = value;     // 参与计算的值
+        this.value = value;     // 参与计算的值；比值二元为商，多元为 undefined
         this.info = info;
         this.warning = warning;
-        this._fmtValue = undefined;       // 可选：自定义外部显示值（如中文大写、日期文本）
+        this._fmtValue = undefined;       // 可选：自定义外部显示值；比值时存未约分 parts 串
+        this.isRatio = false;             // 是否为比值类型
     }
 
     set fmtValue(val) { this._fmtValue = val; }
@@ -46,8 +47,37 @@ class CCObj {
     get fmtValue() { return this._fmtValue; }
 
     toString() {
+        if (this.isRatio) {
+            return formatRatioParts(parseRatioFmtValue(this.fmtValue));
+        }
         return this.value.toString();
     }
+}
+
+/** 解析比值 fmtValue（未约分 parts 串） */
+function parseRatioFmtValue(fmt) {
+    return String(fmt).split(':').map(s => new Decimal(s));
+}
+
+function joinRatioPartsRaw(parts) {
+    return parts.map(p => {
+        const d = isDecimal(p) ? p : new Decimal(p);
+        return d.isInteger() ? d.toFixed(0) : d.toString();
+    }).join(':');
+}
+
+function formatRatioParts(parts) {
+    return Utils.simplifyRatioParts(parts)
+        .map(p => (p.isInteger() ? p.toFixed(0) : p.toString()))
+        .join(':');
+}
+
+/** 取出 CCObj 的计算值；比值多元无 value 时抛错 */
+function ccObjValue(obj) {
+    if (obj.isRatio && (obj.value === undefined || obj.value === null)) {
+        throw new Error('多元比值不能参与运算');
+    }
+    return obj.value;
 }
 
 
@@ -174,12 +204,11 @@ function checkMatrixArgs(args0, args1) {
 
 // 添加标量和矩阵运算支持，注意是否满足交换律
 function addOpSupport(opName, x, y, op_xy, op_yx) {
-    if(isCCObj(x)) {
-        x = x.value;
+    if (isCCObj(x)) {
+        x = ccObjValue(x);
     }
-
-    if(isCCObj(y)) {
-        y = y.value;
+    if (isCCObj(y)) {
+        y = ccObjValue(y);
     }
 
     // 使用这个函数时，x和y都强制转换为Decimal类型 或者是 DecMatrix类型
@@ -211,9 +240,27 @@ const Utils = {
     convertTypes(value, type='decimal') {
         // console.log("convertTypes: ", value.toString(), type);
 
-        // 如果是CCObj，先获取value参与计算
-        if(isCCObj(value)) {
-            value = value.value;
+        // any：比值 CCObj 整壳保留（fmtValue 续接 parts）；其余取 value
+        if (type === 'any') {
+            if (isCCObj(value)) {
+                if (value.isRatio) {
+                    return value;
+                }
+                value = value.value;
+            }
+            if (isCCnode(value)) {
+                return new Decimal(value.toString());
+            }
+            return value;
+        }
+
+        if (isCCObj(value)) {
+            if (type === 'string') {
+                return value.isRatio
+                    ? formatRatioParts(parseRatioFmtValue(value.fmtValue))
+                    : (value.fmtValue !== undefined ? String(value.fmtValue) : value.value.toString());
+            }
+            value = ccObjValue(value);
         }
     
         try {
@@ -224,13 +271,6 @@ const Utils = {
                     return value;
                 }
                 return new Decimal(value.toString());
-            }
-            if (type === 'any') {
-                // 如果是CCnode，则返回Decimal类型参与计算
-                if(isCCnode(value)) {
-                    return new Decimal(value.toString());
-                }
-                return value;
             }
             if(type === 'number') {
                 return Number(value.toString());
@@ -245,6 +285,9 @@ const Utils = {
             throw new Error(`不支持的类型: ${type}`);
 
         } catch (error) {
+            if (error.message && error.message.includes('多元比值')) {
+                throw error;
+            }
             if(isString(value) && value.startsWith('$')){
                 throw new Error(`默认变量 ${value} 还不能使用`);
             }
@@ -265,11 +308,12 @@ const Utils = {
             return Utils.formatToDisplayString(converted);
         }
 
-        // CCObj：info/warning 挂在外壳；显示值与裸 value 走同一套格式化后合并
+        // CCObj：info/warning 挂在外壳；比值 fmtValue 为未约分 parts，显示时再约分
         if(isCCObj(result)) {
-            const display = Utils.formatToDisplayString(
-                result.fmtValue !== undefined ? result.fmtValue : result.value
-            );
+            const rawDisplay = result.isRatio
+                ? formatRatioParts(parseRatioFmtValue(result.fmtValue))
+                : (result.fmtValue !== undefined ? result.fmtValue : result.value);
+            const display = Utils.formatToDisplayString(rawDisplay);
             return {
                 value: display.value,
                 info: result.info || display.info || undefined,
@@ -1345,6 +1389,71 @@ const Utils = {
         }
 
         throw new Error('std函数参数应为向量或矩阵');
+    },
+
+    /** 整数 Decimal 的最大公约数 */
+    gcdDecimal(a, b) {
+        a = a.abs();
+        b = b.abs();
+        while (!b.isZero()) {
+            const t = b;
+            b = a.mod(b);
+            a = t;
+        }
+        return a;
+    },
+
+    /** 将若干项约分为最简比；零项保持为 0，仅对非零项取 gcd */
+    simplifyRatioParts(parts) {
+        const decimals = parts.map(p => (isDecimal(p) ? p : new Decimal(p)));
+        let maxDp = 0;
+        for (const d of decimals) {
+            const dp = d.decimalPlaces();
+            if (dp > maxDp) {
+                maxDp = dp;
+            }
+        }
+        const scale = new Decimal(10).pow(maxDp);
+        const ints = decimals.map(d => d.mul(scale));
+
+        const nonZero = ints.filter(i => !i.isZero());
+        if (nonZero.length === 0) {
+            return ints;
+        }
+
+        let g = nonZero[0].abs();
+        for (let i = 1; i < nonZero.length; i++) {
+            g = Utils.gcdDecimal(g, nonZero[i].abs());
+        }
+
+        return ints.map(i => i.div(g));
+    },
+
+    /** 从比值操作数展开为 parts（比值从 fmtValue 解析；其余取数字） */
+    ratioPartsFrom(value) {
+        if (isCCObj(value)) {
+            if (value.isRatio) {
+                return parseRatioFmtValue(value.fmtValue);
+            }
+            value = ccObjValue(value);
+        }
+        if (isDigital(value)) {
+            return [isDecimal(value) ? value : new Decimal(value)];
+        }
+        throw new Error('比值运算只支持数字');
+    },
+
+    /** 比值：二元 value=商；多元 value 为空；fmtValue=未约分 parts（显示时约分） */
+    ratio(x, y) {
+        const parts = [
+            ...Utils.ratioPartsFrom(x),
+            ...Utils.ratioPartsFrom(y),
+        ];
+        const binary = parts.length === 2;
+        const result = new CCObj(binary ? parts[0].div(parts[1]) : undefined);
+        result.isRatio = true;
+        result.fmtValue = joinRatioPartsRaw(parts);
+        return result;
     },
     
 };

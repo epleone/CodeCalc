@@ -46,6 +46,7 @@ const OPERATOR_CASES = [
   sameValueForms('%', '7', '4 + 3', '3', '1 + 2', '1'),
   sameValueForms('**', '2', '1 + 1', '3', '1 + 2', '8'),
   sameValueForms('^', '2', '1 + 1', '3', '1 + 2', '8'),
+  sameValueForms(':', '3', '1 + 2', '6', '2 + 4', '1:2'),
   {
     name: '°',
     forms: [

@@ -82,6 +82,16 @@ export const OPERATORS = {
         description: '幂运算'
     },
 
+    // 比值（优先级与赋值同级，实质低于一切算术）
+    ':': {
+        precedence: 1,
+        args: 2,
+        func: Utils.ratio,
+        argTypes: 'any',
+        position: 'infix',
+        description: '比值'
+    },
+
     // 一元运算符
     '°': {
         alias: '.rad',
