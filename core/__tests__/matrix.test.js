@@ -843,10 +843,28 @@ describe('Matrix Operations', () => {
     });
 
     test('向量repeat', () => {
+      // 列向量：每个元素横向重复（含长度 ≠ n，避免旧 reshape 错位）
       expect(Calculator.calculate('repeat([1 2 3], 3)').value).toBe('{1,1,1;2,2,2;3,3,3}');
-      expect(Calculator.calculate('repeat({1 2 3}, 3)').value).toBe('{1,2,3;1,2,3;1,2,3}');
+      expect(Calculator.calculate('repeat([1,2], 3)').value).toBe('{1,1,1;2,2,2}');
+      expect(Calculator.calculate('repeat([1,2], 2)').value).toBe('{1,1;2,2}');
+      expect(Calculator.calculate('repeat([1,2,3], 2)').value).toBe('{1,1;2,2;3,3}');
+      expect(Calculator.calculate('repeat([1], 3)').value).toBe('{1,1,1}');
+      expect(Calculator.calculate('repeat([1,2,3,4], 2)').value).toBe('{1,1;2,2;3,3;4,4}');
 
-      expect(() => Calculator.calculate('repeat({1 2 3;1 2 3}, 3)')).toThrow();
+      // 行向量：整行纵向重复
+      expect(Calculator.calculate('repeat({1 2 3}, 3)').value).toBe('{1,2,3;1,2,3;1,2,3}');
+      expect(Calculator.calculate('repeat({1,2}, 3)').value).toBe('{1,2;1,2;1,2}');
+      expect(Calculator.calculate('repeat({1,2,3}, 2)').value).toBe('{1,2,3;1,2,3}');
+      // 1×1 同时满足行列向量，走列向量分支 → 1×n
+      expect(Calculator.calculate('repeat({1}, 3)').value).toBe('{1,1,1}');
+
+      // 一般矩阵不支持
+      expect(() => Calculator.calculate('repeat({1 2 3;1 2 3}, 3)')).toThrow(/行向量或列向量/);
+      expect(() => Calculator.calculate('repeat({1,2;3,4}, 2)')).toThrow(/行向量或列向量/);
+      expect(() => Calculator.calculate('repeat({1,2,3;4,5,6}, 1)')).toThrow(/行向量或列向量/);
+
+      // 次数须为整数
+      expect(() => Calculator.calculate('repeat([1,2], 1.5)')).toThrow(/整数/);
     });
 
     test('矩阵求逆inv', () => {

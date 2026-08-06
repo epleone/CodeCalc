@@ -171,34 +171,30 @@ export class DecMatrix {
     }
 
     // 重复向量
+    // 行/列向量 data 排布相同：先整段重复 n 次；
+    // 行向量直接视为 (n, cols)；列向量视为 (n, rows) 再转置 → (rows, n)
     repeat(n) {
         n = Number(n);
-        // 判断n是否是整数
         if (!Number.isInteger(n)) {
             throw new Error('repeat的次数必须是整数');
         }
 
-        // 判断矩阵是否是行向量或列向量
         if (this.cols !== 1 && this.rows !== 1) {
             throw new Error('repeat的矩阵必须是行向量或列向量');
         }
 
-        // 将数据重复n次
-        let result = [];
+        const result = [];
         for (let i = 0; i < n; i++) {
             result.push(...this.data);
         }
 
-        // 列向量
-        if (this.cols == 1) {
-            return new DecMatrix(result, this.rows, n).transpose();
+        // 列向量（含 1×1）：(n, rows) 再转置
+        if (this.cols === 1) {
+            return new DecMatrix(result, n, this.rows).transpose();
         }
 
         // 行向量
-        if (this.rows == 1) {
-            return new DecMatrix(result, n, this.cols);
-        }
-        
+        return new DecMatrix(result, n, this.cols);
     }
 
     // 排序,
