@@ -350,25 +350,25 @@ export const OPERATORS = {
     '>': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x > y,
+        func: (x, y) => x.gt(y),
         position: 'infix',
     },
     '<': {
         precedence: 1,
         args: 2,
-        func: (x, y) => x < y,
+        func: (x, y) => x.lt(y),
         position: 'infix',
     },
     '>=': { 
         precedence: 1,
         args: 2,
-        func: (x, y) => x >= y,
+        func: (x, y) => x.gte(y),
         position: 'infix',
     },
     '<=': { 
         precedence: 1,
         args: 2,
-        func: (x, y) => x <= y,
+        func: (x, y) => x.lte(y),
         position: 'infix',
     },
     

@@ -125,10 +125,11 @@ const OPERATOR_CASES = [
   assignmentForms('>>>=', '16', '2', '1 + 1', '4'),
   sameValueForms('==', '2', '1 + 1', '2', '1 + 1', 'true'),
   sameValueForms('!=', '2', '1 + 1', '3', '1 + 2', 'true'),
-  sameValueForms('>', '3', '1 + 2', '2', '1 + 1', 'true'),
-  sameValueForms('<', '2', '1 + 1', '3', '1 + 2', 'true'),
-  sameValueForms('>=', '2', '1 + 1', '2', '1 + 1', 'true'),
-  sameValueForms('<=', '2', '1 + 1', '2', '1 + 1', 'true'),
+  // 用多位数：避免 Decimal 被当成字符串比较时 "10">"2" 碰巧与数值序不一致仍能蒙混过关
+  sameValueForms('>', '10', '5 + 5', '2', '1 + 1', 'true'),
+  sameValueForms('<', '2', '1 + 1', '10', '5 + 5', 'true'),
+  sameValueForms('>=', '10', '5 + 5', '2', '1 + 1', 'true'),
+  sameValueForms('<=', '2', '1 + 1', '10', '5 + 5', 'true'),
   sameValueForms('matmul@', '{1 2;3 4}', '{1 2;3 4}', '{1;1}', '{1;1}', '[3,7]'),
   {
     name: '@',
@@ -246,5 +247,30 @@ describe('OPERATORS basic shape coverage', () => {
       before.forEach(setupExpr => Calculator.calculate(setupExpr));
       expect(calc(expr)).toBe(expected);
     }
+  });
+});
+
+describe('比较运算符数值序（非字符串字典序）', () => {
+  beforeEach(() => {
+    Calculator.clearAllCache();
+  });
+
+  test.each([
+    ['10 > 2', 'true'],
+    ['10 < 2', 'false'],
+    ['10 >= 2', 'true'],
+    ['10 <= 2', 'false'],
+    ['10 >= 10', 'true'],
+    ['10 <= 10', 'true'],
+    ['2 > 10', 'false'],
+    ['2 < 10', 'true'],
+    ['100 > 20', 'true'],
+    ['100 < 20', 'false'],
+    ['1.5 > 1.25', 'true'],
+    ['1.5 < 1.25', 'false'],
+    ['-1 > -2', 'true'],
+    ['-1 < -2', 'false'],
+  ])('%s → %s', (expr, expected) => {
+    expect(calc(expr)).toBe(expected);
   });
 });
