@@ -762,9 +762,27 @@ describe('Matrix Operations', () => {
       expect(() => Calculator.calculate('random(2)')).not.toThrow();
       expect(() => Calculator.calculate('random(2, 3)')).not.toThrow();
 
+      // 整数写法（2.0）仍合法
+      expect(Calculator.calculate('ones(2.0, 3)').value).toBe('{1,1,1;1,1,1}');
+      expect(Calculator.calculate('zeros(2.0)').value).toBe('[0,0]');
+      expect(Calculator.calculate('eye(2.0)').value).toBe('{1,0;0,1}');
+
       // 报错
       expect(() => Calculator.calculate('random(2, 3, 4)')).toThrow();
       expect(() => Calculator.calculate('diag(1,2,3)')).toThrow();
+    });
+
+    test('ones/zeros/random/eye 维度须为正整数', () => {
+      const dimError = /维度参数必须是正整数/;
+
+      for (const expr of [
+        'ones(1.5)', 'ones(1.5, 2)', 'ones(2, 1.5)', 'ones(0)', 'ones(-1, 2)',
+        'zeros(1.5)', 'zeros(1.5, 2)', 'zeros(0, 2)',
+        'random(1.5)', 'random(1.5, 2)', 'random(-1)',
+        'eye(1.5)', 'eye(0)', 'eye(-1)',
+      ]) {
+        expect(() => Calculator.calculate(expr)).toThrow(dimError);
+      }
     });
   });
 

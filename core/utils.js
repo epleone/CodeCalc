@@ -710,6 +710,15 @@ const Utils = {
         return decimal.toFixed(precision).replace(/\.?0+$/, '');
     },
 
+    /** 矩阵维度：必须为正整数，返回 number */
+    toPositiveIntDim(value, funcName) {
+        const d = isDecimal(value) ? value : new Decimal(value);
+        if (!d.isInteger() || d.lte(0)) {
+            throw new Error(`${funcName}函数的维度参数必须是正整数`);
+        }
+        return d.toNumber();
+    },
+
     // 随机数函数
     random(...args) {
         if(args.length === 0) {
@@ -717,15 +726,14 @@ const Utils = {
         }
 
         if(args.length === 1) {
-            const num = args[0].toNumber();
-            // 随机生成num个数字
+            const num = Utils.toPositiveIntDim(args[0], 'random');
             const vec = Array.from({length: num}, () => Decimal.random());
             return new DecMatrix(vec, num, 1);
         }
 
         if(args.length === 2) {
-            const rows = args[0].toNumber();
-            const cols = args[1].toNumber();
+            const rows = Utils.toPositiveIntDim(args[0], 'random');
+            const cols = Utils.toPositiveIntDim(args[1], 'random');
             const vec = Array.from({length: rows * cols}, () => Decimal.random());
             return new DecMatrix(vec, rows, cols);
         }
@@ -1093,15 +1101,14 @@ const Utils = {
     // 生成全1向量或者矩阵
     ones(...args) {
         if(args.length === 1) {
-            const num = args[0].toNumber();
-            // 随机生成num个数字
+            const num = Utils.toPositiveIntDim(args[0], 'ones');
             const vec = Array.from({length: num}, () => Decimal(1));
             return new DecMatrix(vec, num, 1);
         }
 
         if(args.length === 2) {
-            const rows = args[0].toNumber();
-            const cols = args[1].toNumber();
+            const rows = Utils.toPositiveIntDim(args[0], 'ones');
+            const cols = Utils.toPositiveIntDim(args[1], 'ones');
             const vec = Array.from({length: rows * cols}, () => Decimal(1));
             return new DecMatrix(vec, rows, cols);
         }
@@ -1113,14 +1120,14 @@ const Utils = {
     // 生成全0向量或者矩阵
     zeros(...args) {
         if(args.length === 1) {
-            const num = args[0].toNumber();
+            const num = Utils.toPositiveIntDim(args[0], 'zeros');
             const vec = Array.from({length: num}, () => Decimal(0)); 
             return new DecMatrix(vec, num, 1);
         }
 
         if(args.length === 2) {
-            const rows = args[0].toNumber();
-            const cols = args[1].toNumber();
+            const rows = Utils.toPositiveIntDim(args[0], 'zeros');
+            const cols = Utils.toPositiveIntDim(args[1], 'zeros');
             const vec = Array.from({length: rows * cols}, () => Decimal(0));
             return new DecMatrix(vec, rows, cols);
         }
@@ -1130,10 +1137,7 @@ const Utils = {
 
     // 生成单位矩阵
     eye(n) {
-        n = n.toNumber();
-        if(n < 1) {
-            throw new Error('eye函数参数错误，应为正整数');
-        }
+        n = Utils.toPositiveIntDim(n, 'eye');
         // 创建一个n的一维数组，每个元素为1
         const data = Array.from({length: n}, () => Decimal(1));
         const eyeVec =  new DecMatrix(data, n, 1);
