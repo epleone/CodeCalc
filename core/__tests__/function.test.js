@@ -110,7 +110,7 @@ const FUNCTION_CASES = [
   makeCase('RowMatrix', { setup: ['x = 1'], args: '[x, 2], [3, 4]', exprArgs: '[1 + 0, 2], [3, 4]', expected: '[1,2,3,4]', aSetup: 'a = [1, 1, 1, 1]', aExpected: '[1,1,1,1]' }),
   makeCase('ColMatrix', { setup: ['x = 1'], args: '[x, 2], [3, 4]', exprArgs: '[1 + 0, 2], [3, 4]', expected: '{1,3;2,4}', aSetup: 'a = {1,1;1,1}', aExpected: '{1,1;1,1}' }),
   makeCase('if', { setup: ['x = 1'], args: 'x, 2, 3', exprArgs: '1 == 1, 2, 3', expected: '2' }),
-  makeCase('version', { args: '', exprArgs: '', expected: '"CodeCalcCore 3.3.0"', aSetup: 'a = "v"', aExpected: '"v"' }),
+  makeCase('version', { args: '', exprArgs: '', expected: '"CodeCalcCore 3.3.1"', aSetup: 'a = "v"', aExpected: '"v"' }),
 ];
 
 const RANDOM_CASE = {
